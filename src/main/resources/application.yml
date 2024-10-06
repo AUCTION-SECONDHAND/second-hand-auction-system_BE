@@ -1,0 +1,85 @@
+server:
+  port: 8080
+
+open:
+  api:
+    title: API-service document
+    version: V1.0.0
+    description: API for the second-hand auction system
+    licenseUrl: "https://example.com/license"  # Replace with actual license URL
+    licenseName: API License
+    serversUrl: http://localhost:8080/
+    serversDescription: Server v1
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+spring:
+  application:
+    name: second-hand-auction-system_BE
+  datasource:
+    # Duc Anh
+    url: jdbc:mysql://localhost:3306/secondHandAuction?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 12345
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+      dialect: org.hibernate.dialect.MySQL8Dialect
+      format_sql: true
+
+  logging:
+    level:
+      org.springframework.security: DEBUG
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: anhquanpro332002@gmail.com
+    password: sbhh jrde aqqs rfbe
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB    # Kích thước tối đa cho 1 file
+      max-request-size: 10MB # Kích thước tối đa của toàn bộ request (bao gồm các file)
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${SECRET_KEY}
+            client-secret: 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
+            scope: profile, email
+            redirect-uri: http://localhost:8080/login/oauth2/code/google
+
+application:
+  security:
+    jwt:
+      secret-key: b60c9e7a2e251192f67c2b02773e76c8096a6e38ea49627334eddae82dc7da95
+      expiration: 360000  # Expiration time in milliseconds
+      refresh-token:
+        expiration: 604800000  # 7 days in milliseconds
+
+payos:
+  api:
+    secret: 59a13a59-2685-487d-966c-8a0315c19477
+    key: 2f2ff35f-c481-4dbd-8140-f5af2649867e
+    check_sum: ffe3d79b57d6d0546c330aa86b3fb1d68812f581ae26ba7a23477e2691c5704c
+
+api:
+  prefix: api/v1
