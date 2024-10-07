@@ -28,4 +28,8 @@ public class AuctionRegistration extends BaseEntity{
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToOne
+    @JoinColumn(name = "auction_id")
+    private Auction auction;
 }

@@ -5,8 +5,8 @@ import com.second_hand_auction_system.utils.AuctionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.sql.Time;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Date;
 
 @Entity
@@ -22,20 +22,20 @@ public class Auction extends BaseEntity{
     private Integer auctionId;
 
     @Column(name = "start_time")
-    @JsonFormat(pattern = "HH:mm:ss", shape = JsonFormat.Shape.STRING)
-    private Time startTime;
+    //@JsonFormat(pattern = "HH:mm:ss", shape = JsonFormat.Shape.STRING)
+    private LocalTime startTime;
 
     @Column(name = "end_time")
-    @JsonFormat(pattern = "HH:mm:ss", shape = JsonFormat.Shape.STRING)
-    private Time endTime;
+    //@JsonFormat(pattern = "HH:mm:ss", shape = JsonFormat.Shape.STRING)
+    private LocalTime endTime;
 
     @Column(name = "start_date")
-    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
-    private Date startDate;
+    //JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
-    private Date endDate;
+    //@JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
+    private LocalDate endDate;
 
     @Column(name = "start_price")
     private double startPrice;

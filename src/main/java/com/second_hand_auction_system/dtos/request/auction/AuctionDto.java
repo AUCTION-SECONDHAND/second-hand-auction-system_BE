@@ -2,16 +2,14 @@ package com.second_hand_auction_system.dtos.request.auction;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.utils.AuctionStatus;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.sql.Time;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Date;
 
 @Data
@@ -25,19 +23,19 @@ public class AuctionDto {
     @JsonProperty("start_time")
     @NotNull(message = "Start time is required")
     @JsonFormat(pattern = "HH:mm:ss", shape = JsonFormat.Shape.STRING)
-    private Time startTime;
+    private LocalTime startTime;
 
     @JsonProperty("end_time")
     @NotNull(message = "End time is required")
     @JsonFormat(pattern = "HH:mm:ss", shape = JsonFormat.Shape.STRING)
-    private Time endTime;
+    private LocalTime endTime;
 
     @JsonProperty("start_price")
     @Positive(message = "Start price must be a positive value")
     private double startPrice;
 
     @JsonProperty("description")
-    @Size(max = 500, message = "Description should not exceed 500 characters")
+    //@Size(max = 500, message = "Description should not exceed 500 characters")
     private String description;
 
     @JsonProperty("terms_conditions")
@@ -76,10 +74,10 @@ public class AuctionDto {
     @JsonProperty("end_date")
     @NotNull(message = "End date is required")
     @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
-    private Date endDate;
+    private LocalDate endDate;
 
     @JsonProperty("start_date")
     @NotNull(message = "Start date is required")
     @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
-    private Date startDate;
+    private LocalDate startDate;
 }
