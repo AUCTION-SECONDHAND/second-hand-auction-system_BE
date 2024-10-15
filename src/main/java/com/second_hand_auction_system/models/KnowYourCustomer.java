@@ -1,9 +1,11 @@
 package com.second_hand_auction_system.models;
 
 import com.second_hand_auction_system.utils.Gender;
+import com.second_hand_auction_system.utils.KycStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -20,7 +22,7 @@ public class KnowYourCustomer extends BaseEntity{
     private Integer kycId;
 
     @Column(name ="date_of_birth")
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
 
     @Column(name = "age")
     private int age;
@@ -40,14 +42,20 @@ public class KnowYourCustomer extends BaseEntity{
     @Column(name = "reason")
     private String reason;
 
-    @Column(name = "document")
-    private String document;
+    @Column(name = "cccd_number")
+    private String cccdNumber;
 
-    @Column(name = "kyc_status")
-    private String kycStatus;
+    @Column(name = "front_document")
+    private String frontDocumentUrl;
+
+    @Column(name = "back_document")
+    private String backDocumentUrl;
+
+    @Enumerated(EnumType.STRING)
+    private KycStatus kycStatus;
 
     @Column(name = "submited")
-    private LocalDateTime sumbited;
+    private Date sumbited;
 
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
