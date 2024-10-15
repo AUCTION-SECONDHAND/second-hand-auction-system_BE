@@ -1,5 +1,7 @@
 package com.second_hand_auction_system.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.second_hand_auction_system.models.BaseEntity;
 import com.second_hand_auction_system.utils.TransactionStatus;
 import com.second_hand_auction_system.utils.TransactionType;
 import jakarta.persistence.*;
@@ -21,7 +23,7 @@ public class TransactionWallet extends BaseEntity {
     private long transactionWalletCode;
 
     @Column(name = "amount")
-    private int amount;
+    private long amount;
 
     @Column(name = "commission_amount")
     private int commissionAmount;
@@ -35,16 +37,16 @@ public class TransactionWallet extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
-    @Column(name = "image")
+    @Column(name = "image",nullable = true)
     private String image;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_customer_id")
+    @JsonBackReference
     private WalletCustomer walletCustomer;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonBackReference
     @JoinColumn(name = "wallet_id")
     private WalletSystem walletSystem;
-
-
 }

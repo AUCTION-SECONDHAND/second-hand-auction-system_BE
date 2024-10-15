@@ -13,29 +13,36 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class TransactionWalletService implements ITransactionWalletService {
     private final TransactionWalletRepository transactionWalletRepository;
     private final ModelMapper modelMapper;
+
     @Override
-    public ResponseEntity<?> getAll(int size, int page) {
-        Pageable pageable =PageRequest.of(page, size);
-        Page<TransactionWallet> transactionWallets = transactionWalletRepository.findAll(pageable);
+    public ResponseEntity<?> getAll(String keyword, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+        List<TransactionWallet> transactionWallets;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            transactionWallets = transactionWalletRepository.findByWalletCustomer_User_FullNameContainingAndCreateAtBetween(keyword, startDate, endDate, pageable);
+        }
+        else if (startDate != null && endDate != null) {
+            transactionWallets = transactionWalletRepository.findTransactionWalletByCreateAt(startDate, endDate, pageable);
+        }
+        else {
+            transactionWallets = transactionWalletRepository.findAll(pageable).getContent();
+        }
+
         if (transactionWallets.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        List<TransactionWalletResponse> transactionWalletResponses = transactionWallets.getContent()
-                .stream()
-                .map(wallet -> modelMapper.map(wallet, TransactionWalletResponse.class))
-                .toList();
-
-        ListTransactionWalletResponse response = ListTransactionWalletResponse.builder()
-                .transactionWallet(transactionWalletResponses)
-                .build();
 
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .status(HttpStatus.OK)
@@ -43,4 +50,54 @@ public class TransactionWalletService implements ITransactionWalletService {
                 .data(transactionWallets)
                 .build());
     }
+
+    @Override
+    public ResponseEntity<?> getTransactionWallets(int size, int page, String name) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<TransactionWallet> transactionWalletsPage;
+
+            // Nếu name không rỗng, tìm kiếm theo tên; nếu không, lấy tất cả giao dịch
+            if (name != null && !name.isEmpty()) {
+                transactionWalletsPage =  transactionWalletRepository.findByWalletCustomer_User_FullNameContainsIgnoreCase(name, pageable);
+            } else {
+                transactionWalletsPage = transactionWalletRepository.findAll(pageable);
+            }
+
+            if (transactionWalletsPage.isEmpty()) {
+                return ResponseEntity.ok(ResponseObject.builder()
+                        .data(null)
+                        .message("List of transaction wallets no content")
+                        .status(HttpStatus.NO_CONTENT)
+                        .build());
+            }
+
+            List<TransactionWalletResponse> listTransactionWalletResponse = transactionWalletsPage.getContent().stream()
+                    .map(wallet -> TransactionWalletResponse.builder()
+                            .transactionType(wallet.getTransactionType())
+                            .transactionId(wallet.getTransactionWalletId())
+                            .transactionStatus(wallet.getTransactionStatus())
+                            .transactionWalletCode(wallet.getTransactionWalletCode())
+                            .walletCustomerName(wallet.getWalletCustomer().getUser().getFullName())
+                            .amount((int) wallet.getAmount())
+                            .transactionDate(wallet.getCreateAt())
+                            .build())
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .data(listTransactionWalletResponse)
+                    .message("List of transaction wallets")
+                    .status(HttpStatus.OK)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .data(null)
+                    .message(e.getMessage())
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build());
+        }
+    }
+
+
+
 }

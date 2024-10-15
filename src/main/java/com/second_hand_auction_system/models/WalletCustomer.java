@@ -19,13 +19,10 @@ public class WalletCustomer extends BaseEntity{
     @Column(name = "balance")
     private double balance;
 
-    @Column(name = "last_transaction")
-    private String lastTransaction;
-
     @Enumerated(EnumType.STRING)
     private StatusWallet statusWallet;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 }

@@ -133,13 +133,9 @@ public class EmailService {
         String otp = generateOtp();
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
-
-        // Set the email details
         mimeMessageHelper.setFrom(mail);
         mimeMessageHelper.setTo(email);
         mimeMessageHelper.setSubject("Your OTP Code");
-
-        // Xử lý nội dung HTML cho email với OTP được thêm vào
         String htmlContent = """
     <html>
         <head>
@@ -223,16 +219,118 @@ public class EmailService {
         </body>
     </html>
 """.formatted(otp);
-
-
-        // Set the content as HTML
         mimeMessageHelper.setText(htmlContent, true);
-
-        // Send the email
         mailSender.send(message);
         otpService.saveOtp(email,otp);
         log.info("OTP has been sent to " + email + " with OTP: " + otp);
     }
+
+    public void sendNotification(String email, Integer id, int amount) throws MessagingException, IOException {
+        log.info("Sending notification to " + email);
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+        mimeMessageHelper.setFrom(mail);
+        mimeMessageHelper.setTo(email);
+        mimeMessageHelper.setSubject("Thông báo nạp tiền vào ví");
+
+        String htmlContent = """
+    <html>
+        <head>
+            <style>
+                body {
+                    font-family: 'Arial', sans-serif;
+                    background-color: #f4f4f4;
+                    margin: 0;
+                    padding: 0;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 30px auto;
+                    background-color: #ffffff;
+                    padding: 30px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                }
+                .header {
+                    background-color: #4CAF50;
+                    padding: 20px;
+                    border-top-left-radius: 10px;
+                    border-top-right-radius: 10px;
+                    color: white;
+                    text-align: center;
+                }
+                .header h1 {
+                    font-size: 26px;
+                    margin: 0;
+                }
+                .content {
+                    text-align: left;
+                    margin: 20px 0;
+                    color: #333;
+                }
+                .content p {
+                    font-size: 16px;
+                    line-height: 1.6;
+                    margin: 10px 0;
+                }
+                .amount {
+                    display: inline-block;
+                    font-size: 30px;
+                    font-weight: bold;
+                    background-color: #f7f7f7;
+                    padding: 15px;
+                    margin: 20px 0;
+                    color: #4CAF50;
+                    border-radius: 8px;
+                }
+                .footer {
+                    font-size: 12px;
+                    color: #666;
+                    text-align: center;
+                    margin-top: 30px;
+                }
+                .footer a {
+                    color: #4CAF50;
+                    text-decoration: none;
+                }
+                .footer a:hover {
+                    text-decoration: underline;
+                }
+                .note {
+                    font-size: 14px;
+                    color: #555;
+                    margin-top: 20px;
+                    text-align: center;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Thông báo nạp tiền vào ví</h1>
+                </div>
+                <div class="content">
+                    <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Bạn vừa nạp tiền thành công vào ví với số tiền:</p>
+                    <div class="amount">%d VNĐ</div>
+                    <p>Số tiền này đã được cập nhật vào ví của bạn. Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi!</p>
+                </div>
+                <div class="note">
+                    <p>Nếu bạn gặp vấn đề gì, hãy liên hệ với <a href="#">bộ phận hỗ trợ</a>.</p>
+                </div>
+                <div class="footer">
+                    <p>© 2024 Hệ thống đấu giá | All rights reserved</p>
+                </div>
+            </div>
+        </body>
+    </html>
+    """.formatted(amount);
+
+        mimeMessageHelper.setText(htmlContent, true);
+        mailSender.send(message);
+        log.info("Notification has been sent to " + email + " about deposit of " + amount + " VNĐ.");
+    }
+
 
 
 }

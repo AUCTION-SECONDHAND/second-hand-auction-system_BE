@@ -28,9 +28,6 @@ public class UserController {
             @RequestParam String subject,
             @RequestParam String text,
             @RequestParam(required = false) MultipartFile[] files) throws MessagingException {
-
-
-            // Gọi service để gửi email và kiểm tra kết quả
             return emailService.sendEmail(to, subject, text, files);
 
     }

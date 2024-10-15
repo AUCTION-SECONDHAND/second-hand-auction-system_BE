@@ -54,8 +54,8 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 10MB    # Kích thước tối đa cho 1 file
-      max-request-size: 10MB # Kích thước tối đa của toàn bộ request (bao gồm các file)
+      max-file-size: 10MB
+      max-request-size: 10MB
 
   security:
     oauth2:
@@ -71,7 +71,7 @@ application:
   security:
     jwt:
       secret-key: b60c9e7a2e251192f67c2b02773e76c8096a6e38ea49627334eddae82dc7da95
-      expiration: 360000  # Expiration time in milliseconds
+      expiration: 36000000  # Expiration time in milliseconds
       refresh-token:
         expiration: 604800000  # 7 days in milliseconds
 
