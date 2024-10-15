@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/item/**").permitAll()
                         .requestMatchers("/api/v1/auction/**").permitAll()
                         .requestMatchers("api/v1/transactionWallet/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/auction-register/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
