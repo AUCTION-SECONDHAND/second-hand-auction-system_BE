@@ -21,8 +21,7 @@ public class RegisterRequest {
     @NotBlank(message = "Full name is required")
     @Size(min = 6, message = "Full name is required")
     private String fullName;
-
-
+    
     @Pattern(regexp = "^\\+?[0-9. ()-]{7,25}$", message = "Phone number is invalid")
     private String phoneNumber;
 

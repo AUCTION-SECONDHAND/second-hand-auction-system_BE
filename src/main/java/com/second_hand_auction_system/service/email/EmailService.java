@@ -42,14 +42,11 @@ public class EmailService {
             mimeMessageHelper.setTo(to);
         }
 
-        // Thêm các file đính kèm nếu có
         if (files != null) {
             for (MultipartFile file : files) {
                 mimeMessageHelper.addAttachment(Objects.requireNonNull(file.getOriginalFilename()), file);
             }
         }
-
-        // Thêm CSS và nội dung HTML
         String htmlContent = """
         <html>
             <head>
@@ -331,6 +328,25 @@ public class EmailService {
         log.info("Notification has been sent to " + email + " about deposit of " + amount + " VNĐ.");
     }
 
-
+//    public void sendAccountStaff(String email, String password) throws MessagingException {
+//        MimeMessage message = mailSender.createMimeMessage();
+//        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+//
+//        helper.setTo(email); // Địa chỉ email người nhận
+//        helper.setSubject("Thông tin tài khoản nhân viên");
+//
+//        // Nội dung email
+//        String content = "<p>Xin chào,</p>"
+//                + "<p>Thông tin tài khoản của bạn như sau:</p>"
+//                + "<p><strong>Email:</strong> " + email + "</p>"
+//                + "<p><strong>Password:</strong> " + password + "</p>"
+//                + "<p>Vui lòng thay đổi mật khẩu sau khi đăng nhập lần đầu.</p>"
+//                + "<br><p>Trân trọng,</p><p>Đội ngũ hỗ trợ</p>";
+//
+//        helper.setText(content, true); // 'true' để kích hoạt HTML
+//
+//        // Gửi email
+//        mailSender.send(message);
+//    }
 
 }

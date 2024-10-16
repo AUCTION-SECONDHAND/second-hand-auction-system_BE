@@ -23,7 +23,7 @@ public interface IUserService {
 
     ResponseEntity<ListUserResponse> getListUser();
 
-
-
     ResponseEntity<?> isValidOtp(String email, String otp);
+
+    ResponseEntity<?> registerStaff(RegisterRequest registerRequest);
 }

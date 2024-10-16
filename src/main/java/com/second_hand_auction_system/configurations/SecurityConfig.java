@@ -23,13 +23,14 @@ import static org.springframework.http.HttpMethod.POST;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
     private final AuthenticationProvider authenticationProvider;
     private final JwtFilter jwtFilter;
     private final LoginGoogleSuccess loginGoogleSuccess;
     private final LoginGoogleFailure loginGoogleFailure;
     private final LogoutHandler logoutHandler;
 
-    private static final String[] WHILE_LIST = {
+    private static final String[] WHITE_LIST = {
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/swagger-ui.html",
@@ -41,32 +42,37 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(WHILE_LIST).permitAll()
-                        .requestMatchers(GET, "/api/v1/user/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(POST, "api/v1/walletCustomer/**").permitAll()
+                        .requestMatchers(WHITE_LIST).permitAll()
+                        .requestMatchers(GET, "/api/v1/user/**").permitAll()
+                        .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
+                        .requestMatchers(POST, "/api/v1/walletCustomer/**").permitAll()
                         .requestMatchers("/api/v1/main-category/**").permitAll()
+                        .requestMatchers(POST, "/api/v1/main-category/**").permitAll()
                         .requestMatchers("/api/v1/sub-category/**").permitAll()
                         .requestMatchers("/api/v1/item/**").permitAll()
                         .requestMatchers("/api/v1/auction/**").permitAll()
+                        .requestMatchers(POST, "/api/v1/item/**").hasAuthority(Role.SELLER.name())
                         .requestMatchers("api/v1/transactionWallet/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers("/api/v1/kyc/**").hasRole("BUYER")
+                        .requestMatchers("/api/v1/kyc/**").hasAuthority(Role.STAFF.name())
                         .requestMatchers("/api/v1/auction-register/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-//                .oauth2Login(oauth2 -> oauth2
-//                        .successHandler(loginGoogleSuccess)
-//                        .failureHandler(loginGoogleFailure)
-//                )
+                // Uncomment the following for Google OAuth2 login support
+                /*
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(loginGoogleSuccess)
+                        .failureHandler(loginGoogleFailure)
+                )
+                */
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
                         .addLogoutHandler(logoutHandler)
                         .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
                 );
+
         return http.build();
     }
 }
-
-

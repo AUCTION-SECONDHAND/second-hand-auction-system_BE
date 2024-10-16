@@ -1,10 +1,12 @@
 package com.second_hand_auction_system.controller;
 
+import com.second_hand_auction_system.dtos.request.user.RegisterRequest;
 import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.user.IUserService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +19,6 @@ public class UserController {
     private final IUserService userService;
     private final EmailService emailService;
     @GetMapping("getUser")
-    @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<ListUserResponse> getUser(){
         return userService.getListUser();
     }
@@ -31,5 +32,11 @@ public class UserController {
             return emailService.sendEmail(to, subject, text, files);
 
     }
+
+    @PostMapping("/create-staff")
+    public ResponseEntity<?> createStaff(@RequestBody RegisterRequest registerRequest) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerStaff(registerRequest));
+    }
+
 
 }
