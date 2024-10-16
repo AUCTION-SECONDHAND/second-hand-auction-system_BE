@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,21 +26,46 @@ public class AddressService implements IAddressService {
 
     @Override
     public AddressDto updateAddress(Integer addressId, AddressDto addressDto) throws Exception {
-        return null;
+        Optional<Address> existingAddressOpt = addressRepository.findById(addressId);
+        if (existingAddressOpt.isPresent()) {
+            Address existingAddress = existingAddressOpt.get();
+            Address updatedAddress = AddressConverter.convertToEntity(addressDto);
+            updatedAddress.setAddressId(existingAddress.getAddressId());
+            Address savedAddress = addressRepository.save(updatedAddress);
+            return AddressConverter.convertToDto(savedAddress);
+        } else {
+            throw new Exception("Address not found with ID: " + addressId);
+        }
     }
 
     @Override
     public AddressDto getAddressById(Integer addressId) throws Exception {
-        return null;
+        Optional<Address> addressOpt = addressRepository.findById(addressId);
+        if (addressOpt.isPresent()) {
+            return AddressConverter.convertToDto(addressOpt.get());
+        } else {
+            throw new Exception("Address not found with ID: " + addressId);
+        }
     }
 
     @Override
     public List<AddressDto> getAllAddress(Integer userId) throws Exception {
-        return null;
+        List<Address> addresses = addressRepository.findByUserId(userId);
+        if (!addresses.isEmpty()) {
+            return addresses.stream()
+                    .map(AddressConverter::convertToDto)
+                    .collect(Collectors.toList());
+        } else {
+            throw new Exception("No addresses found for user with ID: " + userId);
+        }
     }
 
     @Override
     public void deleteAddress(Integer addressId) throws Exception {
-
+        if (addressRepository.existsById(addressId)) {
+            addressRepository.deleteById(addressId);
+        } else {
+            throw new Exception("Address not found with ID: " + addressId);
+        }
     }
 }
