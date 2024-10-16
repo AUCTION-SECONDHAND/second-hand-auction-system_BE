@@ -2,10 +2,12 @@ package com.second_hand_auction_system.converters.address;
 
 import com.second_hand_auction_system.dtos.request.address.AddressDto;
 import com.second_hand_auction_system.models.Address;
+import com.second_hand_auction_system.models.User;
+
 
 public class AddressConverter {
     // Converter AddressDto => Address
-    public static Address convertToEntity(AddressDto addressDto) {
+    public static Address convertToEntity(AddressDto addressDto, User user) {
         Address address = new Address();
         address.setDistrict_code(addressDto.getDistrict_code());
         address.setDistric_name(addressDto.getDistrict_name());
@@ -19,7 +21,9 @@ public class AddressConverter {
         address.setStreet_address(addressDto.getStreet_address());
         address.setWard_code(addressDto.getWard_code());
         address.setWard_name(addressDto.getWard_name());
-        // address.setUser(new User(addressDto.getUserId()));
+
+
+        address.setUser(user);
         return address;
     }
 

@@ -51,7 +51,7 @@ public class Address extends BaseEntity {
     @Column(name = "ward_name")
     private String ward_name;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

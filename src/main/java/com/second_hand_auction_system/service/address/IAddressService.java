@@ -13,4 +13,6 @@ public interface IAddressService {
   List<AddressDto> getAllAddress(Integer userId) throws Exception;
   void deleteAddress(Integer addressId) throws Exception;
 
+  AddressDto setDefaultAddress(Integer addressId, boolean status) throws Exception;
+
 }

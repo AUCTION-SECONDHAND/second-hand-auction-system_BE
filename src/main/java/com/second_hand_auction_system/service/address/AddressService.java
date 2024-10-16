@@ -3,7 +3,9 @@ package com.second_hand_auction_system.service.address;
 import com.second_hand_auction_system.converters.address.AddressConverter;
 import com.second_hand_auction_system.dtos.request.address.AddressDto;
 import com.second_hand_auction_system.models.Address;
+import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.AddressRepository;
+import com.second_hand_auction_system.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,21 +18,45 @@ import java.util.stream.Collectors;
 public class AddressService implements IAddressService {
 
     private final AddressRepository addressRepository;
+    private final UserRepository userRepository;
 
     @Override
     public AddressDto createAddress(AddressDto addressDto) throws Exception {
-        Address address = AddressConverter.convertToEntity(addressDto);
+        // Kiểm tra xem địa chỉ đầu tiên của người dùng có tồn tại không
+        boolean isFirstAddress = addressRepository.findByUserId(addressDto.getUserId()).isEmpty();
+
+        // Tạo một đối tượng User và thiết lập ID từ addressDto
+        User user = new User();
+        user.setId(addressDto.getUserId());
+
+        Address address = AddressConverter.convertToEntity(addressDto, user);
+
+        // Kiểm tra để thiết lập status
+        address.setStatus(isFirstAddress);
+
+        // Lưu địa chỉ vào repository
         Address savedAddress = addressRepository.save(address);
+
+        // Chuyển đổi Address đã lưu thành AddressDto và trả về
         return AddressConverter.convertToDto(savedAddress);
     }
+
+
+
 
     @Override
     public AddressDto updateAddress(Integer addressId, AddressDto addressDto) throws Exception {
         Optional<Address> existingAddressOpt = addressRepository.findById(addressId);
         if (existingAddressOpt.isPresent()) {
             Address existingAddress = existingAddressOpt.get();
-            Address updatedAddress = AddressConverter.convertToEntity(addressDto);
+
+            User user = userRepository.findById(addressDto.getUserId())
+                    .orElseThrow(() -> new Exception("User not found with ID: " + addressDto.getUserId()));
+
+
+            Address updatedAddress = AddressConverter.convertToEntity(addressDto, user);
             updatedAddress.setAddressId(existingAddress.getAddressId());
+
             Address savedAddress = addressRepository.save(updatedAddress);
             return AddressConverter.convertToDto(savedAddress);
         } else {
@@ -68,4 +94,17 @@ public class AddressService implements IAddressService {
             throw new Exception("Address not found with ID: " + addressId);
         }
     }
+
+    @Override
+    public AddressDto setDefaultAddress(Integer addressId, boolean status) throws Exception {
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new Exception("Address not found"));
+
+        address.setStatus(status);
+
+        Address setDefaultAddress = addressRepository.save(address);
+
+        return AddressConverter.convertToDto(setDefaultAddress);
+    }
+
 }

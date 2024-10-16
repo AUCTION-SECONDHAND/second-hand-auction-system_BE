@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.dtos.request.address;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -44,6 +45,7 @@ public class AddressDto {
     private String ward_name;
 
     @NotNull(message = "User ID is required")
+    @JsonProperty
     private Integer userId;
 }
 

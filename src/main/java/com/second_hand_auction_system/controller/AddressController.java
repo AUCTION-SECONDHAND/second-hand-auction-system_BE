@@ -35,6 +35,18 @@ public class AddressController {
         }
     }
 
+    @PatchMapping("/{addressId}/status")
+    public ResponseEntity<AddressDto> updateAddressStatus(
+            @PathVariable Integer addressId,
+            @RequestBody boolean status) {
+        try {
+            AddressDto updatedAddress = addressService.setDefaultAddress(addressId, status);
+            return new ResponseEntity<>(updatedAddress, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/{addressId}")
     public ResponseEntity<AddressDto> getAddressById(@PathVariable Integer addressId) {
         try {
@@ -64,4 +76,6 @@ public class AddressController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
 }
