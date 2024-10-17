@@ -16,9 +16,9 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class AuctionRegistrationsDto {
-    @JsonProperty("deposite_amount")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Deposite amount must be greater than 0")
-    private double depositeAmount;
+    @JsonProperty("deposit_amount")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Deposit amount must be greater than 0")
+    private double depositAmount;
 
     @JsonProperty("registration")
     @NotNull(message = "Registration status is required")
@@ -29,11 +29,9 @@ public class AuctionRegistrationsDto {
     @NotBlank(message = "Note cannot be blank")
     private String note;
 
-    @JsonProperty("user_id")
-    @NotNull(message = "User ID is required")
-    private Integer user;
-
     @JsonProperty("auction_id")
     @NotNull(message = "Auction ID is required")
     private Integer auction;
+
+
 }

@@ -78,7 +78,6 @@ public class WalletCustomerService implements IWalletCustomerService {
                 final String description = deposit.getDescription();
                 final String successUrl = deposit.getReturnSuccess();
                 final String cancelUrl = deposit.getReturnSuccess();
-                final String bankName = deposit.getBankName();
                 Optional<WalletCustomer> walletOpt = walletCustomerRepository.findByWalletCustomerId(requester.getId());
                 WalletCustomer wallet;
                 if (walletOpt.isEmpty()) {

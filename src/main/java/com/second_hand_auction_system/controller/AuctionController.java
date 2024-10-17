@@ -2,9 +2,13 @@ package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.auction.AuctionDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.auction.ListAuction;
+import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.service.auction.IAuctionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -15,7 +19,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("${api.prefix}/auction")
+@RequestMapping("${api.prefix}/auctions")
 public class AuctionController {
     private final IAuctionService auctionService;
 
@@ -78,4 +82,16 @@ public class AuctionController {
                         .build()
         );
     }
+
+//    @GetMapping
+//    public ResponseEntity<List<AuctionDto>> getAllAuctions(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size) {
+//        return auctionService.getAllAuctions(page,size);
+//    }
+
+//    @GetMapping
+//    public ResponseEntity<?> getAuctions(){
+//        return auctionService.getAll();
+//    }
 }

@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.service.item;
 
+import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 
 public interface IItemService {
@@ -8,4 +9,6 @@ public interface IItemService {
     void updateItem(int itemId, ItemDto itemDto) throws Exception;
 
     void deleteItem(int itemId) throws Exception;
+
+    void approve(int itemId, ItemApprove approve) throws Exception;
 }

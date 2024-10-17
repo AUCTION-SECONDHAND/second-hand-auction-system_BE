@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.controller;
 
+import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.service.item.ItemService;
@@ -64,6 +65,33 @@ public class ItemController {
             );
         }
         itemService.updateItem(itemId, itemDto);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .build()
+        );
+    }
+
+    @PutMapping("/approve/{itemId}")
+    public ResponseEntity<?> approveItem(
+            @PathVariable Integer itemId,
+            @Valid @RequestBody ItemApprove itemApprove,
+            BindingResult result
+    ) throws Exception {
+        if (result.hasErrors()) {
+            List<String> errorMessages = result.getFieldErrors()
+                    .stream()
+                    .map(FieldError::getDefaultMessage)
+                    .toList();
+            return ResponseEntity.badRequest().body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .message(String.valueOf(errorMessages))
+                            .build()
+            );
+        }
+        itemService.approve(itemId, itemApprove);
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
