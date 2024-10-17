@@ -22,24 +22,30 @@ public class AddressService implements IAddressService {
 
     @Override
     public AddressDto createAddress(AddressDto addressDto) throws Exception {
-        // Kiểm tra xem địa chỉ đầu tiên của người dùng có tồn tại không
-        boolean isFirstAddress = addressRepository.findByUserId(addressDto.getUserId()).isEmpty();
 
-        // Tạo một đối tượng User và thiết lập ID từ addressDto
+        int addressCount = addressRepository.countByUserId(addressDto.getUserId());
+
+        //A user can only have 6 address
+        if (addressCount >= 6) {
+            throw new Exception("Cannot create a new address. The user already has the maximum number of addresses (6).");
+        }
+
+        //Set address default, if it is the first created address
+        boolean isFirstAddress = (addressCount == 0);
+
+        //Many to One khởi tạo cái User và chỉ lưu userId vô address
         User user = new User();
         user.setId(addressDto.getUserId());
 
         Address address = AddressConverter.convertToEntity(addressDto, user);
 
-        // Kiểm tra để thiết lập status
         address.setStatus(isFirstAddress);
 
-        // Lưu địa chỉ vào repository
         Address savedAddress = addressRepository.save(address);
 
-        // Chuyển đổi Address đã lưu thành AddressDto và trả về
         return AddressConverter.convertToDto(savedAddress);
     }
+
 
 
 
@@ -50,19 +56,22 @@ public class AddressService implements IAddressService {
         if (existingAddressOpt.isPresent()) {
             Address existingAddress = existingAddressOpt.get();
 
-            User user = userRepository.findById(addressDto.getUserId())
-                    .orElseThrow(() -> new Exception("User not found with ID: " + addressDto.getUserId()));
-
+            User user = existingAddress.getUser();
 
             Address updatedAddress = AddressConverter.convertToEntity(addressDto, user);
+
             updatedAddress.setAddressId(existingAddress.getAddressId());
+            updatedAddress.setCreateAt(existingAddress.getCreateAt());
+            updatedAddress.setStatus(existingAddress.isStatus());
 
             Address savedAddress = addressRepository.save(updatedAddress);
+
             return AddressConverter.convertToDto(savedAddress);
         } else {
             throw new Exception("Address not found with ID: " + addressId);
         }
     }
+
 
     @Override
     public AddressDto getAddressById(Integer addressId) throws Exception {
@@ -100,11 +109,26 @@ public class AddressService implements IAddressService {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new Exception("Address not found"));
 
+        Integer userId = address.getUser().getId();
+
+        if (status) {
+            // Nếu đặt địa chỉ này là mặc định (status = true),
+            // thì cần đặt tất cả các địa chỉ khác của user thành false
+            List<Address> userAddresses = addressRepository.findByUserId(userId);
+            for (Address userAddress : userAddresses) {
+                if (!userAddress.getAddressId().equals(addressId) && userAddress.isStatus()) {
+                    userAddress.setStatus(false);
+                    addressRepository.save(userAddress);
+                }
+            }
+        }
+
         address.setStatus(status);
 
-        Address setDefaultAddress = addressRepository.save(address);
+        Address updatedAddress = addressRepository.save(address);
 
-        return AddressConverter.convertToDto(setDefaultAddress);
+        return AddressConverter.convertToDto(updatedAddress);
     }
+
 
 }

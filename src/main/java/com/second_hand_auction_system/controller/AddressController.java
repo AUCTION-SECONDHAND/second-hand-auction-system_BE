@@ -16,14 +16,15 @@ public class AddressController {
     private final IAddressService addressService;
 
     @PostMapping
-    public ResponseEntity<AddressDto> createAddress(@RequestBody AddressDto addressDto) {
+    public ResponseEntity<Object> createAddress(@RequestBody AddressDto addressDto) {
         try {
             AddressDto createdAddress = addressService.createAddress(addressDto);
             return new ResponseEntity<>(createdAddress, HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
 
     @PutMapping("/{addressId}")
     public ResponseEntity<AddressDto> updateAddress(@PathVariable Integer addressId, @RequestBody AddressDto addressDto) {

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface AddressRepository extends JpaRepository<Address , Integer> {
     List<Address> findByUserId(Integer userId);
+    int countByUserId(Integer userId);
+
 }

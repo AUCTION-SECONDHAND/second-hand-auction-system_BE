@@ -42,7 +42,7 @@ public class AddressConverter {
                 .street_address(address.getStreet_address())
                 .ward_code(address.getWard_code())
                 .ward_name(address.getWard_name())
-//                .userId(address.getUser().getUserId())
+                .userId(address.getUser().getId())
                 .build();
     }
 }
