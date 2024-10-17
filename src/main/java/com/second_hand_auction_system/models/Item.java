@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.models;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.second_hand_auction_system.utils.ItemCondition;
 import com.second_hand_auction_system.utils.ItemStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,8 +20,8 @@ public class Item extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer itemId;
 
-    @Column(name = "title")
-    private String title;
+//    @Column(name = "title")
+//    private String title;
 
     @Column(name = "item_name")
     private String itemName;
@@ -28,8 +29,8 @@ public class Item extends BaseEntity{
     @Column(name = "item_description")
     private String itemDescription;
 
-    @Column(name = "item_condition")
-    private String itemCondition;
+    @Enumerated(EnumType.STRING)
+    private ItemCondition itemCondition;
 
     @Enumerated(EnumType.STRING)
     private ItemStatus itemStatus;

@@ -3,17 +3,24 @@ package com.second_hand_auction_system.service.item;
 import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemSpecificDto;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.exceptions.DataNotFoundException;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
+import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.ItemStatus;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -24,21 +31,31 @@ public class ItemService implements IItemService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final ItemSpecificRepository itemSpecificRepository;
-
+    private final IJwtService jwtService;
     @Override
     @Transactional
     public void addItem(ItemDto itemDto) throws Exception {
         Item item = modelMapper.map(itemDto, Item.class);
+
         SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
                 .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
-        User userExist = userRepository.findById(itemDto.getUserId())
-                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + itemDto.getUserId()));
-
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+         throw new Exception("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+           throw new Exception("User not found");
+        }
+        item.setItemStatus(ItemStatus.PENDING);
         item.setSubCategory(subCategory);
-        item.setUser(userExist);
-        item.setCreateBy(userExist.getUsername());
-        item.setUpdateBy(userExist.getUsername());
+        item.setUser(requester);
+        item.setCreateBy(requester.getUsername());
+        item.setUpdateBy(requester.getUsername());
         if (itemDto.getItemSpecific() != null) {
+
             ItemSpecific itemSpecific = modelMapper.map(itemDto.getItemSpecific(), ItemSpecific.class);
             item.setItemSpecific(itemSpecific);
         }
@@ -75,13 +92,23 @@ public class ItemService implements IItemService {
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
         SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
                 .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
-        User userExist = userRepository.findById(itemDto.getUserId())
-                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + itemDto.getUserId()));
+//        User userExist = userRepository.findById(itemDto.getUserId())
+//                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + itemDto.getUserId()));
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            throw new Exception("User not found");
+        }
         modelMapper.map(itemDto, itemExist);
         itemExist.setSubCategory(subCategory);
-        itemExist.setUser(userExist);
-        itemExist.setCreateBy(userExist.getUsername());
-        itemExist.setUpdateBy(userExist.getUsername());
+        itemExist.setUser(requester);
+        itemExist.setCreateBy(requester.getUsername());
+        itemExist.setUpdateBy(requester.getUsername());
         if (itemDto.getItemSpecific() != null) {
             ItemSpecific itemSpecificExist = itemSpecificRepository.findById(itemExist.getItemSpecific().getItemSpecificId())
                     .orElseThrow(() -> new DataNotFoundException("Item not found"));

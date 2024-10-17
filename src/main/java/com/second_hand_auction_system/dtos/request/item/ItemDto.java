@@ -2,6 +2,7 @@ package com.second_hand_auction_system.dtos.request.item;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.models.*;
+import com.second_hand_auction_system.utils.ItemCondition;
 import com.second_hand_auction_system.utils.ItemStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,20 +25,24 @@ public class ItemDto {
     @JsonProperty("item_name")
     private String itemName;
 
+//    @NotBlank(message = "Item title is required")
+//    @Size(min = 3, max = 10, message = "Item title must be between 3 and 10 characters")
+//    @JsonProperty("item_title")
+//    private String title;
 
     @NotBlank(message = "Item description is required")
     @Size(min = 10, max = 500, message = "Item description must be between 10 and 500 characters")
     @JsonProperty("item_description")
     private String itemDescription;
 
-    // Điều kiện sản phẩm (mới, đã qua sử dụng,...)
-    @NotBlank(message = "Item condition is required")
+    //    // Điều kiện sản phẩm (mới, đã qua sử dụng,...)
+    @NotNull(message = "Item condition is required")
     @JsonProperty("item_condition")
-    private String itemCondition;
+    private ItemCondition itemCondition;
 
-    @NotNull(message = "Item status is required")
-    @JsonProperty("item_status")
-    private ItemStatus itemStatus;
+//    @NotNull(message = "Item status is required")
+//    @JsonProperty("item_status")
+//    private ItemStatus itemStatus;
 
     // Tên thương hiệu
     @NotBlank(message = "Brand name is required")
@@ -55,9 +60,9 @@ public class ItemDto {
     private List<ImgItemDto> imgItem;
 
     // Mã người dùng (liên kết với người dùng)
-    @NotNull(message = "User ID is required")
-    @JsonProperty("user_id")
-    private Integer userId;
+//    @NotNull(message = "User ID is required")
+//    @JsonProperty("user_id")
+//    private Integer userId;
 
     // Đánh giá (nếu có)
 //    @JsonProperty("feedback")

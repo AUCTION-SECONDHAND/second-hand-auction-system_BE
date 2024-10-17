@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Data
 @Getter
 @Setter
@@ -24,5 +26,6 @@ public class MainCategoryResponse extends BaseResponse {
 
     @JsonProperty("icon_url")
     private String iconUrl;
+
 
 }
