@@ -15,8 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.*;
 
 @Configuration
 @EnableWebSecurity
@@ -53,7 +52,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auction/**").permitAll()
                         .requestMatchers(POST, "/api/v1/item/**").hasAuthority(Role.SELLER.name())
                         .requestMatchers("api/v1/transactionWallet/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers("/api/v1/kyc/**").hasAuthority(Role.STAFF.name())
+                        .requestMatchers(POST,"/api/v1/kyc/**").permitAll()
+                        .requestMatchers(PUT,"/api/v1/kyc/**").hasAuthority(Role.STAFF.name())
+
                         .requestMatchers("/api/v1/auction-register/**").permitAll()
                         .requestMatchers("/api/v1/address/**").permitAll()
                         .anyRequest().authenticated()

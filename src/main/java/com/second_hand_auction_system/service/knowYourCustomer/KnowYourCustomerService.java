@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.service.knowYourCustomer;
 
+import com.second_hand_auction_system.dtos.request.kyc.ApproveKyc;
 import com.second_hand_auction_system.dtos.request.kyc.KycDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.kyc.KycResponse;
@@ -7,9 +8,12 @@ import com.second_hand_auction_system.models.KnowYourCustomer;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.KnowYourCustomerRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.KycStatus;
 import com.second_hand_auction_system.utils.Role;
+import jakarta.mail.MessagingException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -20,6 +24,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,14 +33,13 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     private final IJwtService jwtService;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final EmailService emailService;
 
     @Override
+    @Transactional
     public ResponseEntity<?> register(KycDto kyc) {
-        // Lấy Authorization header từ request
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
-
-        // Kiểm tra tính hợp lệ của Authorization header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ResponseObject.builder()
@@ -44,13 +48,9 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .status(HttpStatus.UNAUTHORIZED)
                             .build());
         }
-
-        // Trích xuất email từ token
         String token = authHeader.substring(7);
         String email = jwtService.extractUserEmail(token);
         User requester = userRepository.findByEmailAndStatusIsTrue(email).orElse(null);
-
-        // Kiểm tra người dùng
         if (requester == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ResponseObject.builder()
@@ -58,8 +58,6 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .message("Unauthorized request - User not found")
                             .build());
         }
-
-        // Kiểm tra quyền người dùng
         if (requester.getRole() != Role.BUYER) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ResponseObject.builder()
@@ -67,7 +65,6 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .message("Forbidden request - Only buyers can register for KYC")
                             .build());
         }
-
         if (knowYourCustomerRepository.existsByCccdNumber(kyc.getCccdNumber())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ResponseObject.builder()
@@ -75,7 +72,6 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .message("KYC record already exists for this CCCD number")
                             .build());
         }
-
         KnowYourCustomer knowYourCustomer = KnowYourCustomer.builder()
                 .age(kyc.getAge())
                 .dateOfBirth(kyc.getDob())
@@ -90,14 +86,10 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .phoneNumber(kyc.getPhoneNumber())
                 .user(requester)
                 .build();
-
-        // Lưu bản ghi KYC vào cơ sở dữ liệu
         knowYourCustomerRepository.save(knowYourCustomer);
-
-        // Tạo phản hồi KYC
         KycResponse kycResponse = KycResponse.builder()
                 .kycId(knowYourCustomer.getKycId())
-                .dob(kyc.getDob().toString()) // Chuyển đổi nếu cần
+                .dob(kyc.getDob().toString())
                 .age(kyc.getAge())
                 .fullName(kyc.getFullName())
                 .phoneNumber(kyc.getPhoneNumber())
@@ -118,4 +110,43 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .status(HttpStatus.OK)
                 .build());
     }
+
+    @Override
+    public ResponseEntity<?> approveKyc(ApproveKyc kycDto, int id) throws MessagingException {
+        Optional<KnowYourCustomer> optionalKyc = knowYourCustomerRepository.findById(id);
+        if (optionalKyc.isPresent()) {
+            KnowYourCustomer kyc = optionalKyc.get();
+            kyc.setKycStatus(kycDto.getStatus());
+            kyc.setVerifiedBy(kycDto.getVerifiedBy());
+            kyc.setReason(kycDto.getReason());
+            knowYourCustomerRepository.save(kyc);
+
+            User user = userRepository.findById(kyc.getKycId()).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                        .status(HttpStatus.NOT_FOUND)
+                        .message("User associated with this KYC not found.")
+                        .build());
+            }
+
+            if (kycDto.getStatus() == KycStatus.APPROVED) {
+                user.setRole(Role.SELLER);  // Cập nhật vai trò của người dùng thành SELLER
+                userRepository.save(user);  // Lưu thông tin người dùng
+            }
+            emailService.sendKycSuccessNotification(user.getEmail(), user.getFullName()); // Gửi email thông báo KYC thành công
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .data(null)
+                    .message("Approve KYC successful. User has been upgraded to SELLER.")
+                    .build());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("KYC not found with id: " + id)
+                    .data(null)
+                    .build());
+        }
+    }
+
+
 }

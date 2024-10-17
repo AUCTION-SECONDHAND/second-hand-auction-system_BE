@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
     private final IUserService userService;
     private final EmailService emailService;
-    @GetMapping("getUser")
+    @GetMapping("get-users")
     public ResponseEntity<ListUserResponse> getUser(){
         return userService.getListUser();
     }
