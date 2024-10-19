@@ -74,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
                         .requestMatchers(POST,"api/v1/auction/**").hasRole("STAFF")
                         .requestMatchers("/api/v1/address/**").permitAll()
+                        .requestMatchers("/api/v1/bids/**").permitAll()
                         .anyRequest().authenticated()
 
                 )
