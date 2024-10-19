@@ -57,6 +57,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v1/auction-register/**").permitAll()
                         .requestMatchers("/api/v1/address/**").permitAll()
+                        .requestMatchers("/api/v1/bids/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
