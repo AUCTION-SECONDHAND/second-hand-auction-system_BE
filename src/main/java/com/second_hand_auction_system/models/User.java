@@ -38,6 +38,9 @@ public class User extends BaseEntity implements UserDetails  {
     @Column(name = "status")
     private boolean status;
 
+    @Column(name = "avatar")
+    private String avatar;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 

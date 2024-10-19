@@ -2,6 +2,7 @@ package com.second_hand_auction_system.service.user;
 
 import com.second_hand_auction_system.dtos.request.user.Authentication;
 import com.second_hand_auction_system.dtos.request.user.RegisterRequest;
+import com.second_hand_auction_system.dtos.request.user.UserDto;
 import com.second_hand_auction_system.dtos.responses.user.AuthenticationResponse;
 import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
 import com.second_hand_auction_system.dtos.responses.user.RegisterResponse;
@@ -26,4 +27,8 @@ public interface IUserService {
     ResponseEntity<?> isValidOtp(String email, String otp);
 
     ResponseEntity<?> registerStaff(RegisterRequest registerRequest);
+
+    ResponseEntity<?> updateUser(int id, UserDto userResponse);
+
+    ResponseEntity<?> getUserId(int id);
 }

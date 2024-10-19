@@ -366,6 +366,55 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    public void sendNotificationRegisterItem(String email, String userName, String itemName) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setTo(email); // Địa chỉ email người nhận
+        helper.setSubject("Thông báo thẩm định sản phẩm");
+
+        // Nội dung HTML có sử dụng CSS
+        String htmlContent = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "<style>" +
+                "  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }" +
+                "  .email-container { max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }" +
+                "  .header { background-color: #1a73e8; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; color: white; }" +
+                "  .header h1 { font-size: 26px; margin: 0; }" +
+                "  .logo img { max-width: 120px; margin-bottom: 10px; }" +
+                "  p { font-size: 16px; line-height: 1.6; color: #555555; margin-bottom: 20px; }" +
+                "  .highlight { color: #1a73e8; font-weight: bold; }" +
+                "  .footer { margin-top: 30px; font-size: 12px; color: #888888; text-align: center; border-top: 1px solid #eeeeee; padding-top: 10px; }" +
+                "</style>" +
+                "</head>" +
+                "<body>" +
+                "<div class='email-container'>" +
+                "  <div class='header'>" +
+                "    <div class='logo'>" +
+                "    </div>" +
+                "    <h1>Thông báo sản phẩm</h1>" +
+                "  </div>" +
+                "  <h2>Xin chào, " + userName + "</h2>" +
+                "  <p>Sản phẩm của bạn <span class='highlight'>" + itemName + "</span> đã được thẩm định.</p>" +
+                "  <p>Nếu sản phẩm đã được phê duyệt, xin vui lòng đăng nhập và bắt đầu quản lý sản phẩm của bạn trên nền tảng của chúng tôi.</p>" +
+                "  <p>Chúng tôi luôn sẵn sàng hỗ trợ nếu bạn có bất kỳ câu hỏi nào.</p>" +
+                "  <p>Trân trọng,</p>" +
+                "  <p>Đội ngũ hỗ trợ</p>" +
+                "  <div class='footer'>" +
+                "    <p>Email này được gửi tự động, vui lòng không trả lời.</p>" +
+                "  </div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+
+
+        helper.setText(htmlContent, true); // 'true' để kích hoạt HTML
+        mailSender.send(message);
+
+    }
+
+
 
 
 }

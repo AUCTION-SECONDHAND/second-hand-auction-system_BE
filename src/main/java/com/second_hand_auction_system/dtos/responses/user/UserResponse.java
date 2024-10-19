@@ -14,6 +14,7 @@ import lombok.*;
 public class UserResponse {
     private String fullName;
     private String email;
+    private String avatar;
     @Enumerated(EnumType.STRING)
     private Role role;
     private boolean status;

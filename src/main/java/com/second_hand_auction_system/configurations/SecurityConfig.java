@@ -33,7 +33,8 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/swagger-ui.html",
-            "/api/v1/auth/**"
+            "/api/v1/auth/**",
+            "api/v1/auctions/**",
     };
 
     @Bean
@@ -42,23 +43,36 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST).permitAll()
+                        //user
                         .requestMatchers(GET, "/api/v1/user/**").permitAll()
                         .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
-                        .requestMatchers(POST, "/api/v1/walletCustomer/**").permitAll()
+                        //main-category
+                        .requestMatchers(POST, "/api/v1/main-category/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/api/v1/main-category/**").permitAll()
-                        .requestMatchers(POST, "/api/v1/main-category/**").hasAnyAuthority(Role.ADMIN.name(),Role.STAFF.name())
-                        .requestMatchers(POST,"/api/v1/sub-category/**").hasAnyAuthority(Role.ADMIN.name(),Role.STAFF.name())
+                        //sub-category
+                        .requestMatchers(POST, "/api/v1/sub-category/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/api/v1/item/**").permitAll()
-                        .requestMatchers("/api/v1/auction/**").permitAll()
-                        .requestMatchers(POST, "/api/v1/item/**").hasAuthority(Role.SELLER.name())
-                        .requestMatchers("api/v1/transactionWallet/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(POST,"/api/v1/kyc/**").permitAll()
-                        .requestMatchers(PUT,"/api/v1/kyc/**").hasAuthority(Role.STAFF.name())
+                        //wallet-customer
+                        .requestMatchers(POST, "/api/v1/walletCustomer/**").hasAnyRole("BUYER", "SELLER")
+                        //item
+                        .requestMatchers(POST, "/api/v1/item/**").hasRole("SELLER")
+                        .requestMatchers(PUT, "/api/v1/item/**").hasRole("STAFF")
+                        //transaction-wallet
+                        .requestMatchers("/api/v1/transactionWallet/**").hasAnyRole("BUYER", "SELLER")
 
-                        .requestMatchers("/api/v1/auction-register/**").permitAll()
+                        //kyc
+                        .requestMatchers(POST,"/api/v1/kyc/**").hasRole("BUYER")
+                        .requestMatchers(PUT,"/api/v1/kyc/**").hasRole("SELLER")
+                        .requestMatchers(PUT,"/api/v1/kyc/approve/**").hasRole("STAFF")
+
+
+                        //auction
+                        .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
+                        .requestMatchers(POST,"api/v1/auction/**").hasRole("STAFF")
                         .requestMatchers("/api/v1/address/**").permitAll()
                         .requestMatchers("/api/v1/bids/**").permitAll()
                         .anyRequest().authenticated()
+
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
