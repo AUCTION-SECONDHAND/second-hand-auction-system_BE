@@ -44,8 +44,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST).permitAll()
                         //user
-                        .requestMatchers(GET, "/api/v1/user/**").permitAll()
+                        .requestMatchers(GET, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
+                        .requestMatchers(PUT,"/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
+                        .requestMatchers(DELETE,"/api/v1/user/**").hasRole("ADMIN")
                         //main-category
                         .requestMatchers(POST, "/api/v1/main-category/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/api/v1/main-category/**").permitAll()
@@ -62,8 +64,10 @@ public class SecurityConfig {
 
                         //kyc
                         .requestMatchers(POST,"/api/v1/kyc/**").hasRole("BUYER")
-                        .requestMatchers(PUT,"/api/v1/kyc/**").hasRole("SELLER")
+                        .requestMatchers(PUT,"/api/v1/kyc").hasRole("SELLER")
                         .requestMatchers(PUT,"/api/v1/kyc/approve/**").hasRole("STAFF")
+                        .requestMatchers(GET,"/api/v1/kyc/**").permitAll()
+
 
 
                         //auction

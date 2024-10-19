@@ -9,5 +9,9 @@ import org.springframework.http.ResponseEntity;
 public interface IKnowYourCustomerService {
     ResponseEntity<?> register(KycDto kyc);
 
-    ResponseEntity<?> approveKyc(@Valid ApproveKyc kycDto, int id) throws MessagingException;
+    ResponseEntity<?> approveKyc(@Valid ApproveKyc kycDto, int kycId) throws MessagingException;
+
+    ResponseEntity<?> getKycById(int kycId);
+
+    ResponseEntity<?> getKycs(String search, int page, int size);
 }

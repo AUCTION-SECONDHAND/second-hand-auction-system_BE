@@ -16,6 +16,9 @@ import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,8 +26,10 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -112,8 +117,8 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     }
 
     @Override
-    public ResponseEntity<?> approveKyc(ApproveKyc kycDto, int id) throws MessagingException {
-        Optional<KnowYourCustomer> optionalKyc = knowYourCustomerRepository.findById(id);
+    public ResponseEntity<?> approveKyc(ApproveKyc kycDto, int kycId) throws MessagingException {
+        Optional<KnowYourCustomer> optionalKyc = knowYourCustomerRepository.findById(kycId);
         if (optionalKyc.isPresent()) {
             KnowYourCustomer kyc = optionalKyc.get();
             kyc.setKycStatus(kycDto.getStatus());
@@ -142,11 +147,86 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .status(HttpStatus.NOT_FOUND)
-                    .message("KYC not found with id: " + id)
+                    .message("KYC not found with id: " + kycId)
                     .data(null)
                     .build());
         }
     }
+
+    @Override
+    public ResponseEntity<?> getKycById(int kycId) {
+        var kyc = knowYourCustomerRepository.findById(kycId).orElse(null);
+        if (kyc != null) {
+            KycResponse kycResponse = KycResponse.builder()
+                    .kycId(kycId)
+                    .user(kyc.getKycId())
+                    .dob(kyc.getDateOfBirth().toString())
+                    .email(kyc.getEmail())
+                    .gender(kyc.getGender())
+                    .cccdNumber(kyc.getCccdNumber())
+                    .frontDocumentUrl(kyc.getFrontDocumentUrl())
+                    .backDocumentUrl(kyc.getBackDocumentUrl())
+                    .kycStatus(kyc.getKycStatus())
+                    .submited(kyc.getSumbited())
+                    .age(kyc.getAge())
+                    .phoneNumber(kyc.getPhoneNumber())
+                    .fullName(kyc.getFullName())
+                    .submited(kyc.getSumbited())
+                    .build();
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .data(kycResponse)
+                    .message("KYC record with id: " + kycId)
+                    .build());
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                .status(HttpStatus.NOT_FOUND)
+                .data(null)
+                .message("KYC not found with id: " + kycId )
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getKycs(String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<KnowYourCustomer> kycPage;
+        if (search != null && !search.isEmpty()) {
+            kycPage = knowYourCustomerRepository.findByFullNameContainingIgnoreCase(search, pageable);
+        } else {
+            kycPage = knowYourCustomerRepository.findAll(pageable);
+        }
+
+        List<KycResponse> kycResponses = kycPage.getContent()
+                .stream()
+                .map(kyc -> {
+
+                    return KycResponse.builder()
+                            .kycId(kyc.getKycId())
+                            .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null) // Chuyển đổi Date sang String nếu cần
+                            .age(kyc.getAge())
+                            .fullName(kyc.getFullName())
+                            .phoneNumber(kyc.getPhoneNumber())
+                            .email(kyc.getUser() != null ? kyc.getUser().getEmail() : null)
+                            .gender(kyc.getGender())
+                            .cccdNumber(kyc.getCccdNumber())
+                            .frontDocumentUrl(kyc.getFrontDocumentUrl())
+                            .backDocumentUrl(kyc.getBackDocumentUrl())
+                            .kycStatus(kyc.getKycStatus())
+                            .submited(kyc.getSumbited())
+                            .user(kyc.getUser() != null ? kyc.getUser().getId() : null)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(kycResponses)
+                .message("Fetched Kycs")
+                .build());
+    }
+
+
 
 
 }

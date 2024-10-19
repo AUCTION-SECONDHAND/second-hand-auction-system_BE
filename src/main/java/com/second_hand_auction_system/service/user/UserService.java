@@ -274,6 +274,7 @@ public class UserService implements IUserService {
                     .role(Role.STAFF)
                     .fullName(registerRequest.getFullName())
                     .phoneNumber(registerRequest.getPhoneNumber())
+                    .avatar("https://png.pngtree.com/png-clipart/20231216/original/pngtree-vector-office-worker-staff-avatar-employee-icon-png-image_13863941.png")
                     .status(true)
                     .build();
             userRepository.save(newUser);
@@ -310,9 +311,10 @@ public class UserService implements IUserService {
             user.setEmail(userRequest.getEmail());
             user.setAvatar(userRequest.getAvatarUrl());
             userRepository.save(user);
+            UserResponse userResponse = modelMapper.map(user, UserResponse.class);
             return ResponseEntity.ok(RegisterResponse.builder()
                     .status(HttpStatus.OK.value())
-                    .data(user)
+                    .data(userResponse)
                     .message("User updated successfully")
                     .build());
         } catch (Exception e) {
@@ -328,13 +330,13 @@ public class UserService implements IUserService {
     @Override
     public ResponseEntity<?> getUserId(int id) {
         User user = userRepository.findById(id).orElse(null);
-        if(user != null){
+        if (user != null) {
             UserResponse userResponse = modelMapper.map(user, UserResponse.class);
 
             return ResponseEntity.ok(ResponseObject.builder()
-                            .status(HttpStatus.OK)
-                            .message("User found")
-                            .data(userResponse)
+                    .status(HttpStatus.OK)
+                    .message("User found")
+                    .data(userResponse)
                     .build());
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
@@ -342,6 +344,26 @@ public class UserService implements IUserService {
                 .data(null)
                 .message("User not found")
                 .build());
+    }
+
+    @Override
+    public ResponseEntity<?> deleteUser(int id) {
+        User user = userRepository.findById(id).orElse(null);
+        if (user != null) {
+            user.setStatus(false);
+            userRepository.save(user);
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .data(null)
+                    .status(HttpStatus.OK)
+                    .message("User deleted")
+                    .build());
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                .data(null)
+                .status(HttpStatus.NOT_FOUND)
+                .message("User not found")
+                .build());
+
     }
 
 
