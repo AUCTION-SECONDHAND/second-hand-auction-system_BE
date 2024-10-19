@@ -90,8 +90,8 @@ public class AuctionController {
 //        return auctionService.getAllAuctions(page,size);
 //    }
 
-//    @GetMapping
-//    public ResponseEntity<?> getAuctions(){
-//        return auctionService.getAll();
-//    }
+    @GetMapping
+    public ResponseEntity<?> getAuctions(){
+        return auctionService.getAll();
+    }
 }

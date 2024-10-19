@@ -1,19 +1,25 @@
 package com.second_hand_auction_system.dtos.responses.auction;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.second_hand_auction_system.dtos.responses.BaseResponse;
+import com.second_hand_auction_system.dtos.BaseDto;
+import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.utils.AuctionStatus;
+import lombok.*;
 
-import java.time.LocalDateTime;
+import java.sql.Time;
 import java.util.Date;
 
-public class AuctionResponse extends BaseResponse {
-
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@Builder
+public class AuctionResponse  {
     @JsonProperty("start_time")
-    private LocalDateTime startTime;
+    private Time startTime;
 
     @JsonProperty("end_time")
-    private LocalDateTime endTime;
+    private Time endTime;
 
     @JsonProperty("start_price")
     private double startPrice;
@@ -47,4 +53,10 @@ public class AuctionResponse extends BaseResponse {
 
     @JsonProperty("item")
     private Integer item;
+
+//    @JsonProperty("created_at")
+//    private Date createdAt;
+//
+//    @JsonProperty("updated_at")
+//    private Date updatedAt;
 }

@@ -3,10 +3,9 @@ package com.second_hand_auction_system.service.user;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.second_hand_auction_system.dtos.request.user.Authentication;
 import com.second_hand_auction_system.dtos.request.user.RegisterRequest;
-import com.second_hand_auction_system.dtos.responses.user.AuthenticationResponse;
-import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
-import com.second_hand_auction_system.dtos.responses.user.RegisterResponse;
-import com.second_hand_auction_system.dtos.responses.user.UserResponse;
+import com.second_hand_auction_system.dtos.request.user.UserDto;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.user.*;
 import com.second_hand_auction_system.models.Token;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.TokenRepository;
@@ -65,13 +64,14 @@ public class UserService implements IUserService {
                     .email(registerRequest.getEmail())
                     .password(passwordEncoder.encode(registerRequest.getPassword()))
                     .role(Role.BUYER)
+                    .avatar("https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.freepik.com%2Ficon%2Fmanager-profile_80023&psig=AOvVaw3G7RhNQwUNw34W58OhQeFW&ust=1729417330651000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCNissOGTmokDFQAAAAAdAAAAABAQ")
                     .fullName(registerRequest.getFullName())
                     .phoneNumber(registerRequest.getPhoneNumber())
                     .status(false)
                     .build();
 
             userRepository.save(newUser);
-            if(newUser.getId() != null) {
+            if (newUser.getId() != null) {
                 //send mail confirm
                 emailService.sendOtp(newUser.getEmail(), newUser.getId());
 
@@ -226,7 +226,6 @@ public class UserService implements IUserService {
     }
 
 
-
     @Override
     public ResponseEntity<?> isValidOtp(String email, String otp) {
         User user = userRepository.findByEmail(email).orElse(null);
@@ -238,7 +237,7 @@ public class UserService implements IUserService {
                             .build()
             );
         }
-        boolean storedOtp = otpService.isValidOtp(email,otp);
+        boolean storedOtp = otpService.isValidOtp(email, otp);
         user.setStatus(true);
         userRepository.save(user);
         if (!storedOtp) {
@@ -293,6 +292,56 @@ public class UserService implements IUserService {
                             .build()
             );
         }
+    }
+
+    @Override
+    public ResponseEntity<?> updateUser(int id, UserDto userRequest) {
+        try {
+            User user = userRepository.findById(id).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(RegisterResponse.builder()
+                        .status(HttpStatus.NOT_FOUND.value())
+                        .message("User not found")
+                        .data(null)
+                        .build());
+            }
+            user.setFullName(userRequest.getFullName());
+            user.setPhoneNumber(userRequest.getPhoneNumber());
+            user.setEmail(userRequest.getEmail());
+            user.setAvatar(userRequest.getAvatarUrl());
+            userRepository.save(user);
+            return ResponseEntity.ok(RegisterResponse.builder()
+                    .status(HttpStatus.OK.value())
+                    .data(user)
+                    .message("User updated successfully")
+                    .build());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(RegisterResponse.builder()
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .data(null)
+                .message("Update failed")
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getUserId(int id) {
+        User user = userRepository.findById(id).orElse(null);
+        if(user != null){
+            UserResponse userResponse = modelMapper.map(user, UserResponse.class);
+
+            return ResponseEntity.ok(ResponseObject.builder()
+                            .status(HttpStatus.OK)
+                            .message("User found")
+                            .data(userResponse)
+                    .build());
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                .status(HttpStatus.NOT_FOUND)
+                .data(null)
+                .message("User not found")
+                .build());
     }
 
 

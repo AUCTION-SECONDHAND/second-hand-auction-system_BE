@@ -13,5 +13,5 @@ import java.util.List;
 @Setter
 @Builder
 public class ListAuction {
-    private List<AuctionDto> auctionDtoList;
+    private List<AuctionResponse> auctionResponses;
 }
