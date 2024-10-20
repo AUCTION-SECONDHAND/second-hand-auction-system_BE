@@ -59,6 +59,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/item/**").permitAll()
                         //wallet-customer
                         .requestMatchers(POST, "/api/v1/walletCustomer/**").hasAnyRole("BUYER", "SELLER")
+                        .requestMatchers(GET,"/api/v1/walletCustomer/**").permitAll()
                         //item
                         .requestMatchers(POST, "/api/v1/item/**").hasRole("SELLER")
                         .requestMatchers(PUT, "/api/v1/item/**").hasRole("STAFF")
@@ -78,7 +79,10 @@ public class SecurityConfig {
                         .requestMatchers(POST,"api/v1/auction/**").hasRole("STAFF")
                         .requestMatchers("/api/v1/address/**").permitAll()
                         .requestMatchers("/api/v1/bids/**").permitAll()
+                        //withdraw
+                        .requestMatchers(POST,"/api/v1/withdrawRequest/**").hasRole("SELLER")
                         .anyRequest().authenticated()
+
 
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

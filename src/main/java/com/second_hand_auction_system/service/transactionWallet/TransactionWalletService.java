@@ -32,11 +32,9 @@ public class TransactionWalletService implements ITransactionWalletService {
 
         if (keyword != null && !keyword.isEmpty()) {
             transactionWallets = transactionWalletRepository.findByWalletCustomer_User_FullNameContainingAndCreateAtBetween(keyword, startDate, endDate, pageable);
-        }
-        else if (startDate != null && endDate != null) {
+        } else if (startDate != null && endDate != null) {
             transactionWallets = transactionWalletRepository.findTransactionWalletByCreateAt(startDate, endDate, pageable);
-        }
-        else {
+        } else {
             transactionWallets = transactionWalletRepository.findAll(pageable).getContent();
         }
 
@@ -59,7 +57,7 @@ public class TransactionWalletService implements ITransactionWalletService {
 
             // Nếu name không rỗng, tìm kiếm theo tên; nếu không, lấy tất cả giao dịch
             if (name != null && !name.isEmpty()) {
-                transactionWalletsPage =  transactionWalletRepository.findByWalletCustomer_User_FullNameContainsIgnoreCase(name, pageable);
+                transactionWalletsPage = transactionWalletRepository.findByWalletCustomer_User_FullNameContainsIgnoreCase(name, pageable);
             } else {
                 transactionWalletsPage = transactionWalletRepository.findAll(pageable);
             }
@@ -98,6 +96,24 @@ public class TransactionWalletService implements ITransactionWalletService {
         }
     }
 
+    @Override
+    public ResponseEntity<?> getTransactionById(int id) {
+        TransactionWallet transactionWallet = transactionWalletRepository.findById(id).orElse(null);
+//        TransactionWalletResponse transactionWalletResponse = modelMapper.map(transactionWallet, TransactionWalletResponse.class);
+        if (transactionWallet != null) {
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .data(transactionWallet)
+                    .message("Transaction wallet found")
+                    .status(HttpStatus.OK)
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                .data(null)
+                .message("Transaction wallet found")
+                .status(HttpStatus.OK)
+                .build());
+    }
 
 
 }

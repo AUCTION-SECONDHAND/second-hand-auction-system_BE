@@ -9,10 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -49,6 +46,11 @@ public class TransactionWalletController {
                                              @RequestParam(value = "page", defaultValue = "0") int page,
                                              @RequestParam(value = "keyword") String name) {
         return transactionWalletService.getTransactionWallets(size, page, name);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTransaction(@PathVariable("id") int id) {
+        return transactionWalletService.getTransactionById(id);
     }
 
 

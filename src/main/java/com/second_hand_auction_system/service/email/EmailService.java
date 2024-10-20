@@ -450,31 +450,88 @@ public class EmailService {
         mimeMessageHelper.setSubject("Set Password");
 
         String htmlContent = """
-                <html>
-                    <head>
-                        <style>
-                            div {
-                                background-color: #f2f2f2;
-                                padding: 10px;
-                                border-radius: 5px;
-                            }
-                            a {
-                                color: #007bff;
-                                text-decoration: none;
-                            }
-                            a:hover {
-                                color: #0056b3;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div>
-                            <h1>Mat khau moi</h1>
-                            <p>Your password is: %s</p>
+            <html>
+                <head>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            background-color: #f9f9f9;
+                        }
+                        .container {
+                            max-width: 600px;
+                            margin: 0 auto;
+                            padding: 20px;
+                            background-color: #ffffff;
+                            border-radius: 10px;
+                            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                        }
+                        .header {
+                            background-color: #007bff;
+                            color: #ffffff;
+                            padding: 20px;
+                            text-align: center;
+                            border-top-left-radius: 10px;
+                            border-top-right-radius: 10px;
+                        }
+                        .header h1 {
+                            margin: 0;
+                            font-size: 24px;
+                        }
+                        .content {
+                            padding: 20px;
+                        }
+                        h1 {
+                            color: #333333;
+                            font-size: 20px;
+                        }
+                        p {
+                            font-size: 16px;
+                            color: #555555;
+                            line-height: 1.5;
+                        }
+                        .password {
+                            font-weight: bold;
+                            color: #d9534f;
+                            font-size: 18px;
+                        }
+                        .footer {
+                            background-color: #f1f1f1;
+                            padding: 10px;
+                            font-size: 12px;
+                            color: #777777;
+                            text-align: center;
+                            border-bottom-left-radius: 10px;
+                            border-bottom-right-radius: 10px;
+                            margin-top: 20px;
+                        }
+                        .footer p {
+                            margin: 5px 0;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Password Reset Request</h1>
                         </div>
-                    </body>
-                </html>
-                """.formatted(password);
+                        <div class="content">
+                            <p>Dear User,</p>
+                            <p>We have received a request to reset your password. Your new password is:</p>
+                            <p class="password">%s</p>
+                            <p>Please make sure to change your password after logging in to ensure your account’s security.</p>
+                            <p>Best regards,</p>
+                            <p>Your Company Team</p>
+                        </div>
+                        <div class="footer">
+                            <p>If you didn’t request this password reset, please contact our support immediately.</p>
+                            <p>Company Name | Address | Contact</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+            """.formatted(password);
 
         mimeMessageHelper.setText(htmlContent, true);
         mailSender.send(mimeMessage);
