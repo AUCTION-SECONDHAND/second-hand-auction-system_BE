@@ -1,9 +1,8 @@
 package com.second_hand_auction_system.dtos.responses.auction;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.second_hand_auction_system.dtos.BaseDto;
-import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.utils.AuctionStatus;
+import jakarta.persistence.Column;
 import lombok.*;
 
 import java.sql.Time;
@@ -53,6 +52,12 @@ public class AuctionResponse  {
 
     @JsonProperty("item")
     private Integer item;
+
+    @Column(name = "start_date")
+    private Date startDate;
+
+    @Column(name = "end_date")
+    private Date endDate;
 
 //    @JsonProperty("created_at")
 //    private Date createdAt;

@@ -3,7 +3,8 @@ package com.second_hand_auction_system.controller;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
-import com.second_hand_auction_system.service.item.ItemService;
+import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
+import com.second_hand_auction_system.service.item.IItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("${api.prefix}/item")
 public class ItemController {
-    private final ItemService itemService;
+    private final IItemService itemService;
 
     @PostMapping("")
     public ResponseEntity<?> createItem(
@@ -109,6 +110,18 @@ public class ItemController {
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
                         .message("Success")
+                        .build()
+        );
+    }
+
+    @GetMapping("top-10-featured-item")
+    public ResponseEntity<?> getTop10FeaturedItem() throws Exception {
+        List<AuctionItemResponse> itemResponseList = itemService.getTop10FeaturedItem();
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(itemResponseList)
                         .build()
         );
     }
