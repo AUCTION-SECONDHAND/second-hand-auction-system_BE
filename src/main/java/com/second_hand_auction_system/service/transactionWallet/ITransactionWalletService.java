@@ -9,4 +9,6 @@ public interface ITransactionWalletService {
     ResponseEntity<?> getAll(String keyword, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 
     ResponseEntity<?> getTransactionWallets(int size, int page, String name);
+
+    ResponseEntity<?> getTransactionById(int id);
 }

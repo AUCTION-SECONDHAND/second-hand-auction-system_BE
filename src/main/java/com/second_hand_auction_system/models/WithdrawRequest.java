@@ -33,6 +33,12 @@ public class WithdrawRequest extends BaseEntity{
     @Column(name = "process_at")
     private LocalDateTime processAt;
 
+    @Column(name = "bank_account")
+    private String bankAccount;
+
+    @Column(name = "account_number")
+    private String accountNumber;
+
     @ManyToOne
     @JoinColumn(name = "wallet_customer_id")
     private WalletCustomer walletCustomer;
