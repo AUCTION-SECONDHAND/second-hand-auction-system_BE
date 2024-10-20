@@ -35,6 +35,8 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/api/v1/auth/**",
             "api/v1/auctions/**",
+            "/api/v1/user/**",
+            "api/v1/user/forgot-password/**",
     };
 
     @Bean
@@ -47,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(PUT,"/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
+                        .requestMatchers(PATCH,"/api/v1/user/**").permitAll()
                         .requestMatchers(DELETE,"/api/v1/user/**").hasRole("ADMIN")
                         //main-category
                         .requestMatchers(POST, "/api/v1/main-category/**").hasAnyRole("ADMIN", "STAFF")

@@ -32,7 +32,7 @@ public class KycDto {
     private String email;
 
     @NotNull(message = "CCCD cannot be null")
-    @Size(min = 10, max = 10)
+    @Size(min = 12, max = 12)
     private String cccdNumber;
 
     @Pattern(regexp = "^(http(s?):)([/|.|\\w|\\s|-])*\\.(?:jpg|jpeg|png)$", message = "Invalid image URL format for image 1")

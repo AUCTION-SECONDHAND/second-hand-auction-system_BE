@@ -1,5 +1,7 @@
 package com.second_hand_auction_system.service.email;
 
+import com.second_hand_auction_system.models.User;
+import com.second_hand_auction_system.repositories.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -8,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -26,7 +30,10 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
     private final OtpService otpService;
-
+    private final UserRepository userRepository;
+    private final PasswordEncoder encoder;
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final int PASSWORD_LENGTH = 8;
     public String sendEmail(String to, String subject, String text, MultipartFile[] files) throws MessagingException {
         log.info("Sending email to " + to);
 
@@ -121,6 +128,20 @@ public class EmailService {
         SecureRandom random = new SecureRandom();
         int otp = random.nextInt(900000) + 100000;
         return String.valueOf(otp);
+    }
+
+
+
+    public String generatePassword() {
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
+
+        for (int i = 0; i < PASSWORD_LENGTH; i++) {
+            int index = random.nextInt(CHARACTERS.length());
+            password.append(CHARACTERS.charAt(index));
+        }
+
+        return password.toString();
     }
 
     public void sendOtp(String email, Integer id) throws MessagingException, IOException {
@@ -414,6 +435,50 @@ public class EmailService {
 
     }
 
+    public void sendSetPassword(String email) throws MessagingException {
+        String password = generatePassword();
+
+        otpService.saveOtp(email, password);
+        var user = userRepository.findByEmail(email).orElse(null);
+        assert user != null;
+        String passwordEncode = encoder.encode(password);
+        user.setPassword(passwordEncode);
+        userRepository.save(user);
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+        mimeMessageHelper.setTo(email);
+        mimeMessageHelper.setSubject("Set Password");
+
+        String htmlContent = """
+                <html>
+                    <head>
+                        <style>
+                            div {
+                                background-color: #f2f2f2;
+                                padding: 10px;
+                                border-radius: 5px;
+                            }
+                            a {
+                                color: #007bff;
+                                text-decoration: none;
+                            }
+                            a:hover {
+                                color: #0056b3;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div>
+                            <h1>Mat khau moi</h1>
+                            <p>Your password is: %s</p>
+                        </div>
+                    </body>
+                </html>
+                """.formatted(password);
+
+        mimeMessageHelper.setText(htmlContent, true);
+        mailSender.send(mimeMessage);
+    }
 
 
 

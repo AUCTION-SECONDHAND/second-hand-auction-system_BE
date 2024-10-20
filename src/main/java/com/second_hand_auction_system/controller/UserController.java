@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.controller;
 
+import com.second_hand_auction_system.dtos.request.user.ChangePassWordDTO;
 import com.second_hand_auction_system.dtos.request.user.RegisterRequest;
 import com.second_hand_auction_system.dtos.request.user.UserDto;
 import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
@@ -11,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -52,5 +55,17 @@ public class UserController {
     public ResponseEntity<?> deleteUser(@PathVariable int id) {
         return userService.deleteUser(id);
     }
+
+    @PutMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestParam String email) throws MessagingException {
+        return userService.forgotPassword(email);
+    }
+
+    @PatchMapping("/changePassword")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePassWordDTO request, Principal connectedUser) throws IllegalAccessException {
+        return userService.changePassword(request, connectedUser);
+    }
+
+
 
 }

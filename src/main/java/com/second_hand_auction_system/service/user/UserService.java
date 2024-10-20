@@ -2,6 +2,7 @@ package com.second_hand_auction_system.service.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.second_hand_auction_system.dtos.request.user.Authentication;
+import com.second_hand_auction_system.dtos.request.user.ChangePassWordDTO;
 import com.second_hand_auction_system.dtos.request.user.RegisterRequest;
 import com.second_hand_auction_system.dtos.request.user.UserDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
@@ -15,6 +16,7 @@ import com.second_hand_auction_system.service.email.OtpService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TokenType;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
+import java.nio.file.attribute.UserPrincipal;
+import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -364,6 +368,47 @@ public class UserService implements IUserService {
                 .message("User not found")
                 .build());
 
+    }
+
+    @Override
+    public ResponseEntity<?> forgotPassword(String email) throws MessagingException {
+        var user = userRepository.findByEmail(email).orElse(null);
+        if(user != null){
+            emailService.sendSetPassword(user.getEmail());
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder().status(HttpStatus.OK)
+                    .message("Forgot password success")
+                    .data(null)
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder().status(HttpStatus.NOT_FOUND)
+                .message("Forgot password failed")
+                .data(null)
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> changePassword(ChangePassWordDTO request, Principal connectedUser) {
+        User user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .message("Password does not match")
+                    .data(null)
+                    .build());
+        }
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message("Password does not match confirm password")
+                    .build());
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Change password successful")
+                .build());
     }
 
 
