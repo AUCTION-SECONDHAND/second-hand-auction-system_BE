@@ -29,6 +29,7 @@ public class AuctionItemConvert {
                     .createBy(auction.getCreateBy())
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
+                    .status(auction.getStatus())
                     .build();
         }
         SubCategoryItemResponse subCategoryResponse = null;
@@ -45,6 +46,7 @@ public class AuctionItemConvert {
                 .thumbnail(item.getThumbnail())
                 .itemName(item.getItemName())
                 .itemDescription(item.getItemDescription())
+                .itemStatus(item.getItemStatus())
                 .auction(auctionResponse)
                 .scId(subCategoryResponse)
                 .build();

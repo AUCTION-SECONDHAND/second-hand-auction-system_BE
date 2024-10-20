@@ -13,6 +13,8 @@ import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.ItemStatus;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -159,10 +161,11 @@ public class ItemService implements IItemService {
                 , item.getItemName());
     }
 
-    public List<AuctionItemResponse> getTop10FeaturedItem() {
-        List<Item> items = itemRepository.findAll();  // Lọc top 10 nếu cần
-        return items.stream()
-                .map(auctionItemConvert::toAuctionItemResponse)
-                .collect(Collectors.toList());
+    public Page<AuctionItemResponse> getTop10FeaturedItem(PageRequest pageRequest) {
+        Page<Item> items = itemRepository.findAllByItemStatus(ItemStatus.ACCEPTED, pageRequest);  // Lọc top 10 nếu cần
+//        return items.stream()
+//                .map(auctionItemConvert::toAuctionItemResponse)
+//                .collect(Collectors.toList());
+        return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 }

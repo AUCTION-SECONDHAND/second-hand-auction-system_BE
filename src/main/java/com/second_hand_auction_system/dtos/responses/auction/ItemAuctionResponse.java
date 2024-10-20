@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.dtos.responses.auction;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.second_hand_auction_system.utils.AuctionStatus;
 import jakarta.persistence.Column;
 import lombok.*;
 
@@ -33,4 +34,9 @@ public class ItemAuctionResponse {
 
     @Column(name = "end_date")
     private Date endDate;
+
+    @Column(name = "status")
+    private AuctionStatus status;
+
+
 }

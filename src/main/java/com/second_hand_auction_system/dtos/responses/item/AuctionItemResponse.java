@@ -3,6 +3,7 @@ package com.second_hand_auction_system.dtos.responses.item;
 import com.second_hand_auction_system.dtos.responses.BaseResponse;
 import com.second_hand_auction_system.dtos.responses.auction.ItemAuctionResponse;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
+import com.second_hand_auction_system.utils.ItemStatus;
 import lombok.*;
 
 @Getter
@@ -18,6 +19,8 @@ public class AuctionItemResponse extends BaseResponse {
     private String itemDescription;
 
     private String thumbnail;
+
+    private ItemStatus itemStatus;
 
     private ItemAuctionResponse auction;
 

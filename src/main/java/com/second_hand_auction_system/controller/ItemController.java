@@ -2,11 +2,15 @@ package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
+import com.second_hand_auction_system.dtos.responses.ResponseListObject;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.service.item.IItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -115,13 +119,25 @@ public class ItemController {
     }
 
     @GetMapping("top-10-featured-item")
-    public ResponseEntity<?> getTop10FeaturedItem() throws Exception {
-        List<AuctionItemResponse> itemResponseList = itemService.getTop10FeaturedItem();
+    public ResponseEntity<?> getTop10FeaturedItem(
+            @RequestParam(value = "page", defaultValue = "0") int page, @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) throws Exception {
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        //, Sort.by("id").descending()
+        Page<AuctionItemResponse> itemResponseList = itemService.getTop10FeaturedItem(pageRequest);
+        int totalPages = itemResponseList.getTotalPages();
+        Long totalOrder = itemResponseList.getTotalElements();
+        List<AuctionItemResponse> auctionItemResponses = itemResponseList.getContent();
+        ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
+                .data(auctionItemResponses)
+                .totalElements(totalOrder)
+                .totalPages(totalPages)
+                .build();
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
                         .message("Success")
-                        .data(itemResponseList)
+                        .data(responseListObject)
                         .build()
         );
     }
