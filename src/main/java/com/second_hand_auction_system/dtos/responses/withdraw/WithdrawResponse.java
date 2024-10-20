@@ -18,8 +18,9 @@ public class WithdrawResponse {
     private RequestStatus requestStatus;
 
     private String note;
-
+    private String bankAccount;
     private LocalDateTime processAt;
     private TransactionType transactionType;
+    private String accountNumber;
     private Integer walletCustomer;
 }

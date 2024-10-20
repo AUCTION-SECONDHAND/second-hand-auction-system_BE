@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WithdrawRequestController {
     private final IWithdrawRequestService withdrawRequestService;
 
-    @PostMapping("/withdraw")
+    @PostMapping("")
     public ResponseEntity<?> withdraw(@RequestBody WithdrawRequestDTO withdrawRequest) {
         return  withdrawRequestService.requestWithdraw(withdrawRequest);
     }

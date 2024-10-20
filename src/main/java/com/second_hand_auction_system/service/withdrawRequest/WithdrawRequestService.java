@@ -10,7 +10,6 @@ import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.repositories.WalletCustomerRepository;
 import com.second_hand_auction_system.repositories.WithdrawRequestRepository;
 import com.second_hand_auction_system.service.jwt.JwtService;
-import com.second_hand_auction_system.service.user.UserService;
 import com.second_hand_auction_system.utils.RequestStatus;
 import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionType;
@@ -71,17 +70,22 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 .requestStatus(RequestStatus.PENDING)
                 .processAt(withdrawRequest.getProcessAt())
                 .note(withdrawRequest.getNote())
+                .bankAccount(withdrawRequest.getBankAccount())
+                .accountNumber(withdrawRequest.getBankNumber())
                 .walletCustomer(walletCustomer)
                 .build();
 
         withdrawRequestRepository.save(withdrawRequest1);
 
+        assert walletCustomer != null;
         WithdrawResponse withdrawResponse = WithdrawResponse.builder()
                 .requestAmount(withdrawRequest1.getRequestAmount())
                 .requestStatus(withdrawRequest1.getRequestStatus())
                 .note(withdrawRequest1.getNote())
                 .processAt(withdrawRequest1.getProcessAt())
                 .transactionType(TransactionType.WITHDRAWAL)
+                .accountNumber(withdrawRequest1.getAccountNumber())
+                .bankAccount(withdrawRequest1.getBankAccount())
                 .walletCustomer(walletCustomer.getWalletCustomerId())
                 .build();
 
