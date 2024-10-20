@@ -1,10 +1,10 @@
 package com.second_hand_auction_system.service.item;
 
+import com.second_hand_auction_system.converters.item.AuctionItemConvert;
 import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
-import com.second_hand_auction_system.dtos.request.item.ItemSpecificDto;
-import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.exceptions.DataNotFoundException;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
@@ -13,8 +13,6 @@ import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.ItemStatus;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -23,6 +21,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +34,8 @@ public class ItemService implements IItemService {
     private final ItemSpecificRepository itemSpecificRepository;
     private final IJwtService jwtService;
     private final EmailService emailService;
+    private final AuctionRepository auctionRepository;
+    private final AuctionItemConvert auctionItemConvert;
 
     @Override
     @Transactional
@@ -156,5 +157,12 @@ public class ItemService implements IItemService {
         itemRepository.save(item);
         emailService.sendNotificationRegisterItem(userEmail, item.getUser().getFullName()
                 , item.getItemName());
+    }
+
+    public List<AuctionItemResponse> getTop10FeaturedItem() {
+        List<Item> items = itemRepository.findAll();  // Lọc top 10 nếu cần
+        return items.stream()
+                .map(auctionItemConvert::toAuctionItemResponse)
+                .collect(Collectors.toList());
     }
 }
