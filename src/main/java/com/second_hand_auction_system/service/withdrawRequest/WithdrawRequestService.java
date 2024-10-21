@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.service.withdrawRequest;
 
+import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawApprove;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawRequestDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.withdraw.WithdrawResponse;
@@ -9,10 +10,12 @@ import com.second_hand_auction_system.models.WithdrawRequest;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.repositories.WalletCustomerRepository;
 import com.second_hand_auction_system.repositories.WithdrawRequestRepository;
+import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.jwt.JwtService;
 import com.second_hand_auction_system.utils.RequestStatus;
 import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionType;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -32,6 +35,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
     private final UserRepository userRepository;
     private final WalletCustomerRepository walletCustomerRepository;
     private final ModelMapper modelMapper;
+    private final VNPAYService vnpayService;
 
     @Override
     @Transactional
@@ -95,5 +99,29 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 .data(withdrawResponse)
                 .build());
     }
+
+    @Override
+    public ResponseEntity<?> approve(Integer id, WithdrawApprove withdrawApprove, HttpServletRequest request) {
+        WithdrawRequest withdrawRequest = withdrawRequestRepository.findById(id).orElse(null);
+        if (withdrawRequest != null) {
+            withdrawRequest.setRequestStatus(withdrawApprove.getStatus());
+            withdrawRequestRepository.save(withdrawRequest);
+            VNPAYService vnpayService = new VNPAYService();
+//            String paymentUrl = vnpayService.createOrder(request, (int) withdrawRequest.getRequestAmount(),
+//                    "Withdrawal approval for ID: " + withdrawRequest.getWithdrawRequestId(), "http://your-website.com/vnpay-return-url");
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .message("Withdrawal approved, redirecting to payment")
+                    .data(null)
+                    .build());
+        }
+
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                .status(HttpStatus.NOT_FOUND)
+                .message("Withdrawal request not found")
+                .build());
+    }
+
 
 }

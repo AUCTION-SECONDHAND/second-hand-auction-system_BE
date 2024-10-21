@@ -78,4 +78,8 @@ public class Item extends BaseEntity{
     @ManyToOne
     @JoinColumn(name = "sub_category_id")
     private SubCategory subCategory;
+
+    @ManyToOne
+    @JoinColumn(name = "acution_type_id")
+    private AuctionType acutionType;
 }
