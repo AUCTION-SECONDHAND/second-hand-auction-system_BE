@@ -26,6 +26,4 @@ public class SubCategory extends BaseEntity{
     @ManyToOne
     @JoinColumn(name = "main_category")
     private MainCategory mainCategory;
-
-
 }

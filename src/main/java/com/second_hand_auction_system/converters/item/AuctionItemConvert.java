@@ -21,7 +21,7 @@ public class AuctionItemConvert {
         if (item.getAuction() != null) {
             Auction auction = item.getAuction();
             auctionResponse = ItemAuctionResponse.builder()
-//                    .auctionId(auction.getAuctionId())
+                    .auctionId(auction.getAuctionId())
                     .startTime(auction.getStartTime())
                     .endTime(auction.getEndTime())
                     .startPrice(auction.getStartPrice())
@@ -36,6 +36,7 @@ public class AuctionItemConvert {
         if (item.getSubCategory() != null) {
             SubCategory subCategory = item.getSubCategory();
             subCategoryResponse = SubCategoryItemResponse.builder()
+                    .subCategoryId(subCategory.getSubCategoryId())
                     .subCategory(subCategory.getSubCategory())
                     .build();
         }

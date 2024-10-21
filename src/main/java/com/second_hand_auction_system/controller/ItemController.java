@@ -17,7 +17,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -119,12 +121,24 @@ public class ItemController {
     }
 
     @GetMapping("top-10-featured-item")
-    public ResponseEntity<?> getTop10FeaturedItem(
+    public ResponseEntity<?> getTop10FeaturedItem() throws Exception {
+        List<AuctionItemResponse> itemResponseList = itemService.getTop10FeaturedItem();
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(itemResponseList)
+                        .build()
+        );
+    }
+
+    @GetMapping("product-appraisal")
+    public ResponseEntity<?> getProductAppraisal(
             @RequestParam(value = "page", defaultValue = "0") int page, @RequestParam(value = "limit", defaultValue = "10") int limit
     ) throws Exception {
         PageRequest pageRequest = PageRequest.of(page, limit);
         //, Sort.by("id").descending()
-        Page<AuctionItemResponse> itemResponseList = itemService.getTop10FeaturedItem(pageRequest);
+        Page<AuctionItemResponse> itemResponseList = itemService.getProductAppraisal(pageRequest);
         int totalPages = itemResponseList.getTotalPages();
         Long totalOrder = itemResponseList.getTotalElements();
         List<AuctionItemResponse> auctionItemResponses = itemResponseList.getContent();
@@ -140,5 +154,43 @@ public class ItemController {
                         .data(responseListObject)
                         .build()
         );
+    }
+
+    @GetMapping("")
+    public ResponseEntity<?> getItem(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "minPrice", required = false) Double minPrice,
+            @RequestParam(value = "maxPrice", required = false) Double maxPrice,
+            @RequestParam(value = "scIds", required = false) String scIds,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) throws Exception {
+        List<Integer> parsedScIds = parseIds(scIds);
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        //, Sort.by("id").descending()
+        Page<AuctionItemResponse> itemResponseList = itemService.getItem(keyword, minPrice, maxPrice,pageRequest, parsedScIds );
+        int totalPages = itemResponseList.getTotalPages();
+        Long totalOrder = itemResponseList.getTotalElements();
+        List<AuctionItemResponse> auctionItemResponses = itemResponseList.getContent();
+        ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
+                .data(auctionItemResponses)
+                .totalElements(totalOrder)
+                .totalPages(totalPages)
+                .build();
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(responseListObject)
+                        .build()
+        );
+    }
+
+
+    private List<Integer> parseIds(String ids) {
+        if (ids == null || ids.isEmpty()) {
+            return null;
+        }
+        return Arrays.stream(ids.split(",")).map(Integer::parseInt).collect(Collectors.toList());
     }
 }

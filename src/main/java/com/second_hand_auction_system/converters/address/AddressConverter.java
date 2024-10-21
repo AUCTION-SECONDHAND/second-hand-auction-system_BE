@@ -1,9 +1,9 @@
 package com.second_hand_auction_system.converters.address;
 
 import com.second_hand_auction_system.dtos.request.address.AddressDto;
+import com.second_hand_auction_system.dtos.responses.address.AddressResponse;
 import com.second_hand_auction_system.models.Address;
 import com.second_hand_auction_system.models.User;
-
 
 public class AddressConverter {
     // Converter AddressDto => Address
@@ -22,14 +22,14 @@ public class AddressConverter {
         address.setWard_code(addressDto.getWard_code());
         address.setWard_name(addressDto.getWard_name());
 
-
         address.setUser(user);
         return address;
     }
 
-    // Converter Address => AddressDto
-    public static AddressDto convertToDto(Address address) {
-        return AddressDto.builder()
+    // Converter Address => AddressResponse
+    public static AddressResponse convertToResponse(Address address) {
+        return AddressResponse.builder()
+                .addressId(address.getAddressId())
                 .district_code(address.getDistrict_code())
                 .district_name(address.getDistric_name())
                 .address_name(address.getAddress_name())

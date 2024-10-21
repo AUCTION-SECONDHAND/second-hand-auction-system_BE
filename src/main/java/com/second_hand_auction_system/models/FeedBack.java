@@ -28,7 +28,8 @@ public class FeedBack extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToOne(mappedBy = "feedback", cascade = CascadeType.ALL)
+    @OneToOne
+    @JoinColumn(name = "item_id")
     private Item item;
 
 }
