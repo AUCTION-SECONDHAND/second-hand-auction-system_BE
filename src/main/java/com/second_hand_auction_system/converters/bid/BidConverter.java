@@ -1,7 +1,7 @@
 package com.second_hand_auction_system.converters.bid;
 
 import com.second_hand_auction_system.dtos.request.bid.BidDto;
-import com.second_hand_auction_system.dtos.responses.bid.BidResponses;
+import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Bid;
 import com.second_hand_auction_system.models.User;
@@ -22,8 +22,8 @@ public class BidConverter {
     }
 
     // Converter Bid entity => BidResponses
-    public static BidResponses convertToResponse(Bid bid) {
-        return BidResponses.builder()
+    public static BidResponse convertToResponse(Bid bid) {
+        return BidResponse.builder()
                 .bidId(bid.getBidId())
                 .bidAmount(bid.getBidAmount())
                 .bidTime(bid.getBidTime())

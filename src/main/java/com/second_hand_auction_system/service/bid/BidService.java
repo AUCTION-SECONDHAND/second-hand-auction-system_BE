@@ -2,7 +2,7 @@ package com.second_hand_auction_system.service.bid;
 
 import com.second_hand_auction_system.converters.bid.BidConverter;
 import com.second_hand_auction_system.dtos.request.bid.BidDto;
-import com.second_hand_auction_system.dtos.responses.bid.BidResponses;
+import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Bid;
 import com.second_hand_auction_system.models.User;
@@ -25,7 +25,7 @@ public class BidService implements IBidService{
     private final AuctionRepository auctionRepository;
 
     @Override
-    public BidResponses createBid(BidDto bidDto) throws Exception {
+    public BidResponse createBid(BidDto bidDto) throws Exception {
         // Lấy đối tượng User và Auction từ repository
         User user = userRepository.findById(bidDto.getUserId())
                 .orElseThrow(() -> new Exception("User not found"));
@@ -43,7 +43,7 @@ public class BidService implements IBidService{
     }
 
     @Override
-    public BidResponses updateBid(Integer bidId, BidDto bidDto) throws Exception {
+    public BidResponse updateBid(Integer bidId, BidDto bidDto) throws Exception {
         // Find existing bid
         Bid existingBid = bidRepository.findById(bidId)
                 .orElseThrow(() -> new Exception("Bid not found"));
@@ -80,7 +80,7 @@ public class BidService implements IBidService{
     }
 
     @Override
-    public BidResponses getBidById(Integer bidId) throws Exception {
+    public BidResponse getBidById(Integer bidId) throws Exception {
         // Find bid
         Bid bid = bidRepository.findById(bidId)
                 .orElseThrow(() -> new Exception("Bid not found"));
@@ -90,7 +90,7 @@ public class BidService implements IBidService{
     }
 
     @Override
-    public List<BidResponses> getAllBidsByAuctionId(Integer auctionId) throws Exception {
+    public List<BidResponse> getAllBidsByAuctionId(Integer auctionId) throws Exception {
         // Find all bids by auction
         List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId);
 

@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class BidResponses {
+public class BidResponse {
 
     private Integer bidId;
     private int bidAmount;
