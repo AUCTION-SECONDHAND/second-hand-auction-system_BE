@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.dtos.responses.auction;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import jakarta.persistence.Column;
@@ -14,6 +15,10 @@ import java.util.Date;
 @Setter
 @Builder
 public class ItemAuctionResponse {
+
+    @JsonProperty("auction_id")
+    private Integer auctionId;
+
     @JsonProperty("start_time")
     private Time startTime;
 
@@ -24,15 +29,18 @@ public class ItemAuctionResponse {
     private double startPrice;
 
     @JsonProperty("approved_at")
+    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
     private Date approveAt;
 
     @JsonProperty("created_by")
     private String createBy;
 
     @Column(name = "start_date")
+    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
     private Date startDate;
 
     @Column(name = "end_date")
+    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
     private Date endDate;
 
     @Column(name = "status")

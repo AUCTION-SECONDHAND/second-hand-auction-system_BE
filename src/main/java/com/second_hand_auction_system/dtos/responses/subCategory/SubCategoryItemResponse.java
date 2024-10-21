@@ -9,6 +9,10 @@ import lombok.*;
 @Setter
 @Builder
 public class SubCategoryItemResponse {
+
+    @JsonProperty("sub_category_id")
+    private Integer subCategoryId;
+
     @JsonProperty("sub_category")
     private String subCategory;
 }

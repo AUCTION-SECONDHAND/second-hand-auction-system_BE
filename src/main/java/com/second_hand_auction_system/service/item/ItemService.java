@@ -161,11 +161,26 @@ public class ItemService implements IItemService {
                 , item.getItemName());
     }
 
-    public Page<AuctionItemResponse> getTop10FeaturedItem(PageRequest pageRequest) {
-        Page<Item> items = itemRepository.findAllByItemStatus(ItemStatus.ACCEPTED, pageRequest);  // Lọc top 10 nếu cần
-//        return items.stream()
-//                .map(auctionItemConvert::toAuctionItemResponse)
-//                .collect(Collectors.toList());
+    public List<AuctionItemResponse> getTop10FeaturedItem() {
+        List<Item> items = itemRepository.findAll();
+        return items.stream()
+                .map(auctionItemConvert::toAuctionItemResponse)
+                .collect(Collectors.toList());
+//        return items.map(auctionItemConvert::toAuctionItemResponse);
+    }
+
+    @Override
+    public Page<AuctionItemResponse> getProductAppraisal(PageRequest pageRequest) throws Exception {
+        Page<Item> items = itemRepository.findAllByItemStatus(ItemStatus.ACCEPTED, pageRequest);
+        return items.map(auctionItemConvert::toAuctionItemResponse);
+    }
+
+    @Override
+    public Page<AuctionItemResponse> getItem(String keyword, Double minPrice, Double maxPrice, PageRequest pageRequest, List<Integer> subCategoryIds) throws Exception {
+        Page<Item> items;
+        items = itemRepository.searchItems(
+                keyword, minPrice, maxPrice, subCategoryIds, pageRequest
+        );
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 }

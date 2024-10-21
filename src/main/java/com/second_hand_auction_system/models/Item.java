@@ -20,9 +20,6 @@ public class Item extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer itemId;
 
-//    @Column(name = "title")
-//    private String title;
-
     @Column(name = "item_name")
     private String itemName;
 
@@ -38,18 +35,11 @@ public class Item extends BaseEntity{
     @Column(name = "brand_name")
     private String brandName;
 
-//    @Lob
-//    @Column(name = "document")
-//    private byte[] fileData;
-
     @Column(name = "thumbnail")
     private String thumbnail;
 
     @Column(name = "img_default")
     private String imgDefault;
-
-//    @Column(name = "img_item")
-//    private String imgItem;
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
