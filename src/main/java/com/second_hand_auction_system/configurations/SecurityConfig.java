@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(PUT,"/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
                         .requestMatchers(PATCH,"/api/v1/user/**").permitAll()
                         .requestMatchers(DELETE,"/api/v1/user/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/feedback/**").permitAll()
                         //main-category
                         .requestMatchers(POST, "/api/v1/main-category/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/api/v1/main-category/**").permitAll()
