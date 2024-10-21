@@ -2,6 +2,7 @@ package com.second_hand_auction_system.service.address;
 
 import com.second_hand_auction_system.converters.address.AddressConverter;
 import com.second_hand_auction_system.dtos.request.address.AddressDto;
+import com.second_hand_auction_system.dtos.responses.address.AddressResponse;
 import com.second_hand_auction_system.models.Address;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.AddressRepository;
@@ -21,37 +22,35 @@ public class AddressService implements IAddressService {
     private final UserRepository userRepository;
 
     @Override
-    public AddressDto createAddress(AddressDto addressDto) throws Exception {
+    public AddressResponse createAddress(AddressDto addressDto) throws Exception {
 
         int addressCount = addressRepository.countByUserId(addressDto.getUserId());
 
-        //A user can only have 6 address
+        // A user can only have 6 addresses
         if (addressCount >= 6) {
             throw new Exception("Cannot create a new address. The user already has the maximum number of addresses (6).");
         }
 
-        //Set address default, if it is the first created address
+        // Set address default, if it is the first created address
         boolean isFirstAddress = (addressCount == 0);
 
-        //Many to One khởi tạo cái User và chỉ lưu userId vô address
+        // Create a User instance to associate with the Address
         User user = new User();
         user.setId(addressDto.getUserId());
 
+        // Convert DTO to entity
         Address address = AddressConverter.convertToEntity(addressDto, user);
-
         address.setStatus(isFirstAddress);
 
+        // Save to the database
         Address savedAddress = addressRepository.save(address);
 
-        return AddressConverter.convertToDto(savedAddress);
+        // Convert saved entity to response
+        return AddressConverter.convertToResponse(savedAddress);
     }
 
-
-
-
-
     @Override
-    public AddressDto updateAddress(Integer addressId, AddressDto addressDto) throws Exception {
+    public AddressResponse updateAddress(Integer addressId, AddressDto addressDto) throws Exception {
         Optional<Address> existingAddressOpt = addressRepository.findById(addressId);
         if (existingAddressOpt.isPresent()) {
             Address existingAddress = existingAddressOpt.get();
@@ -66,29 +65,28 @@ public class AddressService implements IAddressService {
 
             Address savedAddress = addressRepository.save(updatedAddress);
 
-            return AddressConverter.convertToDto(savedAddress);
+            return AddressConverter.convertToResponse(savedAddress);
         } else {
             throw new Exception("Address not found with ID: " + addressId);
         }
     }
 
-
     @Override
-    public AddressDto getAddressById(Integer addressId) throws Exception {
+    public AddressResponse getAddressById(Integer addressId) throws Exception {
         Optional<Address> addressOpt = addressRepository.findById(addressId);
         if (addressOpt.isPresent()) {
-            return AddressConverter.convertToDto(addressOpt.get());
+            return AddressConverter.convertToResponse(addressOpt.get());
         } else {
             throw new Exception("Address not found with ID: " + addressId);
         }
     }
 
     @Override
-    public List<AddressDto> getAllAddress(Integer userId) throws Exception {
+    public List<AddressResponse> getAllAddress(Integer userId) throws Exception {
         List<Address> addresses = addressRepository.findByUserId(userId);
         if (!addresses.isEmpty()) {
             return addresses.stream()
-                    .map(AddressConverter::convertToDto)
+                    .map(AddressConverter::convertToResponse)
                     .collect(Collectors.toList());
         } else {
             throw new Exception("No addresses found for user with ID: " + userId);
@@ -105,30 +103,25 @@ public class AddressService implements IAddressService {
     }
 
     @Override
-    public AddressDto setDefaultAddress(Integer addressId, boolean status) throws Exception {
+    public AddressResponse setDefaultAddress(Integer addressId) throws Exception {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new Exception("Address not found"));
 
         Integer userId = address.getUser().getId();
 
-        if (status) {
-            // Nếu đặt địa chỉ này là mặc định (status = true),
-            // thì cần đặt tất cả các địa chỉ khác của user thành false
-            List<Address> userAddresses = addressRepository.findByUserId(userId);
-            for (Address userAddress : userAddresses) {
-                if (!userAddress.getAddressId().equals(addressId) && userAddress.isStatus()) {
-                    userAddress.setStatus(false);
-                    addressRepository.save(userAddress);
-                }
+        address.setStatus(true);
+
+        List<Address> userAddresses = addressRepository.findByUserId(userId);
+        for (Address userAddress : userAddresses) {
+            if (!userAddress.getAddressId().equals(addressId) && userAddress.isStatus()) {
+                userAddress.setStatus(false);
+                addressRepository.save(userAddress);
             }
         }
 
-        address.setStatus(status);
-
         Address updatedAddress = addressRepository.save(address);
 
-        return AddressConverter.convertToDto(updatedAddress);
+        return AddressConverter.convertToResponse(updatedAddress);
     }
-
 
 }

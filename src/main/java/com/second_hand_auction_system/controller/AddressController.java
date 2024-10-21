@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.address.AddressDto;
+import com.second_hand_auction_system.dtos.responses.address.AddressResponse;
 import com.second_hand_auction_system.service.address.IAddressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,20 +17,19 @@ public class AddressController {
     private final IAddressService addressService;
 
     @PostMapping
-    public ResponseEntity<Object> createAddress(@RequestBody AddressDto addressDto) {
+    public ResponseEntity<AddressResponse> createAddress(@RequestBody AddressDto addressDto) {
         try {
-            AddressDto createdAddress = addressService.createAddress(addressDto);
+            AddressResponse createdAddress = addressService.createAddress(addressDto);
             return new ResponseEntity<>(createdAddress, HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
 
-
     @PutMapping("/{addressId}")
-    public ResponseEntity<AddressDto> updateAddress(@PathVariable Integer addressId, @RequestBody AddressDto addressDto) {
+    public ResponseEntity<AddressResponse> updateAddress(@PathVariable Integer addressId, @RequestBody AddressDto addressDto) {
         try {
-            AddressDto updatedAddress = addressService.updateAddress(addressId, addressDto);
+            AddressResponse updatedAddress = addressService.updateAddress(addressId, addressDto);
             return new ResponseEntity<>(updatedAddress, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -37,21 +37,20 @@ public class AddressController {
     }
 
     @PatchMapping("/{addressId}/status")
-    public ResponseEntity<AddressDto> updateAddressStatus(
-            @PathVariable Integer addressId,
-            @RequestBody boolean status) {
+    public ResponseEntity<AddressResponse> setDefaultAddress(@PathVariable Integer addressId) {
         try {
-            AddressDto updatedAddress = addressService.setDefaultAddress(addressId, status);
+            AddressResponse updatedAddress = addressService.setDefaultAddress(addressId);
             return new ResponseEntity<>(updatedAddress, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+
     @GetMapping("/{addressId}")
-    public ResponseEntity<AddressDto> getAddressById(@PathVariable Integer addressId) {
+    public ResponseEntity<AddressResponse> getAddressById(@PathVariable Integer addressId) {
         try {
-            AddressDto address = addressService.getAddressById(addressId);
+            AddressResponse address = addressService.getAddressById(addressId);
             return new ResponseEntity<>(address, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
@@ -59,9 +58,9 @@ public class AddressController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AddressDto>> getAllAddress(@PathVariable Integer userId) {
+    public ResponseEntity<List<AddressResponse>> getAllAddress(@PathVariable Integer userId) {
         try {
-            List<AddressDto> addresses = addressService.getAllAddress(userId);
+            List<AddressResponse> addresses = addressService.getAllAddress(userId);
             return new ResponseEntity<>(addresses, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -77,6 +76,4 @@ public class AddressController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
 }
