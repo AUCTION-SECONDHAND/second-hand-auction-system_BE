@@ -14,7 +14,7 @@ public class VNPayConfig {
     public static String vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
     //    public static String vnp_ReturnUrl = "http://localhost:8080/vnpay_jsp/vnpay_return.jsp";
 //    public static String vnp_ReturnUrl = "http://localhost:8089/payment-vnpay/results";
-    public static String vnp_ReturnUrl = "http://localhost:3000/payment-vnpay/results";
+    public static String vnp_ReturnUrl = "https://www.facebook.com/";
     public static String vnp_TmnCode = "XGURHFGP";
     public static String secretKey = "14S3N7ZES9RPRJPSXOFQF6RD0HXCPNKV";
     public static String vnp_ApiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";

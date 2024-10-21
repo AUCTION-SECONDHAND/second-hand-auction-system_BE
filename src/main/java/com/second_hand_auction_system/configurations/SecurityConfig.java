@@ -37,6 +37,7 @@ public class SecurityConfig {
             "api/v1/auctions/**",
             "/api/v1/user/**",
             "api/v1/user/forgot-password/**",
+            "api/v1/withdrawRequest/vnpay-payment/**",
     };
 
     @Bean

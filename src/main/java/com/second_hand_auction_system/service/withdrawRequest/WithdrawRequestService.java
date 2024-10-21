@@ -106,17 +106,22 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         if (withdrawRequest != null) {
             withdrawRequest.setRequestStatus(withdrawApprove.getStatus());
             withdrawRequestRepository.save(withdrawRequest);
-            VNPAYService vnpayService = new VNPAYService();
-//            String paymentUrl = vnpayService.createOrder(request, (int) withdrawRequest.getRequestAmount(),
-//                    "Withdrawal approval for ID: " + withdrawRequest.getWithdrawRequestId(), "http://your-website.com/vnpay-return-url");
+            WithdrawResponse withdrawResponse = WithdrawResponse.builder()
+                    .requestAmount(withdrawRequest.getRequestAmount())
+                    .requestStatus(withdrawApprove.getStatus())
+                    .note(withdrawRequest.getNote())
+                    .processAt(withdrawRequest.getProcessAt())
+                    .bankAccount(withdrawRequest.getBankAccount())
+                    .accountNumber(withdrawRequest.getBankAccount())
+                    .transactionType(TransactionType.WITHDRAWAL)
+                    .walletCustomer(withdrawRequest.getWithdrawRequestId())
+                    .build();
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .status(HttpStatus.OK)
                     .message("Withdrawal approved, redirecting to payment")
-                    .data(null)
+                    .data(withdrawResponse)
                     .build());
         }
-
-
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                 .status(HttpStatus.NOT_FOUND)
                 .message("Withdrawal request not found")
