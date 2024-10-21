@@ -81,6 +81,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/bids/**").permitAll()
                         //withdraw
                         .requestMatchers(POST,"/api/v1/withdrawRequest/**").hasRole("SELLER")
+                        .requestMatchers(PUT,"/api/v1/withdrawRequest/**").hasRole("STAFF")
+                        .requestMatchers(GET,"api/v1/withdrawRequest/**").permitAll()
                         .anyRequest().authenticated()
 
 

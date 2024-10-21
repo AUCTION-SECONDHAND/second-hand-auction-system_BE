@@ -44,6 +44,5 @@ public class ItemResponse extends BaseResponse {
     private Auction auction;
 
     private ItemSpecific itemSpecific;
-
     private Integer scId;
 }
