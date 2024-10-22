@@ -2,6 +2,7 @@ package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.mainCategory.MainCategoryDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.mainCategory.CategoryVsSubCategoryResponse;
 import com.second_hand_auction_system.dtos.responses.mainCategory.MainCategoryResponse;
 import com.second_hand_auction_system.service.mainCategory.IMainCategoryService;
 import com.second_hand_auction_system.service.mainCategory.MainCategoryService;
@@ -58,7 +59,7 @@ public class MainCategoryController {
                     .toList();
             return ResponseEntity.badRequest().body(errorMessages);
         }
-        mainCategoryService.updateMainCategory(id,mainCategoryDto);
+        mainCategoryService.updateMainCategory(id, mainCategoryDto);
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
@@ -66,6 +67,7 @@ public class MainCategoryController {
                         .build()
         );
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMainCategory(
             @PathVariable Integer id
@@ -81,7 +83,7 @@ public class MainCategoryController {
 
     @GetMapping("")
     public ResponseEntity<?> getMainCategory() throws Exception {
-        List<MainCategoryResponse> mainCategoryResponses = mainCategoryService.getMainCategory();
+        List<CategoryVsSubCategoryResponse> mainCategoryResponses = mainCategoryService.getMainCategoryVsSubCategory();
         try {
             return ResponseEntity.ok(
                     ResponseObject.builder()

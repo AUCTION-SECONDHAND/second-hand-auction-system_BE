@@ -26,4 +26,8 @@ public class MainCategory extends BaseEntity{
 
     @Column(name = "icon_url")
     private String iconUrl;
+
+    @OneToMany(mappedBy = "mainCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<SubCategory> subCategories;
+
 }

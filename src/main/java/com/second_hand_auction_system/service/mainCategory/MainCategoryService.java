@@ -1,6 +1,8 @@
 package com.second_hand_auction_system.service.mainCategory;
 
+import com.second_hand_auction_system.converters.mainCategory.MainCategoryConverter;
 import com.second_hand_auction_system.dtos.request.mainCategory.MainCategoryDto;
+import com.second_hand_auction_system.dtos.responses.mainCategory.CategoryVsSubCategoryResponse;
 import com.second_hand_auction_system.dtos.responses.mainCategory.MainCategoryResponse;
 import com.second_hand_auction_system.models.MainCategory;
 import com.second_hand_auction_system.repositories.MainCategoryRepository;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 public class MainCategoryService implements IMainCategoryService {
     private final MainCategoryRepository mainCategoryRepository;
     private final ModelMapper modelMapper;
+    private final MainCategoryConverter mainCategoryConverter;
 
     @Override
     public void addMainCategory(MainCategoryDto mainCategory) throws Exception {
@@ -62,6 +65,12 @@ public class MainCategoryService implements IMainCategoryService {
         }
         MainCategoryResponse mainCategoryResponse = modelMapper.map(mainCategory, MainCategoryResponse.class);
         return mainCategoryResponse;
+    }
+
+    @Override
+    public List<CategoryVsSubCategoryResponse> getMainCategoryVsSubCategory() throws Exception {
+        List<MainCategory> mainCategoryList = mainCategoryRepository.findAll();
+        return mainCategoryList.stream().map(mainCategoryConverter::toCategoryVsSubCategoryResponse).collect(Collectors.toList());
     }
 
 }
