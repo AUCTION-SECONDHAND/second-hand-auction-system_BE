@@ -1,7 +1,18 @@
 package com.second_hand_auction_system.service.VNPay;
 
 import com.second_hand_auction_system.configurations.VNPayConfig;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.models.TransactionWallet;
+import com.second_hand_auction_system.models.WalletSystem;
+import com.second_hand_auction_system.models.WithdrawRequest;
+import com.second_hand_auction_system.repositories.TransactionWalletRepository;
+import com.second_hand_auction_system.repositories.WalletCustomerRepository;
+import com.second_hand_auction_system.repositories.WalletSystemRepository;
+import com.second_hand_auction_system.repositories.WithdrawRequestRepository;
+import com.second_hand_auction_system.utils.TransactionStatus;
+import com.second_hand_auction_system.utils.TransactionType;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -9,13 +20,17 @@ import org.springframework.stereotype.Service;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
-public class VNPAYService implements VNPaySerivce{
-
-    public String createOrder(HttpServletRequest request, int amount, String orderInfor, String urlReturn){
+@RequiredArgsConstructor
+public class VNPAYService implements VNPaySerivce {
+    private final WithdrawRequestRepository withdrawRequestRepository;
+    private final TransactionWalletRepository transactionWalletRepository;
+    private final WalletSystemRepository walletSystemRepository;
+    public String createOrder(HttpServletRequest request, int amount, String orderInfor, String urlReturn) {
         //Các bạn có thể tham khảo tài liệu hướng dẫn và điều chỉnh các tham số
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
@@ -28,7 +43,7 @@ public class VNPAYService implements VNPaySerivce{
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(amount*100));
+        vnp_Params.put("vnp_Amount", String.valueOf(amount * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
 
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
@@ -86,9 +101,9 @@ public class VNPAYService implements VNPaySerivce{
         return paymentUrl;
     }
 
-    public int orderReturn(HttpServletRequest request){
+    public int orderReturn(HttpServletRequest request) {
         Map fields = new HashMap();
-        for (Enumeration params = request.getParameterNames(); params.hasMoreElements();) {
+        for (Enumeration params = request.getParameterNames(); params.hasMoreElements(); ) {
             String fieldName = null;
             String fieldValue = null;
             try {
@@ -122,7 +137,16 @@ public class VNPAYService implements VNPaySerivce{
     }
 
 
-    public ResponseEntity<?> createOrder(int total,  String urlReturn){
+    public ResponseEntity<?> createOrder(int total, int withdrawId, String urlReturn) {
+        WithdrawRequest withdraw = withdrawRequestRepository.findById(withdrawId).orElse(null);
+        if (withdraw == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                            .data(null)
+                            .message("Not found withdrawRequest")
+                            .status(HttpStatus.NOT_FOUND)
+                    .build());
+        }
+        String orderInfo = withdraw.getNote();
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String vnp_TxnRef = VNPayConfig.getRandomNumber(8);
@@ -134,11 +158,11 @@ public class VNPAYService implements VNPaySerivce{
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(total*100));
+        vnp_Params.put("vnp_Amount", String.valueOf(total * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
 
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-        vnp_Params.put("vnp_OrderInfo", "hello");
+        vnp_Params.put("vnp_OrderInfo", orderInfo);
         vnp_Params.put("vnp_OrderType", orderType);
 
         String locate = "vn";
@@ -188,6 +212,30 @@ public class VNPAYService implements VNPaySerivce{
         String vnp_SecureHash = VNPayConfig.hmacSHA512(VNPayConfig.secretKey, hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
         String paymentUrl = VNPayConfig.vnp_PayUrl + "?" + queryUrl;
-        return ResponseEntity.status(HttpStatus.OK).body(paymentUrl);
+        WalletSystem walletSystem = new WalletSystem();
+        walletSystemRepository.save(walletSystem);
+        String randomcode = code();
+        TransactionWallet transactionWallet = TransactionWallet.builder()
+                .amount((total * 100))
+                .commissionAmount(0)
+                .commissionRate(0)
+                .transactionStatus(TransactionStatus.PENDING)
+                .transactionType(TransactionType.WITHDRAWAL)
+                .walletCustomer(withdraw.getWalletCustomer())
+                .walletSystem(walletSystem)
+                .transactionWalletId(Integer.valueOf(randomcode))
+                .build();
+        transactionWalletRepository.save(transactionWallet);
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .data(paymentUrl)
+                .message("Link payment")
+                .status(HttpStatus.OK)
+                .build());
+    }
+
+    private String code() {
+        SecureRandom random = new SecureRandom();
+        int otp = random.nextInt(900000) + 100000;
+        return String.valueOf(otp);
     }
 }

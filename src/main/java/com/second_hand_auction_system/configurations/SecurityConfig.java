@@ -37,6 +37,7 @@ public class SecurityConfig {
             "api/v1/auctions/**",
             "/api/v1/user/**",
             "api/v1/user/forgot-password/**",
+            "api/v1/withdrawRequest/vnpay-payment/**",
     };
 
     @Bean
@@ -86,6 +87,8 @@ public class SecurityConfig {
                         .requestMatchers(POST,"/api/v1/withdrawRequest/**").hasRole("SELLER")
                         .requestMatchers(PUT,"/api/v1/withdrawRequest/**").hasRole("STAFF")
                         .requestMatchers(GET,"api/v1/withdrawRequest/**").permitAll()
+                        //auction_type
+                        .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF")
                         .anyRequest().authenticated()
 
 
