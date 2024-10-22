@@ -30,4 +30,15 @@ public class AuctionTypeController {
         return iAuctionTypeService.delete(id);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getAuctionType (@PathVariable int id) {
+        return iAuctionTypeService.getById(id);
+    }
+
+    @GetMapping()
+    public ResponseEntity<?> getAllAuctionTypes(@RequestParam("size") int size,
+                                                @RequestParam("page") int page) {
+        return iAuctionTypeService.getAuctions(size,page);
+    }
+
 }

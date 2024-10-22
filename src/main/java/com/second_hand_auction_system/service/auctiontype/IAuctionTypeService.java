@@ -10,4 +10,8 @@ public interface IAuctionTypeService {
     ResponseEntity<?> update(@Valid AuctionTypeDTO auctionType,int id);
 
     ResponseEntity<?> delete(int id);
+
+    ResponseEntity<?> getById(int id);
+
+    ResponseEntity<?> getAuctions(int size, int page);
 }
