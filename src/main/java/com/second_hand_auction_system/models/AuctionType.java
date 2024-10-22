@@ -1,16 +1,14 @@
 package com.second_hand_auction_system.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 @Table(name = "auction_type")
 public class AuctionType {
     @Id
@@ -19,4 +17,7 @@ public class AuctionType {
 
     @Column(name = "auction_type_name")
     private String auctionTypeName;
+
+    @Column(name = "auction_type_description")
+    private String auctionTypeDescription;
 }
