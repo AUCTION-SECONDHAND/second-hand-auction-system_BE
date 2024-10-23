@@ -2,6 +2,7 @@ package com.second_hand_auction_system.service.bid;
 
 import com.second_hand_auction_system.converters.bid.BidConverter;
 import com.second_hand_auction_system.dtos.request.bid.BidDto;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Bid;
@@ -10,19 +11,24 @@ import com.second_hand_auction_system.repositories.AuctionRepository;
 import com.second_hand_auction_system.repositories.BidRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class BidService implements IBidService{
+public class BidService implements IBidService {
     private final BidRepository bidRepository;
 
     private final UserRepository userRepository;
 
     private final AuctionRepository auctionRepository;
+    private final ModelMapper modelMapper;
 
     @Override
     public BidResponse createBid(BidDto bidDto) throws Exception {
@@ -99,4 +105,62 @@ public class BidService implements IBidService{
                 .map(BidConverter::convertToResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public ResponseEntity<?> findWinnerAuction(int auctionId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
+
+        List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId);
+
+        if (bids.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // No bids found
+        }
+
+        Bid winningBid = bids.stream()
+                .filter(Bid::isWinBid)
+                .max(Comparator.comparingInt(Bid::getBidAmount))
+                .orElse(null);
+
+        if (winningBid == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+//        Bid bidResponse = modelMapper.map(bids, BidResponse.class);
+        BidResponse winningBidResponse = new BidResponse(); // Create a BidResponse object
+        winningBidResponse.setBidId(winningBid.getBidId());
+        winningBidResponse.setBidAmount(winningBid.getBidAmount());
+        winningBidResponse.setBidTime(winningBid.getBidTime());
+        winningBidResponse.setBidStatus(winningBid.getBidStatus());
+        winningBidResponse.setWinBid(winningBid.isWinBid());
+        winningBidResponse.setUserId(winningBid.getUser().getId());
+        winningBidResponse.setAuctionId(auctionId);
+//
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Find winner")
+                .data(winningBidResponse)
+                .build());
+
+    }
+
+
+    public Bid findWinner(int auctionId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
+
+        List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId);
+
+        if (bids.isEmpty()) {
+            return null;
+        }
+
+        Bid winningBid = bids.stream()
+                .filter(Bid::isWinBid)
+                .max(Comparator.comparingInt(Bid::getBidAmount))
+                .orElse(null);
+
+        return winningBid;
+    }
+
+
 }

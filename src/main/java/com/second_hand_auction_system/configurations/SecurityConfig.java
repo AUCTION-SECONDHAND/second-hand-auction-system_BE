@@ -60,7 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/main-category/**").permitAll()
                         //sub-category
                         .requestMatchers(POST, "/api/v1/sub-category/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers("/api/v1/item/**").permitAll()
+                        .requestMatchers("/api/v1/sub-category/**").permitAll()
                         //wallet-customer
                         .requestMatchers(POST, "/api/v1/walletCustomer/**").hasAnyRole("BUYER", "SELLER")
                         .requestMatchers(GET,"/api/v1/walletCustomer/**").permitAll()
@@ -89,6 +89,8 @@ public class SecurityConfig {
                         .requestMatchers(GET,"api/v1/withdrawRequest/**").permitAll()
                         //auction_type
                         .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF")
+                        //order
+                        .requestMatchers("/api/v1/orders/**").permitAll()
                         .anyRequest().authenticated()
 
 
