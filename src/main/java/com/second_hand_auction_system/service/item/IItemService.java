@@ -3,6 +3,8 @@ package com.second_hand_auction_system.service.item;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
+import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
+import com.second_hand_auction_system.models.Item;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
@@ -24,4 +26,6 @@ public interface IItemService {
             PageRequest pageRequest,
             List<Integer> subCategoryIds
     ) throws Exception;
+
+    ItemDetailResponse getItemById(int itemId) throws Exception;
 }

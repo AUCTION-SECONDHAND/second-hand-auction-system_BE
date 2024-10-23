@@ -5,6 +5,7 @@ import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
+import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.exceptions.DataNotFoundException;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
@@ -182,5 +183,13 @@ public class ItemService implements IItemService {
                 keyword, minPrice, maxPrice, subCategoryIds, pageRequest
         );
         return items.map(auctionItemConvert::toAuctionItemResponse);
+    }
+
+    @Override
+    public ItemDetailResponse getItemById(int itemId) throws Exception {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new DataNotFoundException("Item not found"));
+        ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
+        return itemDetailResponse;
     }
 }

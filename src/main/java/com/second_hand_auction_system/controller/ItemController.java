@@ -5,6 +5,7 @@ import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseListObject;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
+import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.service.item.IItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -168,7 +169,7 @@ public class ItemController {
         List<Integer> parsedScIds = parseIds(scIds);
         PageRequest pageRequest = PageRequest.of(page, limit);
         //, Sort.by("id").descending()
-        Page<AuctionItemResponse> itemResponseList = itemService.getItem(keyword, minPrice, maxPrice,pageRequest, parsedScIds );
+        Page<AuctionItemResponse> itemResponseList = itemService.getItem(keyword, minPrice, maxPrice, pageRequest, parsedScIds);
         int totalPages = itemResponseList.getTotalPages();
         Long totalOrder = itemResponseList.getTotalElements();
         List<AuctionItemResponse> auctionItemResponses = itemResponseList.getContent();
@@ -182,6 +183,18 @@ public class ItemController {
                         .status(HttpStatus.OK)
                         .message("Success")
                         .data(responseListObject)
+                        .build()
+        );
+    }
+
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<?> getItemDetail(@PathVariable Integer id) throws Exception {
+        ItemDetailResponse itemDetailResponse = itemService.getItemById(id);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(itemDetailResponse)
                         .build()
         );
     }
