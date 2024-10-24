@@ -1,6 +1,9 @@
 package com.second_hand_auction_system.service.auctionRegistrations;
 
 import com.second_hand_auction_system.dtos.request.auctionRegistrations.AuctionRegistrationsDto;
+import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 public interface IAuctionRegistrationsService {
     void addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
@@ -8,5 +11,7 @@ public interface IAuctionRegistrationsService {
     void updateAuctionRegistration(int arId, AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
 
     void removeAuctionRegistration(int arId) throws Exception;
-
+    Page<AuctionRegistrationsResponse> findAllAuctionRegistrations(PageRequest pageRequest) throws Exception;
+    Page<AuctionRegistrationsResponse> findAllAuctionRegistrationsByUserId(PageRequest pageRequest) throws Exception;
+    AuctionRegistrationsResponse findAuctionRegistrationById(int arId) throws Exception;
 }

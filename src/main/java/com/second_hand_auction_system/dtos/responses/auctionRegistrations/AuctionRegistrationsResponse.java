@@ -2,6 +2,7 @@ package com.second_hand_auction_system.dtos.responses.auctionRegistrations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.dtos.responses.BaseResponse;
+import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.utils.Registration;
 import lombok.*;
 
@@ -24,6 +25,5 @@ public class AuctionRegistrationsResponse extends BaseResponse {
     @JsonProperty("note")
     private String note;
 
-    @JsonProperty("user_id")
-    private Integer user;
+    private AuctionItemResponse auctionItem;
 }
