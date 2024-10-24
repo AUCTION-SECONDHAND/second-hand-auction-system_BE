@@ -11,4 +11,6 @@ public interface ISellerInformationService {
     SellerInformationResponse getSellerInformationById(Integer sellerId) throws Exception;
 
     void deleteSellerInformation(Integer sellerId) throws Exception;
+
+    SellerInformationResponse getSellerInformationByUserId(Integer userId) throws Exception;
 }

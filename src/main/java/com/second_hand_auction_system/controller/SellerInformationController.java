@@ -59,4 +59,17 @@ public class SellerInformationController {
             return ResponseEntity.status(500).build();
         }
     }
+
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<SellerInformationResponse> getSellerInformationByUserId(
+            @PathVariable Integer userId) {
+        try {
+            SellerInformationResponse response = sellerInformationService.getSellerInformationByUserId(userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
 }

@@ -62,4 +62,13 @@ public class SellerInformationService implements ISellerInformationService {
 
         sellerInformationRepository.delete(sellerInformation);
     }
+
+    @Override
+    public SellerInformationResponse getSellerInformationByUserId(Integer userId) throws Exception {
+        SellerInformation sellerInformation = sellerInformationRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new NoSuchElementException("Seller information not found for user ID: " + userId));
+
+        return SellerInformationConverter.convertToResponse(sellerInformation);
+    }
+
 }
