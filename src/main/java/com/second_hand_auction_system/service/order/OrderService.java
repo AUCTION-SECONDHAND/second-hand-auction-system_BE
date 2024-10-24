@@ -4,16 +4,20 @@ import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
 import com.second_hand_auction_system.models.Bid;
+import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.models.Order;
 import com.second_hand_auction_system.repositories.AuctionRepository;
 import com.second_hand_auction_system.repositories.ItemRepository;
 import com.second_hand_auction_system.repositories.OrderRepository;
-import com.second_hand_auction_system.service.auction.AuctionService;
 import com.second_hand_auction_system.service.bid.BidService;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.OrderStatus;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -27,8 +31,9 @@ public class OrderService implements IOrderService {
     private final BidService bidService;
     private final ModelMapper modelMapper;
     @Override
+    @Transactional
     public ResponseEntity<?> create(OrderDTO order) {
-        var item = itemRepository.findById(order.getItem()).orElse(null);
+        Item item = itemRepository.findByAuction_AuctionId(order.getAuction());
         if (item == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .data(null)
@@ -36,7 +41,6 @@ public class OrderService implements IOrderService {
                     .status(HttpStatus.NOT_FOUND)
                     .build());
         }
-
         var auction = auctionRepository.findById(order.getAuction()).orElse(null);
         if (auction == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
@@ -62,7 +66,6 @@ public class OrderService implements IOrderService {
                     .status(HttpStatus.NOT_FOUND)
                     .build());
         }
-//        OrderResponse orderResponse = modelMapper.map(order, OrderResponse.class);
         Order orderEntity = Order.builder()
                 .totalAmount(winningBid.getBidAmount())
                 .email(order.getEmail())
@@ -73,6 +76,7 @@ public class OrderService implements IOrderService {
                 .createBy(order.getCreateBy())
                 .status(OrderStatus.PENDING)
                 .item(item)
+                .shippingMethod("free shipping")
                 .auction(auction)
                 .build();
         OrderResponse orderResponse1 = OrderResponse.builder()
@@ -85,6 +89,7 @@ public class OrderService implements IOrderService {
                 .createBy(order.getCreateBy())
                 .orderStatus(OrderStatus.PENDING)
                 .itemId(item.getItemId())
+                .shippingType("free shipping")
                 .auctionId(auction.getAuctionId())
                 .build();
         orderRepository.save(orderEntity);
@@ -94,6 +99,16 @@ public class OrderService implements IOrderService {
                 .message("Order created successfully")
                 .status(HttpStatus.CREATED)
                 .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getOrders(String search ,Integer page,Integer pageSize) {
+        Pageable pageable = PageRequest.of(page,pageSize);
+        Page<Order> orderPage;
+        if(!search.isEmpty() ){
+
+        }
+        return null;
     }
 
 }

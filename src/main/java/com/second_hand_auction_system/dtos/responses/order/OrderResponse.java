@@ -2,7 +2,6 @@ package com.second_hand_auction_system.dtos.responses.order;
 
 import com.second_hand_auction_system.utils.OrderStatus;
 import com.second_hand_auction_system.utils.PaymentMethod;
-import com.second_hand_auction_system.utils.PaymentStatus;
 import lombok.*;
 
 @AllArgsConstructor
@@ -22,5 +21,5 @@ public class OrderResponse {
     private Integer auctionId;
     private String createBy;
     private double totalPrice;
-
+    private String shippingType;
 }

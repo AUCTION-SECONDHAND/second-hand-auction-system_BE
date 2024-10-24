@@ -13,8 +13,8 @@ import lombok.*;
 @Setter
 @Builder
 public class OrderDTO {
-    @Min(value = 0, message = "Total amount must be positive")
-    private double totalAmount;
+//    @Min(value = 0, message = "Total amount must be positive")
+//    private double totalAmount;
 
     @Email(message = "Email should be valid")
     @NotBlank(message = "Email cannot be blank")
@@ -33,8 +33,8 @@ public class OrderDTO {
 
     private String createBy;
 
-    @NotNull(message = "Item is required")
-    private Integer item;
+//    @NotNull(message = "Item is required")
+//    private Integer item;
 
     private Integer auction;
 

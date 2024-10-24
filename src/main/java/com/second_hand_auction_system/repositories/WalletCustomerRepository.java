@@ -8,6 +8,12 @@ import java.util.Optional;
 
 public interface WalletCustomerRepository extends JpaRepository<WalletCustomer, Integer> {
     Optional<WalletCustomer> findByWalletCustomerId(int id);
+    Optional<WalletCustomer> findWalletCustomerByUser_Id(int id);
+
     @Query("SELECT wc FROM WalletCustomer wc WHERE wc.user.id = :userId AND wc.balance >= 100")
     WalletCustomer findByUserIdAndBalanceGreaterThanEqual100(@Param("userId") int userId);
+
+    Optional<WalletCustomer> findByUserId(Integer id);
+
+//    Optional<WalletCustomer> findBy
 }

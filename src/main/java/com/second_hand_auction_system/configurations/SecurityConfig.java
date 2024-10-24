@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/sub-category/**").permitAll()
                         //wallet-customer
                         .requestMatchers(POST, "/api/v1/walletCustomer/**").hasAnyRole("BUYER", "SELLER")
+                        .requestMatchers(POST,"api/v1/walletCustomer/confirm-webhook").hasAnyRole("BUYER", "SELLER")
                         .requestMatchers(GET,"/api/v1/walletCustomer/**").permitAll()
                         //item
                         .requestMatchers(POST, "/api/v1/item/**").hasRole("SELLER")

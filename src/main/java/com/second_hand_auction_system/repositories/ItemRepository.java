@@ -27,4 +27,8 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
             @Param("subCategoryIds") List<Integer> subCategoryIds,
             Pageable pageable
     );
+
+//    Item findByAuctionId(int auctionId);
+
+    Item findByAuction_AuctionId(Integer auction);
 }

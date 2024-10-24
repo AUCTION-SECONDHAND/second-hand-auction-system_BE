@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.service.walletCustomer;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.second_hand_auction_system.dtos.request.walletCustomer.Deposit;
@@ -20,6 +21,7 @@ import com.second_hand_auction_system.utils.StatusWallet;
 import com.second_hand_auction_system.utils.TransactionStatus;
 import com.second_hand_auction_system.utils.TransactionType;
 import jakarta.transaction.Transactional;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import vn.payos.PayOS;
-import vn.payos.type.CheckoutResponseData;
-import vn.payos.type.ItemData;
-import vn.payos.type.PaymentData;
-import vn.payos.type.PaymentLinkData;
+import vn.payos.type.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -63,9 +63,11 @@ public class WalletCustomerService implements IWalletCustomerService {
                                 .message("Missing or invalid Authorization header")
                                 .build());
             }
+
             String token = authHeader.substring(7);
             String userEmail = jwtService.extractUserEmail(token);
             User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+
             if (requester == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ResponseObject.builder()
@@ -73,32 +75,19 @@ public class WalletCustomerService implements IWalletCustomerService {
                                 .message("Unauthorized request - User not found")
                                 .build());
             }
+
             if (requester.getRole() == Role.BUYER || requester.getRole() == Role.SELLER) {
                 final double balance = deposit.getAmount();
                 final String description = deposit.getDescription();
                 final String successUrl = deposit.getReturnSuccess();
-                final String cancelUrl = deposit.getReturnSuccess();
-                Optional<WalletCustomer> walletOpt = walletCustomerRepository.findByWalletCustomerId(requester.getId());
-                WalletCustomer wallet;
-                if (walletOpt.isEmpty()) {
-                    wallet = WalletCustomer.builder()
-                            .balance(balance)
-                            .statusWallet(StatusWallet.ACTIVE)
-                            .user(requester)
-                            .build();
-                    walletCustomerRepository.save(wallet);
-                } else {
-                    wallet = walletOpt.get();
-                    double newBalance = wallet.getBalance() + balance;
-                    wallet.setBalance(newBalance);
-                    wallet.setUser(requester);
-                    walletCustomerRepository.save(wallet);
-                }
+                final String cancelUrl = deposit.getReturnError();
+
                 String currentTime = String.valueOf(new Date().getTime());
                 long depositCode = Long.parseLong(currentTime.substring(currentTime.length() - 6));
 
                 ItemData itemData = ItemData.builder()
-                        .name("Nạp tiền vào ví của chủ tài khoản  " + requester.getFullName())
+                        .name("Nạp tiền vào ví của chủ tài khoản " + requester.getFullName())
+                        .price(0)
                         .price((int) balance)
                         .quantity(1)
                         .build();
@@ -111,33 +100,60 @@ public class WalletCustomerService implements IWalletCustomerService {
                         .returnUrl(successUrl)
                         .cancelUrl(cancelUrl)
                         .build();
+
+                // Tạo liên kết thanh toán
                 CheckoutResponseData paymentLinkData = payOS.createPaymentLink(paymentData);
+
+                // Tạo giao dịch mà không cập nhật số dư ngay
                 TransactionWallet transactionWallet = new TransactionWallet();
                 transactionWallet.setAmount((int) balance);
                 transactionWallet.setTransactionType(TransactionType.DEPOSIT);
                 transactionWallet.setCommissionRate(0);
-                transactionWallet.setWalletCustomer(wallet);
                 transactionWallet.setCommissionAmount(0);
-                transactionWallet.setTransactionStatus(TransactionStatus.PENDING);
+                transactionWallet.setTransactionStatus(TransactionStatus.PENDING); // Trạng thái ban đầu là PENDING
                 transactionWallet.setTransactionWalletCode(paymentLinkData.getOrderCode());
+                transactionWallet.setWalletCustomer(getOrCreateWallet(requester)); // Tạo hoặc lấy ví của người dùng
+
                 transactionWalletRepository.save(transactionWallet);
-                emailService.sendNotification(requester.getEmail(), requester.getId(), (int) balance);
+
+                // Trả về link thanh toán cho người dùng
                 response.put("error", 0);
-                response.put("message", "success");
+                response.put("message", "Payment link created successfully");
                 response.set("data", mapper.valueToTree(paymentLinkData));
-                return ResponseEntity.ok(new ResponseObject("Deposit success", HttpStatus.valueOf(HttpStatus.OK.value()), paymentLinkData));
+                return ResponseEntity.ok(new ResponseObject("Payment link created", HttpStatus.OK, paymentLinkData));
+
+            } else {
+                response.put("error", 1);
+                response.put("message", "Unauthorized role for deposit");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject("Unauthorized role", HttpStatus.FORBIDDEN, null));
             }
-
-            return ResponseEntity.ok(new ResponseObject("This is wallet for customer", HttpStatus.valueOf(HttpStatus.FORBIDDEN.value()), null));
-
-
         } catch (Exception e) {
             response.put("error", -1);
             response.put("message", "An error occurred: " + e.getMessage());
             response.set("data", null);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseObject("An error occurred", HttpStatus.INTERNAL_SERVER_ERROR, null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject("An error occurred", HttpStatus.INTERNAL_SERVER_ERROR, null));
         }
     }
+
+    // Phương thức để tạo hoặc lấy ví của người dùng
+    private WalletCustomer getOrCreateWallet(User requester) {
+        return walletCustomerRepository.findByUserId(requester.getId())
+                .orElseGet(() -> {
+                    WalletCustomer wallet = WalletCustomer.builder()
+                            .statusWallet(StatusWallet.ACTIVE)
+                            .user(requester)
+                            .build();
+                    return walletCustomerRepository.save(wallet);
+                });
+    }
+
+
+
+
+
+
 
     @Override
     public ResponseEntity<ResponseObject> getWalletCustomer(Long id) {
@@ -146,7 +162,10 @@ public class WalletCustomerService implements IWalletCustomerService {
 
         try {
             PaymentLinkData order = payOS.getPaymentLinkInformation(id);
-            String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+            String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                    .getRequest().getHeader("Authorization");
+
+            // Check for Authorization header
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ResponseObject.builder()
@@ -164,40 +183,79 @@ public class WalletCustomerService implements IWalletCustomerService {
                         .data(null)
                         .build());
             }
-            WalletCustomer walletCustomer = walletCustomerRepository.findByWalletCustomerId(requester.getId()).orElse(null);
+
+            // Retrieve the transaction wallet
             var transactionWallet = transactionWalletRepository.findTransactionWalletByTransactionWalletCode(id).orElse(null);
             if (transactionWallet == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                         .status(HttpStatus.NOT_FOUND)
-                        .message("Not found ")
+                        .message("Transaction wallet not found")
                         .data(null)
                         .build());
             }
 
-            transactionWallet.setCommissionAmount(0);
-            transactionWallet.setCommissionRate(0);
-            transactionWallet.setWalletCustomer(walletCustomer);
-            transactionWallet.setTransactionType(TransactionType.DEPOSIT);
-            transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
-            transactionWalletRepository.save(transactionWallet);
-//            var transactionSystem = transactionSystemRepository.f
-            response.set("data", objectMapper.valueToTree(order));
-            response.put("error", 0);
-            response.put("message", "ok");
-            return ResponseEntity.ok().body(new ResponseObject("Transaction success", HttpStatus.OK, response));
+            WalletCustomer walletCustomer = walletCustomerRepository.findWalletCustomerByUser_Id(requester.getId()).orElse(null);
+            if (walletCustomer == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseObject("Wallet not found", HttpStatus.NOT_FOUND, response));
+            }
+
+            // Call the new method to process the transaction status
+            return processTransactionStatus(order.getStatus(), order.getAmount(), walletCustomer, transactionWallet, response);
+
         } catch (Exception e) {
             e.printStackTrace();
             response.put("error", -1);
             response.put("message", e.getMessage());
             response.set("data", null);
-            return ResponseEntity.ok().body(new ResponseObject("Transaction Fail", HttpStatus.BAD_REQUEST, response));
+            return ResponseEntity.ok().body(new ResponseObject("Transaction Failed", HttpStatus.BAD_REQUEST, response));
+        }
+    }
+
+
+    private ResponseEntity<ResponseObject> processTransactionStatus(String orderStatus, double amount, WalletCustomer walletCustomer, TransactionWallet transactionWallet, ObjectNode response) {
+        switch (orderStatus) {
+            case "PAID":
+                // Update wallet balance
+                walletCustomer.setBalance(walletCustomer.getBalance() + amount);
+                walletCustomerRepository.save(walletCustomer);
+
+                // Update transaction details
+                transactionWallet.setTransactionType(TransactionType.DEPOSIT);
+                transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
+                transactionWallet.setWalletCustomer(walletCustomer);
+                transactionWalletRepository.save(transactionWallet);
+
+                JsonNode data = response.set("data", ObjectMapper.valueToTree(order));
+                response.put("error", 0);
+                response.put("message", "Transaction successful. Amount credited to wallet.");
+                break;
+
+            case "PENDING":
+                response.put("error", 1);
+                response.put("message", "Transaction is pending. No action taken.");
+                break;
+
+            case "PROCESSING":
+                response.put("error", 2);
+                response.put("message", "Transaction is being processed. Please wait.");
+                break;
+
+            case "CANCELLED":
+                transactionWallet.setTransactionStatus(TransactionStatus.CANCELLED);
+                transactionWalletRepository.save(transactionWallet);
+                response.put("error", 3);
+                response.put("message", "Transaction has been cancelled.");
+                break;
+
+            default:
+                response.put("error", -1);
+                response.put("message", "Unknown transaction status.");
+                break;
         }
 
+        return ResponseEntity.ok().body(new ResponseObject("Transaction processed", HttpStatus.OK, response));
     }
 
-    @Override
-    public ResponseEntity<?> updateStatus(PaymentRequest payment) {
-        return null;
-    }
+
 
 }

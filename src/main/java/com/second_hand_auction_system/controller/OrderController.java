@@ -4,10 +4,7 @@ import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.service.order.IOrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -20,4 +17,13 @@ public class OrderController {
         return orderService.create(order);
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAllOrders(@RequestParam(required = false) String search,
+                                          @RequestParam(required = false) Integer page,
+                                          @RequestParam(required = false) Integer size) {
+        {
+            return orderService.getOrders(search, page, size);
+        }
+
+    }
 }

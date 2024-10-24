@@ -5,4 +5,6 @@ import org.springframework.http.ResponseEntity;
 
 public interface IOrderService {
     ResponseEntity<?> create(OrderDTO order);
+
+    ResponseEntity<?> getOrders(String search ,Integer page,Integer pageSize);
 }
