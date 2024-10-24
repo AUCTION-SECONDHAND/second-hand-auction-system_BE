@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class FeedbackResponses {
+public class FeedbackResponse {
 
     private Integer feedbackId;
     private String comment;

@@ -1,7 +1,7 @@
 package com.second_hand_auction_system.converters.feedback;
 
 import com.second_hand_auction_system.dtos.request.feedback.FeedbackDto;
-import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponses;
+import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.models.FeedBack;
 import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.models.User;
@@ -20,8 +20,8 @@ public class FeedbackConverter {
     }
 
     // Converter FeedBack entity => FeedbackResponses
-    public static FeedbackResponses convertToResponse(FeedBack feedback) {
-        return FeedbackResponses.builder()
+    public static FeedbackResponse convertToResponse(FeedBack feedback) {
+        return FeedbackResponse.builder()
                 .feedbackId(feedback.getFeedbackId())
                 .comment(feedback.getComment())
                 .rating(feedback.getRating())
