@@ -1,11 +1,15 @@
 package com.second_hand_auction_system.dtos.request.order;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.second_hand_auction_system.utils.PaymentMethod;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.Date;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -37,5 +41,11 @@ public class OrderDTO {
 //    private Integer item;
 
     private Integer auction;
+
+    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
+    private LocalDateTime createAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
+    private LocalDateTime updateDate;
 
 }

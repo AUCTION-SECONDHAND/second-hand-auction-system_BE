@@ -91,7 +91,9 @@ public class SecurityConfig {
                         //auction_type
                         .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF")
                         //order
-                        .requestMatchers("/api/v1/orders/**").permitAll()
+                        .requestMatchers(POST,"/api/v1/orders/**").hasAnyRole("SELLER", "BUYER")
+                        .requestMatchers(GET,"/api/v1/orders/**").permitAll()
+
                         .anyRequest().authenticated()
 
 

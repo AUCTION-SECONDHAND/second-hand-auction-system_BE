@@ -1,5 +1,7 @@
 package com.second_hand_auction_system.models;
 
+import com.second_hand_auction_system.utils.TransactionStatus;
+import com.second_hand_auction_system.utils.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,26 +19,26 @@ public class TransactionSystem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer transactionSystemId;
 
-    @Column(name = "account_number")
-    private int accountNumber;
+//    @Column(name = "account_number")
+//    private int accountNumber;
 
     @Column(name = "transaction_type")
-    private String transactionType;
+    private TransactionType transactionType;
 
     @Column(name = "transaction_system_code")
     private String transactionSystemCode;
 
-    @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus status;
 
     @Column(name = "amount")
     private double amount;
 
     @Column(name = "transaction_time")
-    private LocalDateTime transactionTime;
+    private String transactionTime;
 
-    @Column(name = "reference")
-    private String reference;
+//    @Column(name = "reference")
+//    private String reference;
 
     @Column(name = "description")
     private String description;
