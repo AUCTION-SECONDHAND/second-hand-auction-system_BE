@@ -34,5 +34,8 @@ public class ItemDetailResponse {
 
     private SubCategoryItemResponse scId;
 
+    private ItemSpecificResponse itemSpecific;
+
     private List<ImageItemResponse> images;
+
 }

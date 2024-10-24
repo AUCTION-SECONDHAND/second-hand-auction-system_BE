@@ -4,10 +4,12 @@ import com.second_hand_auction_system.dtos.responses.auction.ItemAuctionResponse
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ImageItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
+import com.second_hand_auction_system.dtos.responses.item.ItemSpecificResponse;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Item;
+import com.second_hand_auction_system.models.ItemSpecific;
 import com.second_hand_auction_system.models.SubCategory;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -93,6 +95,21 @@ public class AuctionItemConvert {
                     .build();
         }
 
+        ItemSpecificResponse itemSpecificResponse = null;
+        if (item.getItemSpecific() != null) {
+            ItemSpecific itemSpecific = item.getItemSpecific();
+            itemSpecificResponse = ItemSpecificResponse.builder()
+                    .percent(itemSpecific.getPercent())
+                    .type(itemSpecific.getType())
+                    .color(itemSpecific.getColor())
+                    .weight(itemSpecific.getWeight())
+                    .dimension(itemSpecific.getDimension())
+                    .original(itemSpecific.getOriginal())
+                    .manufactureDate(itemSpecific.getManufactureDate())
+                    .material(itemSpecific.getMaterial())
+                    .build();
+        }
+
         // Sử dụng builder pattern để tạo AuctionItemResponse
         return ItemDetailResponse.builder()
                 .itemId(item.getItemId())
@@ -102,6 +119,7 @@ public class AuctionItemConvert {
                 .itemStatus(item.getItemStatus())
                 .auction(auctionResponse)
                 .scId(subCategoryResponse)
+                .itemSpecific(itemSpecificResponse)
                 .images(subCategoryResponses)
                 .build();
     }
