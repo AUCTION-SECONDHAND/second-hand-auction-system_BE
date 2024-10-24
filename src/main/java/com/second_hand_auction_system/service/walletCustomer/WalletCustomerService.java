@@ -161,100 +161,115 @@ public class WalletCustomerService implements IWalletCustomerService {
         ObjectNode response = objectMapper.createObjectNode();
 
         try {
+            // Lấy thông tin liên kết thanh toán
             PaymentLinkData order = payOS.getPaymentLinkInformation(id);
             String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                     .getRequest().getHeader("Authorization");
 
-            // Check for Authorization header
+            // Kiểm tra tiêu đề Authorization
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ResponseObject.builder()
                                 .status(HttpStatus.UNAUTHORIZED)
-                                .message("Missing or invalid Authorization header")
+                                .message("Thiếu hoặc không hợp lệ tiêu đề Authorization")
                                 .build());
             }
+
+            // Trích xuất token và email người dùng
             String token = authHeader.substring(7);
             String userEmail = jwtService.extractUserEmail(token);
             User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+
             if (requester == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                         .status(HttpStatus.NOT_FOUND)
-                        .message("Unauthorized request - User not found")
+                        .message("Yêu cầu không hợp lệ - Người dùng không tìm thấy")
                         .data(null)
                         .build());
             }
 
-            // Retrieve the transaction wallet
+            // Lấy ví giao dịch
             var transactionWallet = transactionWalletRepository.findTransactionWalletByTransactionWalletCode(id).orElse(null);
             if (transactionWallet == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                         .status(HttpStatus.NOT_FOUND)
-                        .message("Transaction wallet not found")
+                        .message("Không tìm thấy ví giao dịch")
                         .data(null)
                         .build());
             }
 
+            // Lấy ví khách hàng
             WalletCustomer walletCustomer = walletCustomerRepository.findWalletCustomerByUser_Id(requester.getId()).orElse(null);
             if (walletCustomer == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseObject("Wallet not found", HttpStatus.NOT_FOUND, response));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseObject("Không tìm thấy ví", HttpStatus.NOT_FOUND, response));
             }
 
-            // Call the new method to process the transaction status
-            return processTransactionStatus(order.getStatus(), order.getAmount(), walletCustomer, transactionWallet, response);
+            // Kiểm tra xem giao dịch đã được xử lý chưa
+            if (transactionWallet.getTransactionStatus() == TransactionStatus.COMPLETED) {
+                response.put("error", 4);
+                response.put("message", "Giao dịch đã được xử lý.");
+                response.set("data", objectMapper.valueToTree(order));
+                return ResponseEntity.ok(new ResponseObject("Giao dịch đã được ghi có", HttpStatus.OK, response));
+            }
 
+            // Xử lý trạng thái đơn hàng
+            String orderStatus = order.getStatus();
+            switch (orderStatus) {
+                case "PAID":
+                    // Cập nhật số dư ví
+                    walletCustomer.setBalance(walletCustomer.getBalance() + order.getAmount());
+                    walletCustomerRepository.save(walletCustomer);
+
+                    // Cập nhật chi tiết giao dịch
+                    transactionWallet.setTransactionType(TransactionType.DEPOSIT);
+                    transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
+                    transactionWallet.setWalletCustomer(walletCustomer);
+                    transactionWalletRepository.save(transactionWallet);
+
+                    response.set("data", objectMapper.valueToTree(order)); // Sử dụng đơn hàng đã nhận
+                    response.put("error", 0);
+                    response.put("message", "Giao dịch thành công. Số tiền đã được ghi có vào ví.");
+                    break;
+
+                case "PENDING":
+                    response.put("error", 1);
+                    response.put("message", "Giao dịch đang chờ. Không thực hiện thêm hành động nào.");
+                    break;
+
+                case "PROCESSING":
+                    response.put("error", 2);
+                    response.put("message", "Giao dịch đang được xử lý. Vui lòng chờ.");
+                    break;
+
+                case "CANCELLED":
+                    transactionWallet.setTransactionStatus(TransactionStatus.CANCELLED);
+                    transactionWalletRepository.save(transactionWallet);
+                    response.put("error", 3);
+                    response.put("message", "Giao dịch đã bị hủy.");
+                    break;
+
+                default:
+                    response.put("error", -1);
+                    response.put("message", "Trạng thái giao dịch không xác định.");
+                    break;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             response.put("error", -1);
             response.put("message", e.getMessage());
             response.set("data", null);
-            return ResponseEntity.ok().body(new ResponseObject("Transaction Failed", HttpStatus.BAD_REQUEST, response));
+            return ResponseEntity.ok().body(new ResponseObject("Giao dịch thất bại", HttpStatus.BAD_REQUEST, response));
         }
+
+        // Trả về phản hồi cho việc xử lý giao dịch thành công
+        return ResponseEntity.ok(new ResponseObject("Giao dịch đã được xử lý", HttpStatus.OK, response));
     }
 
 
-    private ResponseEntity<ResponseObject> processTransactionStatus(String orderStatus, double amount, WalletCustomer walletCustomer, TransactionWallet transactionWallet, ObjectNode response) {
-        switch (orderStatus) {
-            case "PAID":
-                // Update wallet balance
-                walletCustomer.setBalance(walletCustomer.getBalance() + amount);
-                walletCustomerRepository.save(walletCustomer);
 
-                // Update transaction details
-                transactionWallet.setTransactionType(TransactionType.DEPOSIT);
-                transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
-                transactionWallet.setWalletCustomer(walletCustomer);
-                transactionWalletRepository.save(transactionWallet);
 
-                JsonNode data = response.set("data", ObjectMapper.valueToTree(order));
-                response.put("error", 0);
-                response.put("message", "Transaction successful. Amount credited to wallet.");
-                break;
 
-            case "PENDING":
-                response.put("error", 1);
-                response.put("message", "Transaction is pending. No action taken.");
-                break;
 
-            case "PROCESSING":
-                response.put("error", 2);
-                response.put("message", "Transaction is being processed. Please wait.");
-                break;
-
-            case "CANCELLED":
-                transactionWallet.setTransactionStatus(TransactionStatus.CANCELLED);
-                transactionWalletRepository.save(transactionWallet);
-                response.put("error", 3);
-                response.put("message", "Transaction has been cancelled.");
-                break;
-
-            default:
-                response.put("error", -1);
-                response.put("message", "Unknown transaction status.");
-                break;
-        }
-
-        return ResponseEntity.ok().body(new ResponseObject("Transaction processed", HttpStatus.OK, response));
-    }
 
 
 
