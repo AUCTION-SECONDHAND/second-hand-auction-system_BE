@@ -53,4 +53,9 @@ public class BidController {
         return ResponseEntity.ok(responseList);
     }
 
+    @GetMapping("/find-winner/{auctionId}")
+    public ResponseEntity<?> findWinner(@PathVariable int auctionId) throws Exception {
+        return bidService.findWinnerAuction(auctionId);
+    }
+
 }
