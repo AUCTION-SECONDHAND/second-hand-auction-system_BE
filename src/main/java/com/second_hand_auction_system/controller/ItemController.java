@@ -233,4 +233,16 @@ public class ItemController {
         }
         return Arrays.stream(ids.split(",")).map(Integer::parseInt).collect(Collectors.toList());
     }
+
+    @GetMapping("/auction-process/{id}")
+    public ResponseEntity<?> getItemAuctionProcess(@PathVariable Integer id) throws Exception {
+        AuctionItemResponse auctionItemResponse = itemService.getAuctionItemById(id);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(auctionItemResponse)
+                        .build()
+        );
+    }
 }

@@ -29,4 +29,5 @@ public interface IItemService {
 
     ItemDetailResponse getItemById(int itemId) throws Exception;
     Page<AuctionItemResponse> getAuctionProcess(PageRequest pageRequest) throws Exception;
+    AuctionItemResponse getAuctionItemById(int itemId) throws Exception;
 }

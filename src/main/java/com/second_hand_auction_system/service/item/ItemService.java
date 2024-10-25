@@ -203,6 +203,14 @@ public class ItemService implements IItemService {
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
+    @Override
+    public AuctionItemResponse getAuctionItemById(int itemId) throws Exception {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new DataNotFoundException("Item not found"));
+        AuctionItemResponse auctionItemResponse = auctionItemConvert.toAuctionItemResponse(item);
+        return auctionItemResponse;
+    }
+
     public Integer extractUserIdFromToken(String token) throws Exception {
         String userEmail = jwtService.extractUserEmail(token); // Extract email from token
         User user = userRepository.findByEmail(userEmail) // Find user by email
