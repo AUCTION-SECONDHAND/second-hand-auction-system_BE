@@ -4,7 +4,6 @@ import com.second_hand_auction_system.converters.item.AuctionItemConvert;
 import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
-import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.exceptions.DataNotFoundException;
@@ -18,9 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -143,6 +139,7 @@ public class ItemService implements IItemService {
     @Override
     public void approve(int itemId, ItemApprove approve) throws Exception {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new DataNotFoundException("Item not found"));
+
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
@@ -234,6 +231,14 @@ public class ItemService implements IItemService {
                 .message("Success")
                 .data(items.map(auctionItemConvert::toAuctionItemResponse))
                 .build());
+    }
+
+    @Override
+    public AuctionItemResponse getAuctionItemById(int itemId) throws Exception {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new DataNotFoundException("Item not found"));
+        AuctionItemResponse auctionItemResponse = auctionItemConvert.toAuctionItemResponse(item);
+        return auctionItemResponse;
     }
 
     public Integer extractUserIdFromToken(String token) throws Exception {
