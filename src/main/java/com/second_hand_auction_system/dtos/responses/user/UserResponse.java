@@ -12,9 +12,11 @@ import lombok.*;
 @NoArgsConstructor
 @Setter
 public class UserResponse {
+    private Integer id;
     private String fullName;
     private String email;
     private String avatar;
+
     @Enumerated(EnumType.STRING)
     private Role role;
     private boolean status;

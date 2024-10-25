@@ -28,6 +28,7 @@ public class VNPAYService implements VNPaySerivce {
     private final TransactionWalletRepository transactionWalletRepository;
     private final WalletSystemRepository walletSystemRepository;
     private final OrderRepository orderRepository;
+    private final TransactionSystemRepository transactionSystemRepository;
 //    public String createOrder(HttpServletRequest request, int amount, String orderInfor, String urlReturn) {
 //        //Các bạn có thể tham khảo tài liệu hướng dẫn và điều chỉnh các tham số
 //        String vnp_Version = "2.1.0";
@@ -323,6 +324,7 @@ public class VNPAYService implements VNPaySerivce {
                 .virtualAccountName(bankCode)
                 .transactionTime(vnp_CreateDate)
                 .build();
+        transactionSystemRepository.save(transactionSystem);
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .data(paymentUrl)
                 .message("Link payment")

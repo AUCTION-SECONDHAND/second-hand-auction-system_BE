@@ -5,6 +5,8 @@ import com.second_hand_auction_system.dtos.responses.transactionWallet.ListTrans
 import com.second_hand_auction_system.dtos.responses.transactionWallet.TransactionWalletResponse;
 import com.second_hand_auction_system.models.TransactionWallet;
 import com.second_hand_auction_system.repositories.TransactionWalletRepository;
+import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.service.jwt.IJwtService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -13,11 +15,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +29,8 @@ import java.util.stream.Collectors;
 public class TransactionWalletService implements ITransactionWalletService {
     private final TransactionWalletRepository transactionWalletRepository;
     private final ModelMapper modelMapper;
+    private final IJwtService jwtService;
+    private final UserRepository userRepository;
 
     @Override
     public ResponseEntity<?> getAll(String keyword, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
@@ -50,18 +56,11 @@ public class TransactionWalletService implements ITransactionWalletService {
     }
 
     @Override
-    public ResponseEntity<?> getTransactionWallets(int size, int page, String name) {
+    public ResponseEntity<?> getTransactionWallets(int size, int page) {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<TransactionWallet> transactionWalletsPage;
-
-            // Nếu name không rỗng, tìm kiếm theo tên; nếu không, lấy tất cả giao dịch
-            if (name != null && !name.isEmpty()) {
-                transactionWalletsPage = transactionWalletRepository.findByWalletCustomer_User_FullNameContainsIgnoreCase(name, pageable);
-            } else {
-                transactionWalletsPage = transactionWalletRepository.findAll(pageable);
-            }
-
+            transactionWalletsPage = transactionWalletRepository.findAll(pageable);
             if (transactionWalletsPage.isEmpty()) {
                 return ResponseEntity.ok(ResponseObject.builder()
                         .data(null)
@@ -97,11 +96,9 @@ public class TransactionWalletService implements ITransactionWalletService {
     }
 
 
-
     @Override
     public ResponseEntity<?> getTransactionById(int id) {
         TransactionWallet transactionWallet = transactionWalletRepository.findById(id).orElse(null);
-//        TransactionWalletResponse transactionWalletResponse = modelMapper.map(transactionWallet, TransactionWalletResponse.class);
         if (transactionWallet != null) {
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .data(transactionWallet)
@@ -116,6 +113,45 @@ public class TransactionWalletService implements ITransactionWalletService {
                 .status(HttpStatus.OK)
                 .build());
     }
+
+    @Override
+    public ResponseEntity<?> getTransactionWalletsBider(int size, int page) {
+        Pageable pageable = PageRequest.of(page, size);
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .data(null)
+                    .message("Unauthorized")
+                    .build());
+        }
+        String token = authHeader.substring(7);
+        String email = jwtService.extractUserEmail(token);
+        var user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .data(null)
+                    .message("User not found")
+                    .build());
+        }
+        Page<TransactionWallet> transactionWalletsPage = transactionWalletRepository.findTransactionWalletByWalletCustomer_User_Id(user.getId(), pageable);
+        if (transactionWalletsPage.hasContent()) {
+            List<TransactionWallet> transactionWallets = transactionWalletsPage.getContent();
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .data(transactionWallets)
+                    .message("Transaction wallets retrieved successfully")
+                    .build());
+        } else {
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .data(Collections.emptyList())
+                    .message("No transaction wallets found")
+                    .build());
+        }
+    }
+
 
 
 }

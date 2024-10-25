@@ -20,5 +20,7 @@ public interface TransactionWalletRepository extends JpaRepository<TransactionWa
     List<TransactionWallet> findTransactionWalletByTransactionStatus(TransactionStatus transactionStatus);
 
     List<TransactionWallet> findTransactionWalletByCreateAt(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+
+    Page<TransactionWallet> findTransactionWalletByWalletCustomer_User_Id(long userId, Pageable pageable);
 }
 

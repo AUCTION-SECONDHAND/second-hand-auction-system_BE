@@ -41,11 +41,16 @@ public class TransactionWalletController {
 //        return transactionWalletService.getAll(keyword, startDate, endDate, pageable);
 //    }
 
-    @GetMapping("/get-transactions")
+    @GetMapping("/get-transaction")
     public ResponseEntity<?> getTransactions(@RequestParam(value = "size", defaultValue = "10") int size,
-                                             @RequestParam(value = "page", defaultValue = "0") int page,
-                                             @RequestParam(value = "keyword") String name) {
-        return transactionWalletService.getTransactionWallets(size, page, name);
+                                             @RequestParam(value = "page", defaultValue = "0") int page) {
+        return transactionWalletService.getTransactionWallets(size, page);
+    }
+
+    @GetMapping("/get-transaction-wallet")
+    public ResponseEntity<?> getTransactionBider(@RequestParam(value = "size", defaultValue = "10") int size,
+                                             @RequestParam(value = "page", defaultValue = "0") int page) {
+        return transactionWalletService.getTransactionWalletsBider(size, page);
     }
 
     @GetMapping("/{id}")

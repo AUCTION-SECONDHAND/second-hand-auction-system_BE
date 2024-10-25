@@ -8,7 +8,9 @@ import java.time.LocalDateTime;
 public interface ITransactionWalletService {
     ResponseEntity<?> getAll(String keyword, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 
-    ResponseEntity<?> getTransactionWallets(int size, int page, String name);
+    ResponseEntity<?> getTransactionWallets(int size, int page);
 
     ResponseEntity<?> getTransactionById(int id);
+
+    ResponseEntity<?> getTransactionWalletsBider(int size, int page);
 }

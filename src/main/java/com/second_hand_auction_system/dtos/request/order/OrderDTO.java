@@ -42,10 +42,8 @@ public class OrderDTO {
 
     private Integer auction;
 
-    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
-    private LocalDateTime createAt;
+    private String returnSuccess;
+    private String failureUrl;
 
-    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
-    private LocalDateTime updateDate;
 
 }

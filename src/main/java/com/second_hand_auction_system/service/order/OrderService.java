@@ -1,20 +1,17 @@
 package com.second_hand_auction_system.service.order;
 
-import com.second_hand_auction_system.configurations.VNPayConfig;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
-import com.second_hand_auction_system.dtos.responses.order.VnpayResponse;
-import com.second_hand_auction_system.models.Bid;
-import com.second_hand_auction_system.models.Item;
-import com.second_hand_auction_system.models.Order;
-import com.second_hand_auction_system.repositories.AuctionRepository;
-import com.second_hand_auction_system.repositories.ItemRepository;
-import com.second_hand_auction_system.repositories.OrderRepository;
+import com.second_hand_auction_system.models.*;
+import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.bid.BidService;
-import com.second_hand_auction_system.utils.AuctionStatus;
-import com.second_hand_auction_system.utils.OrderStatus;
+import com.second_hand_auction_system.service.jwt.JwtService;
+import com.second_hand_auction_system.service.walletCustomer.WalletCustomerService;
+import com.second_hand_auction_system.utils.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +22,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import vn.payos.PayOS;
+import vn.payos.type.CheckoutResponseData;
+import vn.payos.type.ItemData;
+import vn.payos.type.PaymentData;
 
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,9 +44,14 @@ public class OrderService implements IOrderService {
     private final BidService bidService;
     private final ModelMapper modelMapper;
     private final VNPAYService vnpayService;
+    private final TransactionSystemRepository transactionSystemRepository;
+    private final PayOS payOS;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
+
     @Override
     @Transactional
-    public ResponseEntity<?> create(OrderDTO order,HttpServletRequest request) {
+    public ResponseEntity<?> create(OrderDTO order, HttpServletRequest request) {
         Item item = itemRepository.findByAuction_AuctionId(order.getAuction());
         if (item == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
@@ -88,14 +98,156 @@ public class OrderService implements IOrderService {
                 .auction(auction)
                 .build();
         orderRepository.save(orderEntity);
-        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        ResponseEntity<?> vnpayResponse = vnpayService.paymentOrder(winningBid.getBidAmount(), orderEntity.getOrderId(), baseUrl);
+        if (order.getPaymentMethod().equals(PaymentMethod.VN_PAYMENT)) {
+            String baseUrl = "https://www.facebook.com/";
+            ResponseEntity<?> vnpayResponse = vnpayService.paymentOrder(winningBid.getBidAmount(), orderEntity.getOrderId(), baseUrl);
+            return ResponseEntity.status(HttpStatus.CREATED).body(ResponseObject.builder()
+                    .data(vnpayResponse)
+                    .message("Order created successfully")
+                    .status(HttpStatus.CREATED)
+                    .build());
+        }
+        if (order.getPaymentMethod().equals(PaymentMethod.PAY_OS)) {
+            String successUrl = "https://your-success-url.com"; // Replace with your actual success URL
+            String cancelUrl = "https://www.facebook.com/minhskn"; // Replace with your actual cancel URL
+            order.setFailureUrl(cancelUrl);
+            order.setReturnSuccess(successUrl);
+            String currentTime = String.valueOf(new Date().getTime());
+            long depositCode = Long.parseLong(currentTime.substring(currentTime.length() - 6));
+            TransactionSystem transactionSystem = TransactionSystem.builder()
+                    .order(orderEntity)
+                    .transactionType(TransactionType.TRANSFER)
+//                    .transactionSystemCode(paymentData.getOrderCode().toString())
+                    .user(orderEntity.getItem().getUser())
+                    .description(order.getNote())
+                    .amount(winningBid.getBidAmount())
+                    .status(TransactionStatus.PENDING)
+//                    .virtualAccountName(paymentLinkData.getAccountNumber())
+                    .transactionTime(currentTime)
+                    .build();
+            transactionSystemRepository.save(transactionSystem);
+            return createOrderByPayOS(order);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseObject.builder()
-                .data(vnpayResponse)
+                .data(null)
                 .message("Order created successfully")
                 .status(HttpStatus.CREATED)
                 .build());
     }
+
+    public ResponseEntity<?> createOrderByPayOS(OrderDTO order) {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode response = mapper.createObjectNode();
+
+        try {
+            String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                    .getRequest().getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ResponseObject.builder()
+                                .status(HttpStatus.UNAUTHORIZED)
+                                .message("Missing or invalid Authorization header")
+                                .build());
+            }
+
+            String token = authHeader.substring(7);
+            String userEmail = jwtService.extractUserEmail(token);
+            User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+
+            if (requester == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ResponseObject.builder()
+                                .status(HttpStatus.UNAUTHORIZED)
+                                .message("Unauthorized request - User not found")
+                                .build());
+            }
+
+            if (requester.getRole() == Role.BUYER || requester.getRole() == Role.SELLER) {
+                Item item = itemRepository.findByAuction_AuctionId(order.getAuction());
+                if (item == null) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                            .data(null)
+                            .message("Item not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+                }
+                var auction = auctionRepository.findById(order.getAuction()).orElse(null);
+                if (auction == null) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                            .data(null)
+                            .message("Auction not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+                }
+                if (!auction.getStatus().equals(AuctionStatus.COMPLETED)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                            .data(null)
+                            .message("Auction is not completed")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+                }
+
+                Bid winningBid = bidService.findWinner(auction.getAuctionId());
+                if (winningBid == null) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                            .data(null)
+                            .message("No winning bid found for this auction")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+                }
+                Bid winner = bidService.findWinner(auction.getAuctionId());
+
+                double balance = winner.getBidAmount(); // Get the amount to be paid from OrderDTO
+                String description = order.getNote();
+                String successUrl = order.getReturnSuccess(); // Get success URL from OrderDTO
+                String cancelUrl = order.getFailureUrl();
+
+                String currentTime = String.valueOf(new Date().getTime());
+                long depositCode = Long.parseLong(currentTime.substring(currentTime.length() - 6));
+
+                ItemData itemData = ItemData.builder()
+                        .name("Thanh toán đơn hàng #" + item.getItemName())
+                        .price((int) balance)
+                        .quantity(1)
+                        .build();
+
+                PaymentData paymentData = PaymentData.builder()
+                        .orderCode(depositCode)
+                        .description(description)
+                        .amount((int) balance)
+                        .item(itemData)
+                        .returnUrl(successUrl)
+                        .cancelUrl(cancelUrl)
+                        .build();
+//                Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+//                SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+//                String vnp_CreateDate = formatter.format(cld.getTime());
+                CheckoutResponseData paymentLinkData = payOS.createPaymentLink(paymentData);
+                var transactionSystem = transactionSystemRepository.findTransactionSystemByUser_Id(requester.getId()).orElse(null);
+                assert transactionSystem != null;
+                transactionSystem.setVirtualAccountName(requester.getFullName());
+                transactionSystem.setTransactionSystemCode(paymentLinkData.getOrderCode().toString());
+                transactionSystemRepository.save(transactionSystem);
+                response.put("error", 0);
+                response.put("message", "Payment link created successfully");
+                response.set("data", mapper.valueToTree(paymentLinkData));
+                return ResponseEntity.ok(new ResponseObject("Payment link created", HttpStatus.OK, paymentLinkData));
+
+            } else {
+                response.put("error", 1);
+                response.put("message", "Unauthorized role for deposit");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject("Unauthorized role", HttpStatus.FORBIDDEN, null));
+            }
+        } catch (Exception e) {
+            response.put("error", -1);
+            response.put("message", "An error occurred: " + e.getMessage());
+            response.set("data", null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject("An error occurred", HttpStatus.INTERNAL_SERVER_ERROR, null));
+        }
+    }
+
 
     @Override
     public ResponseEntity<?> getOrders(Integer page, Integer size, String sortBy) {
@@ -133,6 +285,5 @@ public class OrderService implements IOrderService {
                 .status(HttpStatus.OK)
                 .build());
     }
-
 
 }

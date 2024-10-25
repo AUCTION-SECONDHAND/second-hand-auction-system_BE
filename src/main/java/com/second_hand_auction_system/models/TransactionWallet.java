@@ -37,8 +37,8 @@ public class TransactionWallet extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
-    @Column(name = "image",nullable = true)
-    private String image;
+//    @Column(name = "image",nullable = true)
+//    private String image;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_customer_id")

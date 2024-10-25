@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(PUT,"/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
-                        .requestMatchers(PATCH,"/api/v1/user/**").permitAll()
+                        .requestMatchers(PATCH,"/api/v1/user/**").hasAnyRole("SELLER","BUYER")
                         .requestMatchers(DELETE,"/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/feedback/**").permitAll()
                         .requestMatchers("/api/v1/seller-information/**").permitAll()
@@ -77,7 +77,8 @@ public class SecurityConfig {
                         .requestMatchers(PUT,"/api/v1/kyc/approve/**").hasRole("STAFF")
                         .requestMatchers(GET,"/api/v1/kyc/**").permitAll()
 
-
+                        ///transactionWallet
+                        .requestMatchers(GET,"/api/v1/transactionWallet/get-transaction-wallet").hasAnyRole("BUYER", "SELLER")
 
                         //auction
                         .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
@@ -93,7 +94,8 @@ public class SecurityConfig {
                         //order
                         .requestMatchers(POST,"/api/v1/orders/**").hasAnyRole("SELLER", "BUYER")
                         .requestMatchers(GET,"/api/v1/orders/**").permitAll()
-
+                        //transactionSystem
+                        .requestMatchers("/api/v1/transactionSystem/**").permitAll()
                         .anyRequest().authenticated()
 
 
