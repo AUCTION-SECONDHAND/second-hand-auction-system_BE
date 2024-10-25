@@ -33,7 +33,7 @@ public interface IUserService {
 
     ResponseEntity<?> updateUser(int id, UserDto userResponse);
 
-    ResponseEntity<?> getUserId(int id);
+    ResponseEntity<?> getUserId();
 
     ResponseEntity<?> deleteUser(int id);
 

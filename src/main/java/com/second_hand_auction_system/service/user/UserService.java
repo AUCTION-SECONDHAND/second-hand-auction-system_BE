@@ -332,8 +332,27 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public ResponseEntity<?> getUserId(int id) {
-        User user = userRepository.findById(id).orElse(null);
+    public ResponseEntity<?> getUserId() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ListUserResponse.builder()
+                            .users(null)
+                            .message("Missing or invalid Authorization header")
+                            .build());
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ListUserResponse.builder()
+                            .users(null)
+                            .message("Unauthorized request - User not found")
+                            .build());
+        }
+        User user = userRepository.findById(requester.getId()).orElse(null);
         if (user != null) {
             UserResponse userResponse = modelMapper.map(user, UserResponse.class);
 

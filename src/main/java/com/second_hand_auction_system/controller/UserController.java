@@ -46,9 +46,9 @@ public class UserController {
         return userService.updateUser(id,userResponse);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable int id) {
-        return userService.getUserId(id);
+    @GetMapping("")
+    public ResponseEntity<?> getUserById() {
+        return userService.getUserId();
     }
 
     @DeleteMapping("/{id}")
