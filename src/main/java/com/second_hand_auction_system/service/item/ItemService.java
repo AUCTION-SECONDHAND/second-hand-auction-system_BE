@@ -11,6 +11,7 @@ import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
+import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.ItemStatus;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -191,5 +192,21 @@ public class ItemService implements IItemService {
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
         ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
         return itemDetailResponse;
+    }
+
+    @Override
+    public Page<AuctionItemResponse> getAuctionProcess(PageRequest pageRequest) throws Exception {
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization").substring(7);
+        Integer userId = extractUserIdFromToken(token);
+        Page<Item> items = itemRepository.findAllByAuction_StatusAndUserId(AuctionStatus.PENDING, userId, pageRequest);
+        return items.map(auctionItemConvert::toAuctionItemResponse);
+    }
+
+    public Integer extractUserIdFromToken(String token) throws Exception {
+        String userEmail = jwtService.extractUserEmail(token); // Extract email from token
+        User user = userRepository.findByEmail(userEmail) // Find user by email
+                .orElseThrow(() -> new Exception("User not found!!!"));
+        return user.getId();
     }
 }
