@@ -13,8 +13,8 @@ public class BidConverter {
         Bid bid = new Bid();
         bid.setBidId(bidDto.getBidId());
         bid.setBidAmount(bidDto.getBidAmount());
-        bid.setBidTime(bidDto.getBidTime());
-        bid.setBidStatus(bidDto.getBidStatus());
+//        bid.setBidTime(bidDto.getBidTime());
+//        bid.setBidStatus(bidDto.getBidStatus());
         bid.setWinBid(bidDto.isWinBid());
         bid.setUser(user);
         bid.setAuction(auction);
@@ -26,8 +26,8 @@ public class BidConverter {
         return BidResponse.builder()
                 .bidId(bid.getBidId())
                 .bidAmount(bid.getBidAmount())
-                .bidTime(bid.getBidTime())
-                .bidStatus(bid.getBidStatus())
+//                .bidTime(bid.getBidTime())
+//                .bidStatus(bid.getBidStatus())
                 .winBid(bid.isWinBid())
                 .userId(bid.getUser().getId())
                 .username(bid.getUser().getUsername())

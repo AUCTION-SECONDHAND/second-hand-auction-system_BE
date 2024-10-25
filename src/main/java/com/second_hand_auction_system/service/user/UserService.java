@@ -68,7 +68,6 @@ public class UserService implements IUserService {
                     .email(registerRequest.getEmail())
                     .password(passwordEncoder.encode(registerRequest.getPassword()))
                     .role(Role.BUYER)
-                    .avatar("https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.freepik.com%2Ficon%2Fmanager-profile_80023&psig=AOvVaw3G7RhNQwUNw34W58OhQeFW&ust=1729417330651000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCNissOGTmokDFQAAAAAdAAAAABAQ")
                     .fullName(registerRequest.getFullName())
                     .phoneNumber(registerRequest.getPhoneNumber())
                     .status(false)
@@ -323,7 +322,7 @@ public class UserService implements IUserService {
             }
             user.setFullName(userRequest.getFullName());
             user.setPhoneNumber(userRequest.getPhoneNumber());
-            user.setEmail(userRequest.getEmail());
+//            user.setEmail(userRequest.getEmail());
             user.setAvatar(userRequest.getAvatarUrl());
             userRepository.save(user);
             UserResponse userResponse = modelMapper.map(user, UserResponse.class);

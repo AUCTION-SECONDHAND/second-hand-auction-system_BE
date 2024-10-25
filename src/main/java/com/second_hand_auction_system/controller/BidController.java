@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.bid.BidDto;
+import com.second_hand_auction_system.dtos.request.bid.BidRequest;
 import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.service.bid.IBidService;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,8 @@ public class BidController {
 
 
     @PostMapping
-    public ResponseEntity<BidResponse> createBid(@RequestBody BidDto bidDto) throws Exception {
-        BidResponse response = bidService.createBid(bidDto);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> createBid(@RequestBody BidRequest bidRequest) throws Exception {
+        return bidService.createBid(bidRequest);
     }
 
     @PutMapping("/{bidId}")

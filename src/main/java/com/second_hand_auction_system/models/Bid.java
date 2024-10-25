@@ -3,6 +3,8 @@ package com.second_hand_auction_system.models;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "bid")
 @AllArgsConstructor
@@ -19,10 +21,10 @@ public class Bid extends BaseEntity{
     private int bidAmount;
 
     @Column(name = "bid_time")
-    private int bidTime;
+    private LocalDateTime bidTime;
 
-    @Column(name = "bid_status")
-    private String bidStatus;
+//    @Column(name = "bid_status")
+//    private String bidStatus;
 
     @Column(name = "win_bid")
     private boolean winBid;
