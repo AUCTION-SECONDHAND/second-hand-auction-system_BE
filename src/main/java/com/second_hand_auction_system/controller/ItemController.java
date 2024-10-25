@@ -4,6 +4,7 @@ import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseListObject;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.service.item.IItemService;
@@ -195,6 +196,32 @@ public class ItemController {
                         .status(HttpStatus.OK)
                         .message("Success")
                         .data(itemDetailResponse)
+                        .build()
+        );
+    }
+
+    @GetMapping("/auction-process/user")
+    public ResponseEntity<?> getAuctionProcessByUser(
+            //@RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) throws Exception {
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        //, Sort.by("id").descending()
+        Page<AuctionItemResponse> auctionItemResponses = itemService.getAuctionProcess(pageRequest);
+        int totalPages = auctionItemResponses.getTotalPages();
+        Long totalOrder = auctionItemResponses.getTotalElements();
+        List<AuctionItemResponse> itemResponseList = auctionItemResponses.getContent();
+        ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
+                .data(itemResponseList)
+                .totalElements(totalOrder)
+                .totalPages(totalPages)
+                .build();
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(responseListObject)
                         .build()
         );
     }

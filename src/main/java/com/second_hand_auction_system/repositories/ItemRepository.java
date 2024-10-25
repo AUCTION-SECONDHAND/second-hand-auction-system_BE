@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.repositories;
 
 import com.second_hand_auction_system.models.Item;
+import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.ItemStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +13,8 @@ import java.util.List;
 
 public interface ItemRepository extends JpaRepository<Item, Integer> {
     Page<Item> findAllByItemStatus(ItemStatus itemStatus, Pageable pageable);
-
+    Page<Item> findAllByAuction_StatusAndUserId(AuctionStatus auction_status, Integer user_id, Pageable pageable);
+    //Page<Item> findAllByAuction_Status
     @Query("SELECT i FROM Item i " +
             "JOIN i.auction a " +
             "JOIN i.subCategory sc " +
