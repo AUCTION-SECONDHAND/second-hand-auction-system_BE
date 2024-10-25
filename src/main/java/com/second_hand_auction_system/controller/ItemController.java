@@ -226,6 +226,12 @@ public class ItemController {
         );
     }
 
+    @GetMapping("/auction-completed/user")
+    public ResponseEntity<?> getAuctionCompleted(@RequestParam(value = "page",defaultValue = "0")int page,
+                                                 @RequestParam(value = "limit",defaultValue = "0") int limit) throws Exception {
+        return itemService.getItemAuctionCompleted(page,limit);
+    }
+
 
     private List<Integer> parseIds(String ids) {
         if (ids == null || ids.isEmpty()) {

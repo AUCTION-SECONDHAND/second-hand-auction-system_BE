@@ -33,4 +33,6 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
 //    Item findByAuctionId(int auctionId);
 
     Item findByAuction_AuctionId(Integer auction);
+
+    Page<Item> findAllByUserIdAndAuctionStatus(Integer user_id, AuctionStatus auctionStatus, Pageable pageable);
 }

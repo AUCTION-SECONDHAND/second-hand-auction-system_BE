@@ -31,7 +31,7 @@ public interface IUserService {
 
     ResponseEntity<?> registerStaff(RegisterRequest registerRequest);
 
-    ResponseEntity<?> updateUser(int id, UserDto userResponse);
+    ResponseEntity<?> updateUser( UserDto userResponse);
 
     ResponseEntity<?> getUserId();
 

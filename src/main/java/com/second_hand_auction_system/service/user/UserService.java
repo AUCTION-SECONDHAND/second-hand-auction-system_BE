@@ -300,9 +300,20 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public ResponseEntity<?> updateUser(int id, UserDto userRequest) {
+    public ResponseEntity<?> updateUser( UserDto userRequest) {
         try {
-            User user = userRepository.findById(id).orElse(null);
+            String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                    .getRequest().getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ListUserResponse.builder()
+                                .users(null)
+                                .message("Missing or invalid Authorization header")
+                                .build());
+            }
+            String token = authHeader.substring(7);
+            String userEmail = jwtService.extractUserEmail(token);
+            var user = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(RegisterResponse.builder()
                         .status(HttpStatus.NOT_FOUND.value())

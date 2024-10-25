@@ -49,7 +49,6 @@ public class AuctionItemConvert {
                     .build();
         }
 
-        // Sử dụng builder pattern để tạo AuctionItemResponse
         return AuctionItemResponse.builder()
                 .itemId(item.getItemId())
                 .thumbnail(item.getThumbnail())

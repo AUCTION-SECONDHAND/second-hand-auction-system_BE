@@ -41,9 +41,9 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerStaff(registerRequest));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateStaff(@PathVariable int id, @RequestBody UserDto userResponse) {
-        return userService.updateUser(id,userResponse);
+    @PutMapping("")
+    public ResponseEntity<?> updateStaff( @RequestBody UserDto userResponse) {
+        return userService.updateUser(userResponse);
     }
 
     @GetMapping("")

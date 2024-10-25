@@ -8,4 +8,6 @@ public interface IOrderService {
     ResponseEntity<?> create(OrderDTO order, HttpServletRequest request);
 
     ResponseEntity<?> getOrders(Integer page,Integer pageSize,String sortBy);
+
+    ResponseEntity<?> getOrderByUser(int size, int page);
 }

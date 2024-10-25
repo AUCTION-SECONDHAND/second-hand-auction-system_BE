@@ -4,6 +4,7 @@ import com.second_hand_auction_system.converters.item.AuctionItemConvert;
 import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.exceptions.DataNotFoundException;
@@ -17,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -139,7 +143,6 @@ public class ItemService implements IItemService {
     @Override
     public void approve(int itemId, ItemApprove approve) throws Exception {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new DataNotFoundException("Item not found"));
-
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
@@ -201,6 +204,36 @@ public class ItemService implements IItemService {
         Integer userId = extractUserIdFromToken(token);
         Page<Item> items = itemRepository.findAllByAuction_StatusAndUserId(AuctionStatus.PENDING, userId, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
+    }
+
+    @Override
+    public ResponseEntity<?> getItemAuctionCompleted(int page, int limit) {
+        Pageable pageable = PageRequest.of(page, limit);
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Unauthorized")
+                            .data(null)
+                    .build());
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null)
+                    .build());
+        }
+        Page<Item> items = itemRepository.findAllByUserIdAndAuctionStatus(requester.getId(), AuctionStatus.COMPLETED, pageable);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Success")
+                .data(items.map(auctionItemConvert::toAuctionItemResponse))
+                .build());
     }
 
     public Integer extractUserIdFromToken(String token) throws Exception {

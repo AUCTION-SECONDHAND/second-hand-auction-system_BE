@@ -54,4 +54,9 @@ public class Order extends BaseEntity {
 
     @OneToOne(mappedBy = "order",cascade = CascadeType.ALL)
     private TransactionSystem transactionSystem;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")  // Khóa ngoại user_id trong Order
+    private User user;
+
 }

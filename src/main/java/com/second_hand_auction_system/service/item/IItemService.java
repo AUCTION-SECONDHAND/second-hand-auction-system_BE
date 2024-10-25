@@ -7,6 +7,7 @@ import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.models.Item;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -29,4 +30,6 @@ public interface IItemService {
 
     ItemDetailResponse getItemById(int itemId) throws Exception;
     Page<AuctionItemResponse> getAuctionProcess(PageRequest pageRequest) throws Exception;
+
+    ResponseEntity<?> getItemAuctionCompleted(int page, int limit);
 }

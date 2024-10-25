@@ -28,4 +28,10 @@ public class OrderController {
         return orderService.getOrders(page, size, sortBy);
     }
 
+    @GetMapping("/user")
+    public ResponseEntity<?> getUserOrders(@RequestParam(value = "size",defaultValue = "10") int size,
+                                           @RequestParam(value = "page",defaultValue = "0") int page) {
+        return orderService.getOrderByUser(size,page);
+    }
+
 }

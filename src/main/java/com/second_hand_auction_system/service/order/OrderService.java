@@ -286,4 +286,59 @@ public class OrderService implements IOrderService {
                 .build());
     }
 
+    @Override
+    public ResponseEntity<?> getOrderByUser(int size, int page) {
+        Pageable pageable = PageRequest.of(page, size);
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Missing or invalid Authorization header")
+                            .build());
+        }
+
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.NOT_FOUND)
+                            .message("User not found")
+                            .data(null)
+                            .build());
+        }
+
+        Page<Order> orders = orderRepository.findAllByUser_Id(requester.getId(), pageable);
+        List<OrderResponse> orderResponses = orders.stream()
+                .map(order -> {
+                    OrderResponse response = new OrderResponse();
+                    response.setOrderStatus(order.getStatus()); // Assuming OrderStatus is enum
+                    response.setPaymentMethod(order.getPaymentMethod()); // Assuming PaymentMethod is enum
+                    response.setEmail(order.getEmail());
+                    response.setPhoneNumber(order.getPhoneNumber());
+                    response.setQuantity(order.getQuantity());
+                    response.setNote(order.getNote());
+                    response.setItemId(order.getItem() != null ? order.getItem().getItemId() : null);
+                    response.setAuctionId(order.getAuction() != null ? order.getAuction().getAuctionId() : null);
+                    response.setCreateBy(order.getCreateBy());
+                    response.setTotalPrice(order.getTotalAmount());
+                    response.setShippingType(order.getShippingMethod());
+                    return response;
+                })
+                .toList();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("List of orders found")
+                        .data(orderResponses)  // Pass the processed list
+                        .build());
+    }
+
+
 }
