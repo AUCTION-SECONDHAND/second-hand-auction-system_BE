@@ -41,13 +41,7 @@ public class AuctionRegistrationsController {
                             .build()
             );
         }
-        auctionRegistrationsService.addAuctionRegistration(auctionRegistrationsDto);
-        return ResponseEntity.ok(
-                ResponseObject.builder()
-                        .status(HttpStatus.OK)
-                        .message("Success")
-                        .build()
-        );
+        return auctionRegistrationsService.addAuctionRegistration(auctionRegistrationsDto);
     }
 
     @GetMapping("")

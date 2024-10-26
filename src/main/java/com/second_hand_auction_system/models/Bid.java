@@ -33,7 +33,7 @@ public class Bid extends BaseEntity{
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "auction_id")
     private Auction auction;
 }

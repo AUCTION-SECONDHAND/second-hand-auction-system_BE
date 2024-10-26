@@ -17,7 +17,7 @@ public class BidRequest {
     @Min(value = 1, message = "Bid amount must be greater than or equal to 1")
     private Integer bidAmount;
 
-    private LocalDateTime bidTime;
+//    private LocalDateTime bidTime;
 
     @NotNull(message = "Auction ID cannot be null")
     private Integer auctionId;

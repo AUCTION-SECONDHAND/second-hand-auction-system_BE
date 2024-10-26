@@ -18,7 +18,7 @@ public class WalletSystem extends BaseEntity{
     @Column(name = "balance")
     private double balance;
 
-    @ManyToOne
-    @JoinColumn(name = "transaction_system_id")
-    private TransactionSystem transactionSystem;
+//    @ManyToOne
+//    @JoinColumn(name = "transaction_system_id")
+//    private TransactionSystem transactionSystem;
 }

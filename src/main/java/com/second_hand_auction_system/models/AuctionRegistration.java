@@ -4,12 +4,13 @@ import com.second_hand_auction_system.utils.Registration;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Data
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @Entity
+@Builder
 @Table(name = "auction_registration")
 public class AuctionRegistration extends BaseEntity{
     @Id
@@ -21,9 +22,9 @@ public class AuctionRegistration extends BaseEntity{
 
     @Enumerated(EnumType.STRING)
     private Registration registration;
-
-    @Column(name = "note")
-    private String note;
+//
+//    @Column(name = "note")
+//    private String note;
 
     @OneToOne
     @JoinColumn(name = "user_id")

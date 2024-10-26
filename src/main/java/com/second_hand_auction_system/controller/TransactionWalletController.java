@@ -22,15 +22,15 @@ public class TransactionWalletController {
 
 
 
-    @GetMapping("/get-transaction")
+    @GetMapping("/get-transaction-wallet-system")
     public ResponseEntity<?> getTransactions(@RequestParam(value = "size", defaultValue = "10") int size,
                                              @RequestParam(value = "page", defaultValue = "0") int page) {
         return transactionWalletService.getTransactionWallets(size, page);
     }
 
-    @GetMapping("/get-transaction-wallet")
+    @GetMapping("/get-transaction-wallet-bidder")
     public ResponseEntity<?> getTransactionBider(@RequestParam(value = "size", defaultValue = "10") int size,
-                                             @RequestParam(value = "limit", defaultValue = "0") int page) {
+                                             @RequestParam(value = "page", defaultValue = "0") int page) {
         return transactionWalletService.getTransactionWalletsBider(size, page);
     }
 

@@ -56,7 +56,7 @@ public class AuctionRegistrationsConverter {
                 .auctionRegistrationId(auctionRegistration.getAuctionRegistrationId())
                 .depositeAmount(auctionRegistration.getDepositeAmount())
                 .registration(auctionRegistration.getRegistration())
-                .note(auctionRegistration.getNote())
+//                .note(auctionRegistration.getNote())
                 .auctionItem(auctionItemResponse)
                 .build();
     }

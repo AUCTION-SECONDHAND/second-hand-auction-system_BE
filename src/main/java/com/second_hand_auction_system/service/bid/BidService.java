@@ -26,6 +26,7 @@ import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,57 +41,163 @@ public class BidService implements IBidService {
 
     @Override
     public ResponseEntity<?> createBid(BidRequest bidRequest) throws Exception {
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
-                    .data(null)
-                    .message("Unauthorized")
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .build());
+        String token = extractToken();
+        if (token == null) {
+            return createUnauthorizedResponse();
         }
-        String token = authHeader.substring(7);
-        String email = jwtService.extractUserEmail(token);
-        var requester = userRepository.findByEmail(email).orElse(null);
+
+        User requester = getRequesterByEmail(token);
         if (requester == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                    .data(null)
-                    .message("User not found")
-                    .status(HttpStatus.NOT_FOUND)
-                    .build());
+            return createUserNotFoundResponse();
         }
 
-
-        Auction auction = auctionRepository.findById(bidRequest.getAuctionId()).orElse(null);
+        Auction auction = getAuctionById(bidRequest.getAuctionId());
         if (auction == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                    .data(null)
-                    .message("Auction not found")
-                    .status(HttpStatus.NOT_FOUND)
-                    .build());
+            return createAuctionNotFoundResponse();
         }
-        if (!auction.getStatus().equals(AuctionStatus.OPEN)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                    .data(null)
-                    .message("Auction is not open for bidding")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .build());
+
+        if (!isStandardAuction(auction)) {
+            return createInvalidAuctionTypeResponse();
         }
+
+        if (!isAuctionOpen(auction)) {
+            return createAuctionNotOpenResponse();
+        }
+
+        if (!isWithinAuctionTime(auction)) {
+            return createInvalidTimeForBiddingResponse();
+        }
+
+        if (!isBidAmountValid(bidRequest, auction)) {
+            return createInvalidBidAmountResponse(bidRequest, auction);
+        }
+
+        Bid savedBid = saveBid(bidRequest, auction, requester);
+        return createSuccessResponse(savedBid);
+    }
+
+    private String extractToken() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
+
+    private ResponseEntity<?> createUnauthorizedResponse() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                .data(null)
+                .message("Unauthorized")
+                .status(HttpStatus.UNAUTHORIZED)
+                .build());
+    }
+
+    private User getRequesterByEmail(String token) {
+        String email = jwtService.extractUserEmail(token);
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
+    private ResponseEntity<?> createUserNotFoundResponse() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                .data(null)
+                .message("User not found")
+                .status(HttpStatus.NOT_FOUND)
+                .build());
+    }
+
+    // Retrieve the auction from the database by ID
+    private Auction getAuctionById(int auctionId) {
+        return auctionRepository.findById(auctionId).orElse(null);
+    }
+
+    // Create a response when the auction is not found
+    private ResponseEntity<?> createAuctionNotFoundResponse() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                .data(null)
+                .message("Auction not found")
+                .status(HttpStatus.NOT_FOUND)
+                .build());
+    }
+
+    private boolean isStandardAuction(Auction auction) {
+        return auction.getAuctionType().equals("Đấu giá tiêu chuẩn");
+    }
+
+    private ResponseEntity<?> createInvalidAuctionTypeResponse() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                .data(null)
+                .message("Không thể đặt giá bid cho đấu giá ngược")
+                .status(HttpStatus.BAD_REQUEST)
+                .build());
+    }
+
+    private boolean isAuctionOpen(Auction auction) {
+        return auction.getStatus().equals(AuctionStatus.OPEN);
+    }
+
+    private ResponseEntity<?> createAuctionNotOpenResponse() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                .data(null)
+                .message("Auction is not open for bidding")
+                .status(HttpStatus.BAD_REQUEST)
+                .build());
+    }
+
+    private boolean isWithinAuctionTime(Auction auction) {
         LocalDateTime auctionStartDateTime = auction.getStartDate().toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime()
                 .with(auction.getStartTime().toLocalTime());
-
         LocalDateTime auctionEndDateTime = auction.getEndDate().toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime()
                 .with(auction.getEndTime().toLocalTime());
-        if (LocalDateTime.now().isBefore(auctionStartDateTime) || LocalDateTime.now().isAfter(auctionEndDateTime)) {
+        return !LocalDateTime.now().isBefore(auctionStartDateTime) && !LocalDateTime.now().isAfter(auctionEndDateTime);
+    }
+
+    private ResponseEntity<?> createInvalidTimeForBiddingResponse() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                .data(null)
+                .message("Bidding is not allowed at this time")
+                .status(HttpStatus.BAD_REQUEST)
+                .build());
+    }
+
+    // Validate the bid amount against existing bids and auction requirements
+    private boolean isBidAmountValid(BidRequest bidRequest, Auction auction) {
+        Optional<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+        if (existingBids.isEmpty()) {
+            return bidRequest.getBidAmount() >= auction.getStartPrice();
+        } else {
+            Bid highestBid = existingBids.get();
+            int minimumRequiredBid = (int) (highestBid.getBidAmount() + auction.getPriceStep());
+            return bidRequest.getBidAmount() >= minimumRequiredBid;
+        }
+    }
+
+    // Create a response for invalid bid amount
+    private ResponseEntity<?> createInvalidBidAmountResponse(BidRequest bidRequest, Auction auction) {
+        Optional<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+        if (existingBids.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                     .data(null)
-                    .message("Bidding is not allowed at this time")
+                    .message("Bid amount must be at least the auction start price")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build());
+        } else {
+            Bid highestBid = existingBids.get();
+            int minimumRequiredBid = (int) (highestBid.getBidAmount() + auction.getPriceStep());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                    .data(null)
+                    .message("Bid amount must be at least " + minimumRequiredBid)
                     .status(HttpStatus.BAD_REQUEST)
                     .build());
         }
+    }
+
+    // Save the bid to the database
+    private Bid saveBid(BidRequest bidRequest, Auction auction, User requester) {
         Bid bid = Bid.builder()
                 .winBid(true)
                 .bidTime(LocalDateTime.now())
@@ -98,16 +205,18 @@ public class BidService implements IBidService {
                 .user(requester)
                 .bidAmount(bidRequest.getBidAmount())
                 .build();
-        Bid savedBid = bidRepository.save(bid);
+        return bidRepository.save(bid);
+    }
 
-        BidDto bidDto = modelMapper.map(bidRequest, BidDto.class);
-
+    // Create a success response after saving the bid
+    private ResponseEntity<?> createSuccessResponse(Bid savedBid) {
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .data(savedBid)
                 .message("Created new bid")
                 .status(HttpStatus.OK)
                 .build());
     }
+
 
 
     @Override

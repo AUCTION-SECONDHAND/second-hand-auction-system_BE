@@ -29,7 +29,7 @@ public class TransactionWallet extends BaseEntity {
     private int commissionAmount;
 
     @Column(name = "commission_rate")
-    private int commissionRate;
+    private double commissionRate;
 
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;

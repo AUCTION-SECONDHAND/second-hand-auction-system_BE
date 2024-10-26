@@ -4,9 +4,10 @@ import com.second_hand_auction_system.dtos.request.auctionRegistrations.AuctionR
 import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 
 public interface IAuctionRegistrationsService {
-    void addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
+    ResponseEntity<?> addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
 
     void updateAuctionRegistration(int arId, AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
 

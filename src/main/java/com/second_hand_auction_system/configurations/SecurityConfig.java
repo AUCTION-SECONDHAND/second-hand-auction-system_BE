@@ -71,7 +71,9 @@ public class SecurityConfig {
                         .requestMatchers(GET,"/api/v1/item/**").permitAll()
                         //transaction-wallet
                         .requestMatchers("/api/v1/transactionWallet/**").hasAnyRole("BUYER", "SELLER")
-
+                        //register_auction_bider
+                        .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
+                        .requestMatchers(GET,"/api/v1/auction-register/**").permitAll()
                         //kyc
                         .requestMatchers(POST,"/api/v1/kyc/**").hasRole("BUYER")
                         .requestMatchers(PUT,"/api/v1/kyc").hasRole("SELLER")

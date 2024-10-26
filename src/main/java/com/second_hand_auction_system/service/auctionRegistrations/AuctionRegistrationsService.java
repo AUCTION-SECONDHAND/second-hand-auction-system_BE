@@ -2,25 +2,28 @@ package com.second_hand_auction_system.service.auctionRegistrations;
 
 import com.second_hand_auction_system.converters.auctionRegistrations.AuctionRegistrationsConverter;
 import com.second_hand_auction_system.dtos.request.auctionRegistrations.AuctionRegistrationsDto;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
-import com.second_hand_auction_system.models.Auction;
-import com.second_hand_auction_system.models.AuctionRegistration;
-import com.second_hand_auction_system.models.User;
-import com.second_hand_auction_system.models.WalletCustomer;
-import com.second_hand_auction_system.repositories.AuctionRegistrationsRepository;
-import com.second_hand_auction_system.repositories.AuctionRepository;
-import com.second_hand_auction_system.repositories.UserRepository;
-import com.second_hand_auction_system.repositories.WalletCustomerRepository;
+import com.second_hand_auction_system.models.*;
+import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.service.walletCustomer.WalletCustomerService;
+import com.second_hand_auction_system.utils.AuctionStatus;
+import com.second_hand_auction_system.utils.Registration;
+import com.second_hand_auction_system.utils.TransactionStatus;
+import com.second_hand_auction_system.utils.TransactionType;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.security.SecureRandom;
 import java.util.Objects;
 
 @Service
@@ -31,36 +34,122 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
     private final UserRepository userRepository;
     private final AuctionRepository auctionRepository;
     private final WalletCustomerRepository walletCustomerRepository;
-    private final WalletCustomerService walletCustomerService;
+    private final TransactionWalletRepository transactionWalletRepository;
     private final IJwtService jwtService;
     private final AuctionRegistrationsConverter auctionRegistrationsConverter;
+    private final WalletSystemRepository walletSystemRepository;
 
     @Override
-    public void addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception {
-
+    @Transactional
+    public ResponseEntity<?> addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+
+        // Kiểm tra Authorization header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new Exception("Unauthorized");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .data(null)
+                    .message("Unauthorized")
+                    .build());
         }
+
         String token = authHeader.substring(7);
         String userEmail = jwtService.extractUserEmail(token);
+
+        // Kiểm tra người dùng
         User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
         if (requester == null) {
-            throw new Exception("User not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .data(null)
+                    .message("User not found")
+                    .build());
         }
-        WalletCustomer walletCustomerCheckBalance = walletCustomerRepository.findByUserIdAndBalanceGreaterThanEqual100(requester.getId());
-        if (walletCustomerCheckBalance == null) {
-            throw new Exception("You do not have enough money in your wallet, please top up");
+
+        WalletCustomer walletCustomer = walletCustomerRepository.findByUserId(requester.getId()).orElse(null);
+        if (walletCustomer == null || walletCustomer.getBalance() < 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .data(null)
+                    .message("Wallet not found or balance is insufficient")
+                    .build());
         }
-        Auction auctionExist = auctionRepository.findById(auctionRegistrationsDto.getAuction())
-                .orElseThrow(() -> new RuntimeException("Auction not found"));
-        AuctionRegistration auctionRegistration = modelMapper.map(auctionRegistrationsDto, AuctionRegistration.class);
-        auctionRegistration.setUser(requester);
-        auctionRegistration.setAuction(auctionExist);
-        auctionRegistrationsRepository.save(auctionRegistration);
 
+        Auction auctionExist = auctionRepository.findById(auctionRegistrationsDto.getAuction()).orElse(null);
+        if (auctionExist == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .data(null)
+                    .message("Auction not found")
+                    .build());
+        }
 
+        if (auctionExist.getStatus().equals(AuctionStatus.OPEN)) {
+            // Tính số tiền cọc
+            double depositAmount = 0.1 * auctionExist.getStartPrice();
+
+            // Kiểm tra số dư ví có đủ cho tiền cọc không
+            if (walletCustomer.getBalance() < depositAmount) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .data(null)
+                        .message("You do not have enough money in your wallet for the deposit amount")
+                        .build());
+            }
+
+            AuctionRegistration auctionRegistration = AuctionRegistration.builder()
+                    .registration(Registration.CONFIRMED)
+                    .auction(auctionExist)
+                    .user(requester)
+                    .depositeAmount(depositAmount)
+                    .build();
+
+            auctionRegistrationsRepository.save(auctionRegistration);
+
+            // Trừ tiền cọc từ ví của người dùng
+            walletCustomer.setBalance(walletCustomer.getBalance() - depositAmount);
+            walletCustomerRepository.save(walletCustomer);
+
+            double commissionRate = 0.05; // 5%
+            long commissionAmount = (long) (depositAmount * commissionRate);
+
+            // Chuyển tiền cọc vào ví của admin (giả sử có phương thức này trong WalletService)
+            // walletService.transferToAdmin(depositAmount);
+            WalletSystem walletSystem = walletSystemRepository.findFirstByOrderByWalletAdminIdAsc().orElse(null);
+            assert walletSystem != null;
+            walletSystem.setBalance(walletSystem.getBalance() + depositAmount);
+            TransactionWallet transactionWallet = TransactionWallet.builder()
+                    .transactionType(TransactionType.DEPOSIT_AUCTION)
+                    .amount((long) depositAmount)
+                    .transactionStatus(TransactionStatus.COMPLETED)
+                    .walletSystem(walletSystem)
+                    .walletCustomer(walletCustomer)
+                    .commissionAmount((int) commissionAmount)
+                    .commissionRate(commissionRate)
+                    .transactionWalletCode(generate())
+                    .build();
+            transactionWalletRepository.save(transactionWallet);
+
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .data(auctionRegistration)
+                    .message("Registered auction successfully")
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                .status(HttpStatus.BAD_REQUEST)
+                .data(null)
+                .message("Auction is closed")
+                .build());
     }
+
+    private static long generate() {
+        SecureRandom secureRandom = new SecureRandom();
+        long randomNumber = 100000 + secureRandom.nextInt(900000); // nextInt(900000) tạo số từ 0 đến 899999
+        return randomNumber;
+    }
+
 
     @Override
     public void updateAuctionRegistration(int arId, AuctionRegistrationsDto auctionRegistrationsDto) throws Exception {
