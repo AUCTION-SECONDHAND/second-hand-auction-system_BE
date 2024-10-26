@@ -19,9 +19,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -117,7 +115,8 @@ public class TransactionWalletService implements ITransactionWalletService {
     @Override
     public ResponseEntity<?> getTransactionWalletsBider(int size, int page) {
         Pageable pageable = PageRequest.of(page, size);
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
                     .status(HttpStatus.UNAUTHORIZED)
@@ -135,22 +134,24 @@ public class TransactionWalletService implements ITransactionWalletService {
                     .message("User not found")
                     .build());
         }
-        Page<TransactionWallet> transactionWalletsPage = transactionWalletRepository.findTransactionWalletByWalletCustomer_User_Id(user.getId(), pageable);
-        if (transactionWalletsPage.hasContent()) {
-            List<TransactionWallet> transactionWallets = transactionWalletsPage.getContent();
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .data(transactionWallets)
-                    .message("Transaction wallets retrieved successfully")
-                    .build());
-        } else {
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .data(Collections.emptyList())
-                    .message("No transaction wallets found")
-                    .build());
-        }
+
+        Page<TransactionWallet> transactionWalletsPage = transactionWalletRepository
+                .findTransactionWalletByWalletCustomer_User_Id(user.getId(), pageable);
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("data", transactionWalletsPage.getContent());
+
+        responseData.put("totalPages", transactionWalletsPage.getTotalPages());
+        responseData.put("totalElements", transactionWalletsPage.getTotalElements());
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(responseData)
+                .message("Transaction wallets retrieved successfully")
+                .build());
     }
+
+
 
 
 

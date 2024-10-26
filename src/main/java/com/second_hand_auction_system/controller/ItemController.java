@@ -228,7 +228,7 @@ public class ItemController {
 
     @GetMapping("/auction-completed/user")
     public ResponseEntity<?> getAuctionCompleted(@RequestParam(value = "page",defaultValue = "0")int page,
-                                                 @RequestParam(value = "limit",defaultValue = "0") int limit) throws Exception {
+                                                 @RequestParam(value = "limit",defaultValue = "10") int limit) throws Exception {
         return itemService.getItemAuctionCompleted(page,limit);
     }
 

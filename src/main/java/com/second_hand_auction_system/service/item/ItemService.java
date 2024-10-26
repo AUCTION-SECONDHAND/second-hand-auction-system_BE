@@ -26,9 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -210,17 +208,21 @@ public class ItemService implements IItemService {
     @Override
     public ResponseEntity<?> getItemAuctionCompleted(int page, int limit) {
         Pageable pageable = PageRequest.of(page, limit);
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
-                            .status(HttpStatus.UNAUTHORIZED)
-                            .message("Unauthorized")
-                            .data(null)
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .message("Unauthorized")
+                    .data(null)
                     .build());
         }
+
         String token = authHeader.substring(7);
         String userEmail = jwtService.extractUserEmail(token);
         User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+
         if (requester == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .status(HttpStatus.NOT_FOUND)
@@ -228,14 +230,20 @@ public class ItemService implements IItemService {
                     .data(null)
                     .build());
         }
+
         Page<Item> items = itemRepository.findAllByUserIdAndAuctionStatus(requester.getId(), AuctionStatus.COMPLETED, pageable);
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("items", items.map(auctionItemConvert::toAuctionItemResponse).getContent());
+        responseData.put("totalPages", items.getTotalPages());
+        responseData.put("totalElements", items.getTotalElements());
 
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .status(HttpStatus.OK)
                 .message("Success")
-                .data(items.map(auctionItemConvert::toAuctionItemResponse))
+                .data(responseData)
                 .build());
     }
+
 
     @Override
     public AuctionItemResponse getAuctionItemById(int itemId) throws Exception {
