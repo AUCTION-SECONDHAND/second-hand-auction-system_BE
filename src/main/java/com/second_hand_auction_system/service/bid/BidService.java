@@ -186,31 +186,128 @@ public class BidService implements IBidService {
 
 
     @Override
-    public BidResponse updateBid(Integer bidId, BidDto bidDto) throws Exception {
-        // Find existing bid
-        Bid existingBid = bidRepository.findById(bidId)
-                .orElseThrow(() -> new Exception("Bid not found"));
+    public ResponseEntity<?> updateBid(Integer bidId, BidRequest bidDto) {
+        try {
+            // 1. Extract token from the request
+            String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                    .getRequest().getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return buildUnauthorizedResponse();
+            }
 
-        // Find User and Auction entities
-        User user = userRepository.findById(bidDto.getUserId())
-                .orElseThrow(() -> new Exception("User not found"));
-        Auction auction = auctionRepository.findById(bidDto.getAuctionId())
-                .orElseThrow(() -> new Exception("Auction not found"));
+            token = token.substring(7); // Remove "Bearer "
+            String email = jwtService.extractUserEmail(token);
 
-        // Update bid details
-        existingBid.setBidAmount(bidDto.getBidAmount());
-//        existingBid.setBidTime(bidDto.getBidTime());
-//        existingBid.setBidStatus(bidDto.getBidStatus());
-        existingBid.setWinBid(bidDto.isWinBid());
-        existingBid.setUser(user);
-        existingBid.setAuction(auction);
+            // 2. Validate user
+            User requester = userRepository.findByEmail(email).orElse(null);
+            if (requester == null) {
+                return buildNotFoundResponse("User not found");
+            }
 
-        // Save updated bid
-        Bid updatedBid = bidRepository.save(existingBid);
+            // 3. Check if the bid exists
+            Bid existingBid = bidRepository.findById(bidId).orElse(null);
+            if (existingBid == null) {
+                return buildNotFoundResponse("Bạn chưa dua ra muc gia nao");
+            }
 
-        // Convert entity to response
-        return BidConverter.convertToResponse(updatedBid);
+            // 4. Find the auction
+            Auction auction = auctionRepository.findById(bidDto.getAuctionId()).orElse(null);
+            if (auction == null) {
+                return buildNotFoundResponse("Auction not found");
+            }
+
+            // 5. Check auction type
+            if (!isEnglishAuction(auction)) {
+                return buildBadRequestResponse("Không thể đặt giá bid cho đấu giá ngược");
+            }
+
+            // 6. Validate new bid amount
+            if (bidDto.getBidAmount() <= existingBid.getBidAmount()) {
+                return buildBadRequestResponse("New bid amount must be higher than the existing bid amount: " + existingBid.getBidAmount());
+            }
+
+            // 7. Check auction timing
+            if (!isAuctionActive(auction)) {
+                return buildBadRequestResponse("Bidding is not allowed at this time");
+            }
+
+            // 8. Check auction status
+            if (!auction.getStatus().equals(AuctionStatus.OPEN)) {
+                return buildBadRequestResponse("Auction is not open for bidding");
+            }
+
+            // 9. Update the bid
+            existingBid.setBidAmount(bidDto.getBidAmount());
+            existingBid.setBidTime(LocalDateTime.now());
+            Bid updatedBid = bidRepository.save(existingBid);
+            BidResponse bidResponse =modelMapper.map(updatedBid, BidResponse.class);
+
+            // 10. Return success response
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .data(bidResponse)
+                    .message("Bid updated successfully")
+                    .status(HttpStatus.OK)
+                    .build());
+        } catch (Exception e) {
+            // Handle exceptions
+            return buildErrorResponse(e);
+        }
     }
+
+    // Helper methods for building responses
+    private ResponseEntity<ResponseObject> buildUnauthorizedResponse() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ResponseObject.builder()
+                        .data(null)
+                        .message("Unauthorized")
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .build());
+    }
+
+    private ResponseEntity<ResponseObject> buildNotFoundResponse(String message) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ResponseObject.builder()
+                        .data(null)
+                        .message(message)
+                        .status(HttpStatus.NOT_FOUND)
+                        .build());
+    }
+
+    private ResponseEntity<ResponseObject> buildBadRequestResponse(String message) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ResponseObject.builder()
+                        .data(null)
+                        .message(message)
+                        .status(HttpStatus.BAD_REQUEST)
+                        .build());
+    }
+
+    private ResponseEntity<ResponseObject> buildErrorResponse(Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ResponseObject.builder()
+                        .data(null)
+                        .message("Error occurred: " + e.getMessage())
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .build());
+    }
+
+    private boolean isEnglishAuction(Auction auction) {
+        return auction.getAuctionType().getAuctionTypeName().equals("Đấu giá kiểu Anh");
+    }
+
+    private boolean isAuctionActive(Auction auction) {
+        LocalDateTime auctionStartDateTime = auction.getStartDate().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime()
+                .with(auction.getStartTime().toLocalTime());
+        LocalDateTime auctionEndDateTime = auction.getEndDate().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime()
+                .with(auction.getEndTime().toLocalTime());
+        return !(LocalDateTime.now().isBefore(auctionStartDateTime) || LocalDateTime.now().isAfter(auctionEndDateTime));
+    }
+
+
 
     @Override
     public void deleteBid(Integer bidId) throws Exception {

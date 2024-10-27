@@ -12,8 +12,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class BidDto {
-    @NotNull(message = "Bid ID is required")
-    private Integer bidId;
+//    @NotNull(message = "Bid ID is required")
+//    private Integer bidId;
 
     @NotNull(message = "Bid amount is required")
     private int bidAmount;
@@ -27,9 +27,9 @@ public class BidDto {
     @NotNull(message = "Win bid status is required")
     private boolean winBid;
 
-    @NotNull(message = "User ID is required")
-    @JsonProperty
-    private Integer userId;
+//    @NotNull(message = "User ID is required")
+//    @JsonProperty
+//    private Integer userId;
 
     @NotNull(message = "Auction ID is required")
     @JsonProperty

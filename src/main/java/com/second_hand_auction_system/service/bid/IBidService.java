@@ -12,7 +12,7 @@ public interface IBidService {
 
     ResponseEntity<?> createBid(BidRequest bidRequest) throws Exception;
 
-    BidResponse updateBid(Integer bidId, BidDto bidDto) throws Exception;
+    ResponseEntity<?> updateBid(Integer bidId, BidRequest bidDto) throws Exception;
 
     void deleteBid(Integer bidId) throws Exception;
 

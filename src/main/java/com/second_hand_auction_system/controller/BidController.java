@@ -25,9 +25,8 @@ public class BidController {
     }
 
     @PutMapping("/{bidId}")
-    public ResponseEntity<BidResponse> updateBid(@PathVariable Integer bidId, @RequestBody BidDto bidDto) throws Exception {
-        BidResponse response = bidService.updateBid(bidId, bidDto);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> updateBid(@PathVariable Integer bidId, @RequestBody BidRequest bidDto) throws Exception {
+        return  bidService.updateBid(bidId, bidDto);
     }
 
     // Xóa một Bid

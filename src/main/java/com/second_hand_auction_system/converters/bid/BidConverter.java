@@ -11,7 +11,7 @@ public class BidConverter {
     // Converter BidDto => Bid entity
     public static Bid convertToEntity(BidDto bidDto, User user, Auction auction) {
         Bid bid = new Bid();
-        bid.setBidId(bidDto.getBidId());
+//        bid.setBidId(bidDto.getBidId());
         bid.setBidAmount(bidDto.getBidAmount());
 //        bid.setBidTime(bidDto.getBidTime());
 //        bid.setBidStatus(bidDto.getBidStatus());
