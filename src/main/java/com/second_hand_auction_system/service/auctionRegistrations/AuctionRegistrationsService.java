@@ -4,6 +4,7 @@ import com.second_hand_auction_system.converters.auctionRegistrations.AuctionReg
 import com.second_hand_auction_system.dtos.request.auctionRegistrations.AuctionRegistrationsDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
+import com.second_hand_auction_system.dtos.responses.auctionRegistrations.CheckStatusAuctionRegisterResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.jwt.IJwtService;
@@ -24,7 +25,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -132,7 +135,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
 
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .status(HttpStatus.OK)
-                    .data(auctionRegistration)
+                    .data(null)
                     .message("Registered auction successfully")
                     .build());
         }
@@ -182,6 +185,39 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 .orElseThrow(() -> new RuntimeException("Auction not found"));
         AuctionRegistrationsResponse auctionRegistrationsResponse = auctionRegistrationsConverter.toAuctionRegistrationsResponse(auctionRegistration);
         return auctionRegistrationsResponse;
+    }
+
+    @Override
+    public List<CheckStatusAuctionRegisterResponse> getRegistrationsByUserId() throws Exception {
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization").substring(7);
+        Integer user = extractUserIdFromToken(token);
+        List<AuctionRegistration> auctionRegistrations = auctionRegistrationsRepository.findByUserId(user);
+        return auctionRegistrations.stream()
+                .map(registration -> new CheckStatusAuctionRegisterResponse(
+                        registration.getUser().getId(),
+                        registration.getAuction().getAuctionId(),
+                        registration.getRegistration()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public CheckStatusAuctionRegisterResponse getRegistrationsByUserIdAnhAuctionId(Integer auctionId) throws Exception {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new RuntimeException("Auction not found"));
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization").substring(7);
+        Integer user = extractUserIdFromToken(token);
+//        CheckStatusAuctionRegisterResponse checkStatusAuctionRegisterResponse = auctionRegistrationsRepository
+//                .findByUserIdAndAuction_AuctionId(user,auction.getAuctionId());
+        AuctionRegistration checkStatusAuctionRegisterResponse = auctionRegistrationsRepository
+                .findByUserIdAndAuction_AuctionId(user,auction.getAuctionId());
+        return CheckStatusAuctionRegisterResponse.builder()
+                .auctionId(auction.getAuctionId())
+                .userId(user)
+                .registration(checkStatusAuctionRegisterResponse.getRegistration())
+                .build();
     }
 
 

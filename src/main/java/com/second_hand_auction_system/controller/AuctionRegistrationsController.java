@@ -4,6 +4,7 @@ import com.second_hand_auction_system.dtos.request.auctionRegistrations.AuctionR
 import com.second_hand_auction_system.dtos.responses.ResponseListObject;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
+import com.second_hand_auction_system.dtos.responses.auctionRegistrations.CheckStatusAuctionRegisterResponse;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.service.auctionRegistrations.IAuctionRegistrationsService;
@@ -104,6 +105,31 @@ public class AuctionRegistrationsController {
                         .status(HttpStatus.OK)
                         .message("Success")
                         .data(auctionRegistrationsResponse)
+                        .build()
+        );
+    }
+
+    @GetMapping("/check-registration")
+    public ResponseEntity<?> getCheckRegistrationAuction() throws Exception {
+        List<CheckStatusAuctionRegisterResponse> checkStatusAuctionRegisterResponse = auctionRegistrationsService.getRegistrationsByUserId();
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(checkStatusAuctionRegisterResponse)
+                        .build()
+        );
+    }
+
+    @GetMapping("/check-registration/{auctionId}")
+    public ResponseEntity<?> getCheckRegisterByAuctionId(@PathVariable Integer auctionId) throws Exception {
+
+        CheckStatusAuctionRegisterResponse checkStatusAuctionRegisterResponse = auctionRegistrationsService.getRegistrationsByUserIdAnhAuctionId(auctionId);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(checkStatusAuctionRegisterResponse)
                         .build()
         );
     }
