@@ -70,31 +70,31 @@ public class AuctionRegistrationsController {
         );
     }
 
-    @GetMapping("/user")
-    public ResponseEntity<?> getAuctionRegistrationsByUser(
-            //@RequestParam(value = "keyword", required = false) String keyword,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "limit", defaultValue = "10") int limit
-    ) throws Exception {
-        PageRequest pageRequest = PageRequest.of(page, limit);
-        //, Sort.by("id").descending()
-        Page<AuctionRegistrationsResponse> auctionRegistrations = auctionRegistrationsService.findAllAuctionRegistrationsByUserId(pageRequest);
-        int totalPages = auctionRegistrations.getTotalPages();
-        Long totalOrder = auctionRegistrations.getTotalElements();
-        List<AuctionRegistrationsResponse> auctionRegistrationsResponses = auctionRegistrations.getContent();
-        ResponseListObject<List<AuctionRegistrationsResponse>> responseListObject = ResponseListObject.<List<AuctionRegistrationsResponse>>builder()
-                .data(auctionRegistrationsResponses)
-                .totalElements(totalOrder)
-                .totalPages(totalPages)
-                .build();
-        return ResponseEntity.ok(
-                ResponseObject.builder()
-                        .status(HttpStatus.OK)
-                        .message("Success")
-                        .data(responseListObject)
-                        .build()
-        );
-    }
+//    @GetMapping("/user")
+//    public ResponseEntity<?> getAuctionRegistrationsByUser(
+//            //@RequestParam(value = "keyword", required = false) String keyword,
+//            @RequestParam(value = "page", defaultValue = "0") int page,
+//            @RequestParam(value = "limit", defaultValue = "10") int limit
+//    ) throws Exception {
+//        PageRequest pageRequest = PageRequest.of(page, limit);
+//        //, Sort.by("id").descending()
+//        Page<AuctionRegistrationsResponse> auctionRegistrations = auctionRegistrationsService.findAllAuctionRegistrationsByUserId(pageRequest);
+//        int totalPages = auctionRegistrations.getTotalPages();
+//        Long totalOrder = auctionRegistrations.getTotalElements();
+//        List<AuctionRegistrationsResponse> auctionRegistrationsResponses = auctionRegistrations.getContent();
+//        ResponseListObject<List<AuctionRegistrationsResponse>> responseListObject = ResponseListObject.<List<AuctionRegistrationsResponse>>builder()
+//                .data(auctionRegistrationsResponses)
+//                .totalElements(totalOrder)
+//                .totalPages(totalPages)
+//                .build();
+//        return ResponseEntity.ok(
+//                ResponseObject.builder()
+//                        .status(HttpStatus.OK)
+//                        .message("Success")
+//                        .data(responseListObject)
+//                        .build()
+//        );
+//    }
 
     @GetMapping("/detail/{id}")
     public ResponseEntity<?> getItemDetail(@PathVariable Integer id) throws Exception {

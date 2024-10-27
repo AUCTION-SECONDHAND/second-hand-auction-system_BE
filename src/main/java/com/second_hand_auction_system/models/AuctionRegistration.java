@@ -4,6 +4,8 @@ import com.second_hand_auction_system.utils.Registration;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,9 +28,14 @@ public class AuctionRegistration extends BaseEntity{
 //    @Column(name = "note")
 //    private String note;
 
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @ManyToMany
+    @JoinTable(
+            name = "user_auction_registration",
+            joinColumns = @JoinColumn(name = "auction_registration_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private List<User> users;
+
 
     @OneToOne
     @JoinColumn(name = "auction_id")

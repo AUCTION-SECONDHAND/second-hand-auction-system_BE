@@ -24,6 +24,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -85,7 +87,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         }
 
         if (auctionExist.getStatus().equals(AuctionStatus.OPEN)) {
-            // Tính số tiền cọc
+            // Tính số tiền cọc 10% so voi gia khoi diem
             double depositAmount = 0.1 * auctionExist.getStartPrice();
 
             // Kiểm tra số dư ví có đủ cho tiền cọc không
@@ -96,11 +98,13 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                         .message("You do not have enough money in your wallet for the deposit amount")
                         .build());
             }
+            List<User> usersList = new ArrayList<>();
+            usersList.add(requester);
 
             AuctionRegistration auctionRegistration = AuctionRegistration.builder()
                     .registration(Registration.CONFIRMED)
                     .auction(auctionExist)
-                    .user(requester)
+                    .users(usersList)
                     .depositeAmount(depositAmount)
                     .build();
 
@@ -132,7 +136,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
 
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .status(HttpStatus.OK)
-                    .data(auctionRegistration)
+                    .data(null)
                     .message("Registered auction successfully")
                     .build());
         }
@@ -167,14 +171,14 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         return auctionRegistrations.map(auctionRegistrationsConverter::toAuctionRegistrationsResponse);
     }
 
-    @Override
-    public Page<AuctionRegistrationsResponse> findAllAuctionRegistrationsByUserId(PageRequest pageRequest) throws Exception {
-        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
-                .getRequest().getHeader("Authorization").substring(7);
-        Integer userId = extractUserIdFromToken(token);
-        Page<AuctionRegistration> auctionRegistrations = auctionRegistrationsRepository.findByUserId(userId, pageRequest);
-        return auctionRegistrations.map(auctionRegistrationsConverter::toAuctionRegistrationsResponse);
-    }
+//    @Override
+//    public Page<AuctionRegistrationsResponse> findAllAuctionRegistrationsByUserId(PageRequest pageRequest) throws Exception {
+//        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+//                .getRequest().getHeader("Authorization").substring(7);
+//        Integer userId = extractUserIdFromToken(token);
+//        Page<AuctionRegistration> auctionRegistrations = auctionRegistrationsRepository.findByUserId(userId, pageRequest);
+//        return auctionRegistrations.map(auctionRegistrationsConverter::toAuctionRegistrationsResponse);
+//    }
 
     @Override
     public AuctionRegistrationsResponse findAuctionRegistrationById(int arId) throws Exception {

@@ -6,13 +6,17 @@ import com.second_hand_auction_system.dtos.request.bid.BidRequest;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.models.Auction;
+import com.second_hand_auction_system.models.AuctionRegistration;
 import com.second_hand_auction_system.models.Bid;
 import com.second_hand_auction_system.models.User;
+import com.second_hand_auction_system.repositories.AuctionRegistrationsRepository;
 import com.second_hand_auction_system.repositories.AuctionRepository;
 import com.second_hand_auction_system.repositories.BidRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.AuctionStatus;
+import com.second_hand_auction_system.utils.Registration;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -35,116 +39,77 @@ public class BidService implements IBidService {
     private final BidRepository bidRepository;
     private final IJwtService jwtService;
     private final UserRepository userRepository;
-
+    private final AuctionRegistrationsRepository auctionRegistrationsRepository;
     private final AuctionRepository auctionRepository;
     private final ModelMapper modelMapper;
 
     @Override
+    @Transactional
     public ResponseEntity<?> createBid(BidRequest bidRequest) throws Exception {
-        String token = extractToken();
-        if (token == null) {
-            return createUnauthorizedResponse();
-        }
-
-        User requester = getRequesterByEmail(token);
-        if (requester == null) {
-            return createUserNotFoundResponse();
-        }
-
-        Auction auction = getAuctionById(bidRequest.getAuctionId());
-        if (auction == null) {
-            return createAuctionNotFoundResponse();
-        }
-
-        if (!isStandardAuction(auction)) {
-            return createInvalidAuctionTypeResponse();
-        }
-
-        if (!isAuctionOpen(auction)) {
-            return createAuctionNotOpenResponse();
-        }
-
-        if (!isWithinAuctionTime(auction)) {
-            return createInvalidTimeForBiddingResponse();
-        }
-
-        if (!isBidAmountValid(bidRequest, auction)) {
-            return createInvalidBidAmountResponse(bidRequest, auction);
-        }
-
-        Bid savedBid = saveBid(bidRequest, auction, requester);
-        return createSuccessResponse(savedBid);
-    }
-
-    private String extractToken() {
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+        // Lấy token và kiểm tra người dùng
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+        if (token == null || !token.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Unauthorized")
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .build());
         }
-        return null;
-    }
 
-    private ResponseEntity<?> createUnauthorizedResponse() {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
-                .data(null)
-                .message("Unauthorized")
-                .status(HttpStatus.UNAUTHORIZED)
-                .build());
-    }
-
-    private User getRequesterByEmail(String token) {
+        token = token.substring(7); // Lấy token sau "Bearer "
         String email = jwtService.extractUserEmail(token);
-        return userRepository.findByEmail(email).orElse(null);
-    }
+        User requester = userRepository.findByEmail(email).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("User not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+        }
 
-    private ResponseEntity<?> createUserNotFoundResponse() {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                .data(null)
-                .message("User not found")
-                .status(HttpStatus.NOT_FOUND)
-                .build());
-    }
+        // Kiểm tra phiên đấu giá
+        Auction auction = auctionRepository.findById(bidRequest.getAuctionId()).orElse(null);
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Auction not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+        }
+        var auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndRegistration(requester.getId(), Registration.CONFIRMED);
+        if(!auctionRegister) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Ban chua dang ki tham gia dau gia")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+        // Kiểm tra loại đấu giá
+        if (!auction.getAuctionType().getAuctionTypeName().equals("Đấu giá kiểu Anh")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Không thể đặt giá bid cho đấu giá ngược")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
 
-    // Retrieve the auction from the database by ID
-    private Auction getAuctionById(int auctionId) {
-        return auctionRepository.findById(auctionId).orElse(null);
-    }
+        // Kiểm tra trạng thái phiên đấu giá
+        if (!auction.getStatus().equals(AuctionStatus.OPEN)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Auction is not open for bidding")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
 
-    // Create a response when the auction is not found
-    private ResponseEntity<?> createAuctionNotFoundResponse() {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                .data(null)
-                .message("Auction not found")
-                .status(HttpStatus.NOT_FOUND)
-                .build());
-    }
-
-    private boolean isStandardAuction(Auction auction) {
-        return auction.getAuctionType().equals("Đấu giá tiêu chuẩn");
-    }
-
-    private ResponseEntity<?> createInvalidAuctionTypeResponse() {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                .data(null)
-                .message("Không thể đặt giá bid cho đấu giá ngược")
-                .status(HttpStatus.BAD_REQUEST)
-                .build());
-    }
-
-    private boolean isAuctionOpen(Auction auction) {
-        return auction.getStatus().equals(AuctionStatus.OPEN);
-    }
-
-    private ResponseEntity<?> createAuctionNotOpenResponse() {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                .data(null)
-                .message("Auction is not open for bidding")
-                .status(HttpStatus.BAD_REQUEST)
-                .build());
-    }
-
-    private boolean isWithinAuctionTime(Auction auction) {
+        // Kiểm tra thời gian phiên đấu giá
         LocalDateTime auctionStartDateTime = auction.getStartDate().toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime()
@@ -153,69 +118,57 @@ public class BidService implements IBidService {
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime()
                 .with(auction.getEndTime().toLocalTime());
-        return !LocalDateTime.now().isBefore(auctionStartDateTime) && !LocalDateTime.now().isAfter(auctionEndDateTime);
-    }
+        if (LocalDateTime.now().isBefore(auctionStartDateTime) || LocalDateTime.now().isAfter(auctionEndDateTime)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Bidding is not allowed at this time")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
 
-    private ResponseEntity<?> createInvalidTimeForBiddingResponse() {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                .data(null)
-                .message("Bidding is not allowed at this time")
-                .status(HttpStatus.BAD_REQUEST)
-                .build());
-    }
-
-    // Validate the bid amount against existing bids and auction requirements
-    private boolean isBidAmountValid(BidRequest bidRequest, Auction auction) {
+        // Kiểm tra số tiền bid hợp lệ
         Optional<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
         if (existingBids.isEmpty()) {
-            return bidRequest.getBidAmount() >= auction.getStartPrice();
+            if (bidRequest.getBidAmount() < auction.getStartPrice()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        ResponseObject.builder()
+                                .data(null)
+                                .message("Bid amount must be at least the auction start price")
+                                .status(HttpStatus.BAD_REQUEST)
+                                .build());
+            }
         } else {
             Bid highestBid = existingBids.get();
             int minimumRequiredBid = (int) (highestBid.getBidAmount() + auction.getPriceStep());
-            return bidRequest.getBidAmount() >= minimumRequiredBid;
+            if (bidRequest.getBidAmount() < minimumRequiredBid) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        ResponseObject.builder()
+                                .data(null)
+                                .message("Bid amount must be at least " + minimumRequiredBid)
+                                .status(HttpStatus.BAD_REQUEST)
+                                .build());
+            }
         }
+
+        // Lưu bid và trả về phản hồi thành công
+        Bid savedBid = bidRepository.save(
+                Bid.builder()
+                        .winBid(true)
+                        .bidTime(LocalDateTime.now())
+                        .auction(auction)
+                        .user(requester)
+                        .bidAmount(bidRequest.getBidAmount())
+                        .build()
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ResponseObject.builder()
+                        .data(null)
+                        .message("Created new bid")
+                        .status(HttpStatus.OK)
+                        .build());
     }
 
-    // Create a response for invalid bid amount
-    private ResponseEntity<?> createInvalidBidAmountResponse(BidRequest bidRequest, Auction auction) {
-        Optional<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
-        if (existingBids.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                    .data(null)
-                    .message("Bid amount must be at least the auction start price")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .build());
-        } else {
-            Bid highestBid = existingBids.get();
-            int minimumRequiredBid = (int) (highestBid.getBidAmount() + auction.getPriceStep());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                    .data(null)
-                    .message("Bid amount must be at least " + minimumRequiredBid)
-                    .status(HttpStatus.BAD_REQUEST)
-                    .build());
-        }
-    }
-
-    // Save the bid to the database
-    private Bid saveBid(BidRequest bidRequest, Auction auction, User requester) {
-        Bid bid = Bid.builder()
-                .winBid(true)
-                .bidTime(LocalDateTime.now())
-                .auction(auction)
-                .user(requester)
-                .bidAmount(bidRequest.getBidAmount())
-                .build();
-        return bidRepository.save(bid);
-    }
-
-    // Create a success response after saving the bid
-    private ResponseEntity<?> createSuccessResponse(Bid savedBid) {
-        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                .data(savedBid)
-                .message("Created new bid")
-                .status(HttpStatus.OK)
-                .build());
-    }
 
 
 
