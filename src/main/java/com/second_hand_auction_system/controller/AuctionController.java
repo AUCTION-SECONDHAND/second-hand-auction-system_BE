@@ -94,4 +94,6 @@ public class AuctionController {
     public ResponseEntity<?> getAuctions(){
         return auctionService.getAll();
     }
+
+
 }

@@ -4,8 +4,9 @@ import com.second_hand_auction_system.utils.Registration;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.List;
-
+import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,7 +15,7 @@ import java.util.List;
 @Entity
 @Builder
 @Table(name = "auction_registration")
-public class AuctionRegistration extends BaseEntity{
+public class AuctionRegistration extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer auctionRegistrationId;
@@ -24,9 +25,6 @@ public class AuctionRegistration extends BaseEntity{
 
     @Enumerated(EnumType.STRING)
     private Registration registration;
-//
-//    @Column(name = "note")
-//    private String note;
 
     @ManyToMany
     @JoinTable(
@@ -34,10 +32,9 @@ public class AuctionRegistration extends BaseEntity{
             joinColumns = @JoinColumn(name = "auction_registration_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private List<User> users;
+    private Set<User> users = new HashSet<>();
 
-
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "auction_id")
     private Auction auction;
 }

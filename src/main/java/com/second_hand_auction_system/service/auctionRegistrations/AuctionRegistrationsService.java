@@ -25,9 +25,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -70,6 +68,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .build());
         }
 
+        // Kiểm tra ví của người dùng
         WalletCustomer walletCustomer = walletCustomerRepository.findByUserId(requester.getId()).orElse(null);
         if (walletCustomer == null || walletCustomer.getBalance() < 0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
@@ -79,6 +78,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .build());
         }
 
+        // Kiểm tra phiên đấu giá
         Auction auctionExist = auctionRepository.findById(auctionRegistrationsDto.getAuction()).orElse(null);
         if (auctionExist == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
@@ -100,29 +100,43 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                         .message("You do not have enough money in your wallet for the deposit amount")
                         .build());
             }
-            List<User> userList = new ArrayList<>();
-            userList.add(requester);
-            AuctionRegistration auctionRegistration = AuctionRegistration.builder()
-                    .registration(Registration.CONFIRMED)
-                    .auction(auctionExist)
-                    .users(userList)
-                    .depositeAmount(depositAmount)
-                    .build();
 
-            auctionRegistrationsRepository.save(auctionRegistration);
+            // Kiểm tra đăng ký hiện có
+            // Tìm kiếm bản ghi AuctionRegistration theo auction ID
+            AuctionRegistration auctionRegistration = auctionRegistrationsRepository.findByAuction_AuctionId(auctionRegistrationsDto.getAuction()).orElse(null);
+
+            if (auctionRegistration == null) {
+                // Chèn mới
+                Set<User> users = new HashSet<>(); // Tạo một Set mới để chứa User
+                users.add(requester); // Thêm requester vào Set
+
+                AuctionRegistration createAuctionRegistration = AuctionRegistration.builder()
+                        .registration(Registration.CONFIRMED)
+                        .auction(auctionExist)
+                        .users(users) // Sử dụng Set đã tạo
+                        .depositeAmount(depositAmount)
+                        .build();
+                auctionRegistrationsRepository.save(createAuctionRegistration);
+            } else {
+                // Cập nhật bản ghi đã tồn tại
+                auctionRegistration.setRegistration(Registration.CONFIRMED);
+                auctionRegistration.getUsers().add(requester); // Thêm requester vào Set hiện có
+                auctionRegistration.setDepositeAmount(auctionRegistration.getDepositeAmount() + depositAmount);
+                auctionRegistrationsRepository.save(auctionRegistration);
+            }
 
             // Trừ tiền cọc từ ví của người dùng
             walletCustomer.setBalance(walletCustomer.getBalance() - depositAmount);
             walletCustomerRepository.save(walletCustomer);
 
-            double commissionRate = 0.05; // 5%
-            long commissionAmount = (long) (depositAmount * commissionRate);
-
-            // Chuyển tiền cọc vào ví của admin (giả sử có phương thức này trong WalletService)
-            // walletService.transferToAdmin(depositAmount);
+            // Cập nhật số dư ví của admin
             WalletSystem walletSystem = walletSystemRepository.findFirstByOrderByWalletAdminIdAsc().orElse(null);
             assert walletSystem != null;
             walletSystem.setBalance(walletSystem.getBalance() + depositAmount);
+
+            // Lưu giao dịch
+            double commissionRate = 0.05; // 5%
+            long commissionAmount = (long) (depositAmount * commissionRate);
             TransactionWallet transactionWallet = TransactionWallet.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
                     .amount((long) depositAmount)
@@ -137,7 +151,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
 
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .status(HttpStatus.OK)
-                    .data(auctionRegistration)
+                    .data(null)
                     .message("Registered auction successfully")
                     .build());
         }
@@ -148,6 +162,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 .message("Auction is closed")
                 .build());
     }
+
 
     private static long generate() {
         SecureRandom secureRandom = new SecureRandom();

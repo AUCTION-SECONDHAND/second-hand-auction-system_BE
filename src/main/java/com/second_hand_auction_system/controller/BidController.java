@@ -58,4 +58,11 @@ public class BidController {
         return bidService.findWinnerAuction(auctionId);
     }
 
+    @GetMapping("/history-bid/{auctionId}")
+    public ResponseEntity<?> getAllBids(@PathVariable Integer auctionId,
+                                                        @RequestParam(value = "limit", defaultValue = "10") int limit,
+                                                        @RequestParam(value = "page", defaultValue = "0") int page) throws Exception {
+        return bidService.getAllBids(auctionId,limit, page);
+    }
+
 }

@@ -28,9 +28,9 @@ public class BidConverter {
                 .bidAmount(bid.getBidAmount())
 //                .bidTime(bid.getBidTime())
 //                .bidStatus(bid.getBidStatus())
-                .winBid(bid.isWinBid())
+//                .winBid(bid.isWinBid())
                 .userId(bid.getUser().getId())
-                .username(bid.getUser().getUsername())
+                .username(bid.getUser().getFullName())
                 .auctionId(bid.getAuction().getAuctionId())
                 .build();
     }

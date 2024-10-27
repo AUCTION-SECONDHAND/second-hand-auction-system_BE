@@ -1,6 +1,8 @@
 package com.second_hand_auction_system.repositories;
 
 import com.second_hand_auction_system.models.Bid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +17,6 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     Optional<Bid> findTopByAuction_AuctionIdAndBidAmount(Integer auctionId, Integer bid);
 
     Optional<Bid> findByAuction_AuctionIdOrderByBidAmountDesc(Integer auctionId);
+
+    Page<Bid> findAllByAuction_AuctionIdOrderByBidAmountDesc(Integer auctionId, Pageable pageable);
 }

@@ -19,6 +19,9 @@ import com.second_hand_auction_system.utils.Registration;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -27,10 +30,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -81,14 +81,15 @@ public class BidService implements IBidService {
                             .build());
         }
         var auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndRegistration(requester.getId(), Registration.CONFIRMED);
-        if(!auctionRegister) {
+        if (!auctionRegister) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("Ban chua dang ki tham gia dau gia")
+                            .message("Bạn chưa đăng ký tham gia đấu giá")
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
+
         // Kiểm tra loại đấu giá
         if (!auction.getAuctionType().getAuctionTypeName().equals("Đấu giá kiểu Anh")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -129,7 +130,10 @@ public class BidService implements IBidService {
 
         // Kiểm tra số tiền bid hợp lệ
         Optional<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+        int minimumRequiredBid;
+
         if (existingBids.isEmpty()) {
+            // Không có bid nào trước đó, kiểm tra giá khởi điểm
             if (bidRequest.getBidAmount() < auction.getStartPrice()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         ResponseObject.builder()
@@ -139,8 +143,9 @@ public class BidService implements IBidService {
                                 .build());
             }
         } else {
-            Bid highestBid = existingBids.get();
-            int minimumRequiredBid = (int) (highestBid.getBidAmount() + auction.getPriceStep());
+            // Có bid trước đó
+            Bid highestBid = existingBids.get(); // Lấy bid cao nhất từ Optional
+            minimumRequiredBid = (int) (highestBid.getBidAmount() + auction.getPriceStep());
             if (bidRequest.getBidAmount() < minimumRequiredBid) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         ResponseObject.builder()
@@ -149,18 +154,26 @@ public class BidService implements IBidService {
                                 .status(HttpStatus.BAD_REQUEST)
                                 .build());
             }
+
+            // Cập nhật winBid cho tất cả các bid trước đó thành false
+            List<Bid> allBids = bidRepository.findByAuction_AuctionId(auction.getAuctionId());
+            for (Bid bid : allBids) {
+                bid.setWinBid(false);
+                bidRepository.save(bid); // Lưu thay đổi cho mỗi bid
+            }
         }
 
-        // Lưu bid và trả về phản hồi thành công
+        // Lưu bid mới và thiết lập winBid cho bid mới
         Bid savedBid = bidRepository.save(
                 Bid.builder()
-                        .winBid(true)
+                        .winBid(true) // Thiết lập winBid cho bid mới
                         .bidTime(LocalDateTime.now())
                         .auction(auction)
                         .user(requester)
                         .bidAmount(bidRequest.getBidAmount())
                         .build()
         );
+
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseObject.builder()
                         .data(null)
@@ -255,7 +268,7 @@ public class BidService implements IBidService {
         winningBidResponse.setBidAmount(winningBid.getBidAmount());
 //        winningBidResponse.setBidTime(winningBid.getBidTime());
 //        winningBidResponse.setBidStatus(winningBid.getBidStatus());
-        winningBidResponse.setWinBid(winningBid.isWinBid());
+//        winningBidResponse.setWinBid(winningBid.isWinBid());
         winningBidResponse.setUserId(winningBid.getUser().getId());
         winningBidResponse.setAuctionId(auctionId);
 //
@@ -266,6 +279,31 @@ public class BidService implements IBidService {
                 .build());
 
     }
+
+    @Override
+    public ResponseEntity<?> getAllBids(Integer auctionId, int limit, int page) {
+        Pageable pageable = PageRequest.of(page, limit);
+        var auction = auctionRepository.findById(auctionId).orElse(null);
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("Not found auction")
+                    .data(null)
+                    .build());
+        }
+        Page<Bid> list = bidRepository.findAllByAuction_AuctionIdOrderByBidAmountDesc(auctionId, pageable);
+        List<BidResponse> bidResponses = list.stream()
+                .map(BidConverter::convertToResponse)
+                .toList();
+        return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+                "status", HttpStatus.OK,
+                "message", "List auction",
+                "data", bidResponses,
+                "totalElements", list.getTotalElements(),
+                "totalPage",list.getTotalPages()
+        ));
+    }
+
 
 
     public Bid findWinner(int auctionId) {
