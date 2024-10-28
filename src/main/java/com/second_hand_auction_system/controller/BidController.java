@@ -31,9 +31,9 @@ public class BidController {
 
     // Xóa một Bid
     @DeleteMapping("/{bidId}")
-    public ResponseEntity<Void> deleteBid(@PathVariable Integer bidId) throws Exception {
-        bidService.deleteBid(bidId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteBid(@PathVariable Integer bidId) throws Exception {
+        return bidService.deleteBid(bidId);
+
     }
 
     // Lấy thông tin của một Bid theo ID
@@ -63,5 +63,6 @@ public class BidController {
                                                         @RequestParam(value = "page", defaultValue = "0") int page) throws Exception {
         return bidService.getAllBids(auctionId,limit, page);
     }
+
 
 }

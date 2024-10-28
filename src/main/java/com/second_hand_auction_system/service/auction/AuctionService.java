@@ -3,18 +3,24 @@ package com.second_hand_auction_system.service.auction;
 import com.second_hand_auction_system.dtos.request.auction.AuctionDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
-import com.second_hand_auction_system.dtos.responses.auction.ListAuction;
 import com.second_hand_auction_system.models.Auction;
+import com.second_hand_auction_system.models.Bid;
 import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.repositories.AuctionRepository;
+import com.second_hand_auction_system.repositories.BidRepository;
 import com.second_hand_auction_system.repositories.ItemRepository;
+import com.second_hand_auction_system.utils.AuctionStatus;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.sql.Time;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,11 +28,12 @@ import static com.second_hand_auction_system.utils.AuctionStatus.CANCELLED;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AuctionService implements IAuctionService {
     private final AuctionRepository auctionRepository;
     private final ItemRepository itemRepository;
     private final ModelMapper modelMapper;
+    private static final Logger logger = LoggerFactory.getLogger(AuctionService.class);
+    private final BidRepository bidRepository;
 
     @Override
     public void addAuction(AuctionDto auctionDto) throws Exception {
@@ -76,13 +83,11 @@ public class AuctionService implements IAuctionService {
     public ResponseEntity<?> getAll() {
         try {
             List<Auction> auctions = auctionRepository.findAll();
-            auctions.forEach(auction -> log.info("Auction data: {}", auction));
 
             List<AuctionResponse> auctionResponses = auctions.stream()
                     .map(this::convertToAuctionResponse) // Dùng phương thức ánh xạ thủ công
                     .collect(Collectors.toList());
 
-            auctionResponses.forEach(response -> log.info("Mapped AuctionResponse: {}", response));
 
             return ResponseEntity.ok(ResponseObject.builder()
                     .status(HttpStatus.OK)
@@ -98,6 +103,25 @@ public class AuctionService implements IAuctionService {
                 .data(null)
                 .build());
     }
+
+
+    @Scheduled(fixedRate = 50000) // Kiểm tra mỗi 2 giây
+    public void checkAuctionStatus() {
+        Date currentDate = new Date(System.currentTimeMillis());
+        Time currentTime = new Time(System.currentTimeMillis());
+
+        // Tìm tất cả các phiên đấu giá có ngày và giờ kết thúc đã qua và trạng thái là OPEN
+        List<Auction> auctions = auctionRepository.findAllByEndDateBeforeOrEndDateEqualsAndEndTimeBeforeAndStatus(
+                currentDate, currentDate, currentTime, AuctionStatus.OPEN
+        );
+
+        for (Auction auction : auctions) {
+            auction.setStatus(AuctionStatus.CLOSED); // Cập nhật trạng thái thành CLOSED
+            auctionRepository.save(auction);
+            logger.info("Auction with ID {} has been closed.", auction.getAuctionId());
+        }
+    }
+
 
     private AuctionResponse convertToAuctionResponse(Auction auction) {
         return AuctionResponse.builder()

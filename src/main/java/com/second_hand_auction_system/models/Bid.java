@@ -17,14 +17,14 @@ public class Bid extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer bidId;
 
-    @Column(name = "bid_amout")
-    private int bidAmount;
+    @Column(name = "bid_amount")
+    private Integer bidAmount;
 
     @Column(name = "bid_time")
     private LocalDateTime bidTime;
 
-//    @Column(name = "bid_status")
-//    private String bidStatus;
+//    @Column(name = "bid_change")
+//    private double bidChange;
 
     @Column(name = "win_bid")
     private boolean winBid;

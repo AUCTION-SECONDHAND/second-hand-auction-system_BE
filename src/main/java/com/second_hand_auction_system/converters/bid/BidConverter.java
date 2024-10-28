@@ -24,7 +24,7 @@ public class BidConverter {
     // Converter Bid entity => BidResponses
     public static BidResponse convertToResponse(Bid bid) {
         return BidResponse.builder()
-                .bidId(bid.getBidId())
+//                .bidId(bid.getBidId())
                 .bidAmount(bid.getBidAmount())
 //                .bidTime(bid.getBidTime())
 //                .bidStatus(bid.getBidStatus())

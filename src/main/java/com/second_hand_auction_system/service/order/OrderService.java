@@ -5,12 +5,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
+import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.bid.BidService;
 import com.second_hand_auction_system.service.jwt.JwtService;
-import com.second_hand_auction_system.service.walletCustomer.WalletCustomerService;
 import com.second_hand_auction_system.utils.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -22,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -31,8 +30,9 @@ import vn.payos.type.CheckoutResponseData;
 import vn.payos.type.ItemData;
 import vn.payos.type.PaymentData;
 
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,14 +68,34 @@ public class OrderService implements IOrderService {
                     .status(HttpStatus.NOT_FOUND)
                     .build());
         }
-        if (!auction.getStatus().equals(AuctionStatus.COMPLETED)) {
+        if (!(auction.getStatus().equals(AuctionStatus.COMPLETED) || auction.getStatus().equals(AuctionStatus.CLOSED))) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                     .data(null)
                     .message("Auction is not completed")
                     .status(HttpStatus.BAD_REQUEST)
                     .build());
         }
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
 
+        // Kiểm tra nếu Authorization header không tồn tại hoặc không hợp lệ
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ListUserResponse.builder()
+                            .users(null)
+                            .message("Missing or invalid Authorization header")
+                            .build());
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ListUserResponse.builder()
+                            .users(null)
+                            .message("Unauthorized request - User not found")
+                            .build());
+        }
         Bid winningBid = bidService.findWinner(auction.getAuctionId());
         if (winningBid == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
@@ -94,12 +114,13 @@ public class OrderService implements IOrderService {
                 .createBy(order.getCreateBy())
                 .status(OrderStatus.PENDING)
                 .item(item)
+                .user(requester)
                 .shippingMethod("free shipping")
                 .auction(auction)
                 .build();
         orderRepository.save(orderEntity);
         if (order.getPaymentMethod().equals(PaymentMethod.VN_PAYMENT)) {
-            String baseUrl = "https://www.facebook.com/";
+            String baseUrl = order.getReturnSuccess();
             ResponseEntity<?> vnpayResponse = vnpayService.paymentOrder(winningBid.getBidAmount(), orderEntity.getOrderId(), baseUrl);
             return ResponseEntity.status(HttpStatus.CREATED).body(ResponseObject.builder()
                     .data(vnpayResponse)

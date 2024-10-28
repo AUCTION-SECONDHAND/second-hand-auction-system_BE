@@ -21,9 +21,11 @@ public class Auction extends BaseEntity{
     private Integer auctionId;
 
     @Column(name = "start_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Time startTime;
 
     @Column(name = "end_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Time endTime;
 
     @Column(name = "start_date")

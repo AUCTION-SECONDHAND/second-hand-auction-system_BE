@@ -9,6 +9,5 @@ import lombok.*;
 @Builder
 public class APiResponse {
     private String message;
-    private String data;
-    private int code;
+    private String code;
 }

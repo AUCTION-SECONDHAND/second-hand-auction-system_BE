@@ -13,6 +13,7 @@ import com.second_hand_auction_system.repositories.AuctionRegistrationsRepositor
 import com.second_hand_auction_system.repositories.AuctionRepository;
 import com.second_hand_auction_system.repositories.BidRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.Registration;
@@ -41,7 +42,7 @@ public class BidService implements IBidService {
     private final UserRepository userRepository;
     private final AuctionRegistrationsRepository auctionRegistrationsRepository;
     private final AuctionRepository auctionRepository;
-    private final ModelMapper modelMapper;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -130,7 +131,7 @@ public class BidService implements IBidService {
 
         // Kiểm tra số tiền bid hợp lệ
         Optional<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
-        int minimumRequiredBid;
+        Integer minimumRequiredBid;
 
         if (existingBids.isEmpty()) {
             // Không có bid nào trước đó, kiểm tra giá khởi điểm
@@ -239,9 +240,28 @@ public class BidService implements IBidService {
             // 9. Update the bid
             existingBid.setBidAmount(bidDto.getBidAmount());
             existingBid.setBidTime(LocalDateTime.now());
-            Bid updatedBid = bidRepository.save(existingBid);
-            BidResponse bidResponse =modelMapper.map(updatedBid, BidResponse.class);
+            List<Bid> bids = bidRepository.findByAuction_AuctionId(auction.getAuctionId());
+            for (Bid bid : bids) {
+                bid.setWinBid(false); // Set all bids to not win
+            }
 
+            Bid highestBid = bids.stream()
+                    .max(Comparator.comparingInt(Bid::getBidAmount))
+                    .orElse(null);
+
+            if (highestBid != null) {
+                highestBid.setWinBid(true); // Set the highest bid to win
+            }
+            Bid updatedBid = bidRepository.save(existingBid);
+            BidResponse bidResponse = BidResponse.builder()
+                    .winBid(true)
+                    .bidAmount(bidDto.getBidAmount())
+                    .bidTime(LocalDateTime.now())
+                    .userId(requester.getId())
+                    .auctionId(auction.getAuctionId())
+                    .username(requester.getUsername())
+                    .build();
+            emailService.sendBidNotification(email,requester.getFullName(),bidDto.getBidAmount(),existingBid.getBidAmount(),auction.getAuctionId());
             // 10. Return success response
             return ResponseEntity.ok(ResponseObject.builder()
                     .data(bidResponse)
@@ -310,13 +330,21 @@ public class BidService implements IBidService {
 
 
     @Override
-    public void deleteBid(Integer bidId) throws Exception {
-        // Find bid
-        Bid bid = bidRepository.findById(bidId)
-                .orElseThrow(() -> new Exception("Bid not found"));
-
-        // Delete bid
-        bidRepository.delete(bid);
+    public ResponseEntity<?> deleteBid(Integer bidId) throws Exception {
+       var bid = bidRepository.findById(bidId).orElse(null);
+       if(bid!= null){
+           bidRepository.delete(bid);
+           return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                   .status(HttpStatus.OK)
+                   .message("Deleted successfully")
+                   .data(null)
+                   .build());
+       }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                        .status(HttpStatus.NOT_FOUND)
+                        .message("Bid not found")
+                        .data(null)
+                .build());
     }
 
     @Override
@@ -361,7 +389,7 @@ public class BidService implements IBidService {
         }
 //        Bid bidResponse = modelMapper.map(bids, BidResponse.class);
         BidResponse winningBidResponse = new BidResponse(); // Create a BidResponse object
-        winningBidResponse.setBidId(winningBid.getBidId());
+//        winningBidResponse.setBidId(winningBid.getBidId());
         winningBidResponse.setBidAmount(winningBid.getBidAmount());
 //        winningBidResponse.setBidTime(winningBid.getBidTime());
 //        winningBidResponse.setBidStatus(winningBid.getBidStatus());
@@ -382,24 +410,54 @@ public class BidService implements IBidService {
         Pageable pageable = PageRequest.of(page, limit);
         var auction = auctionRepository.findById(auctionId).orElse(null);
         if (auction == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                    .status(HttpStatus.NOT_FOUND)
-                    .message("Not found auction")
-                    .data(null)
-                    .build());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "status", HttpStatus.NOT_FOUND,
+                    "message", "Auction not found",
+                    "data", null
+            ));
         }
-        Page<Bid> list = bidRepository.findAllByAuction_AuctionIdOrderByBidAmountDesc(auctionId, pageable);
-        List<BidResponse> bidResponses = list.stream()
-                .map(BidConverter::convertToResponse)
-                .toList();
-        return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+
+        Page<Bid> bidPage = bidRepository.findAllByAuction_AuctionIdOrderByBidAmountDesc(auctionId, pageable);
+        List<BidResponse> bidResponses = new ArrayList<>();
+
+        // Giả định rằng các giá thầu được sắp xếp theo thứ tự giảm dần và giá thầu đầu tiên là giá thầu cao nhất
+        Integer previousBidAmount = null; // Giá thầu trước đó
+        for (Bid bid : bidPage) {
+            Integer bidChange = 0; // Số tiền thay đổi
+
+            // Tính toán số tiền thay đổi nếu có giá thầu trước đó
+            if (previousBidAmount != null) {
+                bidChange = bid.getBidAmount() - previousBidAmount; // Tính toán số tiền thay đổi
+            }
+
+            // Cập nhật giá thầu trước đó
+            previousBidAmount = bid.getBidAmount();
+
+            // Tạo đối tượng phản hồi
+            BidResponse bidResponse = BidResponse.builder()
+                    .bidAmount(bid.getBidAmount())
+                    .bidTime(bid.getBidTime())
+                    .winBid(bid.isWinBid())
+                    .userId(bid.getUser().getId())
+                    .auctionId(bid.getAuction().getAuctionId())
+                    .username(bid.getUser().getUsername())
+                    .bidChange(bidChange) // Thêm số tiền thay đổi vào phản hồi
+                    .build();
+
+            bidResponses.add(bidResponse);
+        }
+
+        return ResponseEntity.ok(Map.of(
                 "status", HttpStatus.OK,
-                "message", "List auction",
+                "message", "List of bids",
                 "data", bidResponses,
-                "totalElements", list.getTotalElements(),
-                "totalPage",list.getTotalPages()
+                "totalElements", bidPage.getTotalElements(),
+                "totalPages", bidPage.getTotalPages()
         ));
     }
+
+
+
 
 
 

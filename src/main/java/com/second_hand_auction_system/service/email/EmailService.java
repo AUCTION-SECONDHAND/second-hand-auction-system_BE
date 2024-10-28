@@ -537,6 +537,102 @@ public class EmailService {
         mailSender.send(mimeMessage);
     }
 
+    public void sendBidNotification(String email, String username, double newBidAmount, double oldBidAmount, int auctionId) throws MessagingException {
+        // Tạo nội dung cho email
+        String htmlContent = """
+        <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f9f9f9;
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background-color: #ffffff;
+                        border-radius: 10px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .header {
+                        background-color: #007bff;
+                        color: #ffffff;
+                        padding: 20px;
+                        text-align: center;
+                        border-top-left-radius: 10px;
+                        border-top-right-radius: 10px;
+                    }
+                    .header h1 {
+                        margin: 0;
+                        font-size: 24px;
+                    }
+                    .content {
+                        padding: 20px;
+                    }
+                    h1 {
+                        color: #333333;
+                        font-size: 20px;
+                    }
+                    p {
+                        font-size: 16px;
+                        color: #555555;
+                        line-height: 1.5;
+                    }
+                    .bid-amount {
+                        font-weight: bold;
+                        color: #d9534f;
+                        font-size: 18px;
+                    }
+                    .footer {
+                        background-color: #f1f1f1;
+                        padding: 10px;
+                        font-size: 12px;
+                        color: #777777;
+                        text-align: center;
+                        border-bottom-left-radius: 10px;
+                        border-bottom-right-radius: 10px;
+                        margin-top: 20px;
+                    }
+                    .footer p {
+                        margin: 5px 0;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Bid Notification</h1>
+                    </div>
+                    <div class="content">
+                        <p>Dear %s,</p>
+                        <p>You have successfully placed a new bid for auction ID: %d.</p>
+                        <p>Your previous bid amount: <span class="bid-amount">$%.2f</span></p>
+                        <p>Your new bid amount: <span class="bid-amount">$%.2f</span></p>
+                        <p>Thank you for participating in the auction!</p>
+                        <p>Best regards,</p>
+                        <p>Your Company Team</p>
+                    </div>
+                    <div class="footer">
+                        <p>If you have any questions, please contact our support team.</p>
+                        <p>Company Name | Address | Contact</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+    """.formatted(username, auctionId, oldBidAmount, newBidAmount);
+
+        // Tạo và gửi email
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+        mimeMessageHelper.setTo(email);
+        mimeMessageHelper.setSubject("Bid Placed Successfully");
+        mimeMessageHelper.setText(htmlContent, true);
+        mailSender.send(mimeMessage);
+    }
+
 
 
 }

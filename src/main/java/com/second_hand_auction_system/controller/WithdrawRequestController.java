@@ -2,10 +2,17 @@ package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawApprove;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawRequestDTO;
+import com.second_hand_auction_system.dtos.responses.order.VnpayResponse;
+import com.second_hand_auction_system.dtos.responses.withdraw.APiResponse;
+import com.second_hand_auction_system.models.TransactionSystem;
+import com.second_hand_auction_system.repositories.TransactionSystemRepository;
 import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.withdrawRequest.IWithdrawRequestService;
+import com.second_hand_auction_system.utils.TransactionStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,9 +20,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/withdrawRequest")
 @RequiredArgsConstructor
+@Slf4j
 public class WithdrawRequestController {
     private final IWithdrawRequestService withdrawRequestService;
     private final VNPAYService vnpayService;
+    private final TransactionSystemRepository transactionSystemRepository;
 
     @PostMapping("")
     public ResponseEntity<?> withdraw(@RequestBody WithdrawRequestDTO withdrawRequest) {
@@ -33,20 +42,39 @@ public class WithdrawRequestController {
         return vnpayService.createOrder(orderTotal, withdraw, baseUrl);
     }
 
-    @GetMapping("/vnpay-payment")
-    public String GetMapping(HttpServletRequest request, Model model){
-        int paymentStatus =vnpayService.orderReturn(request);
+    @GetMapping("/results")
+    public ResponseEntity<?> getResult(@RequestParam(name = "vnp_Amount") String vnpAmount,
+                                       @RequestParam(name = "vnp_BankCode") String vnpBankCode,
+                                       @RequestParam(name = "vnp_BankTranNo") String vnpBankTranNo,
+                                       @RequestParam(name = "vnp_CardType") String vnpCardType,
+                                       @RequestParam(name = "vnp_OrderInfo") String vnpOrderInfo,
+                                       @RequestParam(name = "vnp_PayDate") String vnpPayDate,
+                                       @RequestParam(name = "vnp_ResponseCode") String vnpResponseCode,
+                                       @RequestParam(name = "vnp_TmnCode") String vnpTmnCode,
+                                       @RequestParam(name = "vnp_TransactionNo") String vnpTransactionNo,
+                                       @RequestParam(name = "vnp_TransactionStatus") String vnpTransactionStatus,
+                                       @RequestParam(name = "vnp_TxnRef") String vnpTxnRef,
+                                       @RequestParam(name = "vnp_SecureHash") String vnpSecureHash,
+                                       @RequestParam(name = "id") Integer transactionId
+    ) {
+        log.info("vnpAmount|{}|vnpBankCode|{}|vnpBankTranNo|{}|vnpCardType|{}|vnpOrderInfo|{}|vnpPayDate|{}|" +
+                        "vnpPayDate|{}|vnpTmnCode|{}|vnpTransactionNo|{}|vnpTransactionStatus|{}|vnpTxnRef|{}|vnpSecureHash|{}",
+                vnpAmount, vnpBankCode, vnpBankTranNo, vnpCardType, vnpOrderInfo, vnpPayDate, vnpPayDate, vnpTmnCode,
+                vnpTransactionNo, vnpTransactionStatus, vnpTxnRef, vnpSecureHash);
+        var transactionSystem = transactionSystemRepository.findById(transactionId).orElseThrow(null);
 
-        String orderInfo = request.getParameter("vnp_OrderInfo");
-        String paymentTime = request.getParameter("vnp_PayDate");
-        String transactionId = request.getParameter("vnp_TransactionNo");
-        String totalPrice = request.getParameter("vnp_Amount");
-
-        model.addAttribute("orderId", orderInfo);
-        model.addAttribute("totalPrice", totalPrice);
-        model.addAttribute("paymentTime", paymentTime);
-        model.addAttribute("transactionId", transactionId);
-
-        return paymentStatus == 1 ? "ordersuccess" : "orderfail";
+        APiResponse response = new APiResponse();
+        if(vnpTransactionStatus.equals("00")) {
+            response.setCode("200");
+            response.setMessage("Payment success");
+            transactionSystem.setStatus(TransactionStatus.COMPLETED);
+            transactionSystemRepository.save(transactionSystem);
+        } else {
+            response.setCode("500");
+            response.setMessage("Payment processing error");
+            transactionSystem.setStatus(TransactionStatus.FAILED);
+            transactionSystemRepository.save(transactionSystem);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

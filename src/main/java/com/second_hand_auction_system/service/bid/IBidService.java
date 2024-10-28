@@ -14,7 +14,7 @@ public interface IBidService {
 
     ResponseEntity<?> updateBid(Integer bidId, BidRequest bidDto) throws Exception;
 
-    void deleteBid(Integer bidId) throws Exception;
+    ResponseEntity<?> deleteBid(Integer bidId) throws Exception;
 
     BidResponse getBidById(Integer bidId) throws Exception;
 

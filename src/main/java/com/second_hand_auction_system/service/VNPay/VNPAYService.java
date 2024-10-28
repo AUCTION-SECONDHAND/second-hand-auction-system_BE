@@ -100,40 +100,58 @@ public class VNPAYService implements VNPaySerivce {
 //        return paymentUrl;
 //    }
 
-    public int orderReturn(HttpServletRequest request) {
-        Map fields = new HashMap();
-        for (Enumeration params = request.getParameterNames(); params.hasMoreElements(); ) {
-            String fieldName = null;
-            String fieldValue = null;
-            try {
-                fieldName = URLEncoder.encode((String) params.nextElement(), StandardCharsets.US_ASCII.toString());
-                fieldValue = URLEncoder.encode(request.getParameter(fieldName), StandardCharsets.US_ASCII.toString());
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+    public ResponseEntity<?> orderReturn(HttpServletRequest request) {
+        Map<String, String> fields = new HashMap<>();
+
+        // Lấy tất cả các tham số từ request
+        for (Enumeration<String> params = request.getParameterNames(); params.hasMoreElements();) {
+            String fieldName = params.nextElement();
+            String fieldValue = request.getParameter(fieldName);
+            if (fieldValue != null && !fieldValue.isEmpty()) {
                 fields.put(fieldName, fieldValue);
             }
         }
 
+        // Lấy chữ ký từ request
         String vnp_SecureHash = request.getParameter("vnp_SecureHash");
-        if (fields.containsKey("vnp_SecureHashType")) {
-            fields.remove("vnp_SecureHashType");
-        }
-        if (fields.containsKey("vnp_SecureHash")) {
-            fields.remove("vnp_SecureHash");
-        }
+
+        // Loại bỏ các tham số không cần thiết để tính chữ ký
+        fields.remove("vnp_SecureHash");
+        fields.remove("vnp_SecureHashType");
+
+        // Tính toán chữ ký mới
         String signValue = VNPayConfig.hashAllFields(fields);
+
+        // Kiểm tra chữ ký
         if (signValue.equals(vnp_SecureHash)) {
-            if ("00".equals(request.getParameter("vnp_TransactionStatus"))) {
-                return 1;
+            String transactionStatus = request.getParameter("vnp_TransactionStatus");
+
+            if ("00".equals(transactionStatus)) {
+                // Giao dịch thành công
+                return ResponseEntity.ok(ResponseObject.builder()
+                        .data("Payment successful.")
+                        .message("Payment was completed successfully.")
+                        .status(HttpStatus.OK)
+                        .build());
             } else {
-                return 0;
+                // Giao dịch không thành công
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                        .data("Payment failed.")
+                        .message("Payment was not successful.")
+                        .status(HttpStatus.BAD_REQUEST)
+                        .build());
             }
         } else {
-            return -1;
+            // Chữ ký không hợp lệ
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .data("Invalid signature.")
+                    .message("The secure hash does not match.")
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .build());
         }
     }
+
+
 
 
     public ResponseEntity<?> createOrder(int total, int withdrawId, String urlReturn) {
@@ -224,6 +242,7 @@ public class VNPAYService implements VNPaySerivce {
                 .walletCustomer(withdraw.getWalletCustomer())
                 .walletSystem(walletSystem)
                 .transactionWalletId(Integer.valueOf(randomcode))
+
                 .build();
         transactionWalletRepository.save(transactionWallet);
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
@@ -320,6 +339,7 @@ public class VNPAYService implements VNPaySerivce {
                 .user(order.getItem().getUser())
                 .description(orderInfo)
                 .amount(total)
+                .transactionSystemId(1)
                 .status(TransactionStatus.PENDING)
                 .virtualAccountName(bankCode)
                 .transactionTime(vnp_CreateDate)
