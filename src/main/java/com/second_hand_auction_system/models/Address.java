@@ -18,8 +18,8 @@ public class Address extends BaseEntity {
     @Column(name = "distric_code")
     private String district_code;
 
-    @Column(name = "distric_name")
-    private String distric_name;
+    @Column(name = "district_name")
+    private String district_name;
 
     @Column(name = "address_name")
     private String address_name;

@@ -12,7 +12,7 @@ public interface IAddressService {
 
   AddressResponse getAddressById(Integer addressId) throws Exception;
 
-  List<AddressResponse> getAllAddress(Integer userId) throws Exception;
+  List<AddressResponse> getAllAddress() throws Exception;
 
   void deleteAddress(Integer addressId) throws Exception;
 

@@ -10,7 +10,7 @@ public class AddressConverter {
     public static Address convertToEntity(AddressDto addressDto, User user) {
         Address address = new Address();
         address.setDistrict_code(addressDto.getDistrict_code());
-        address.setDistric_name(addressDto.getDistrict_name());
+        address.setDistrict_name(addressDto.getDistrict_name());
         address.setAddress_name(addressDto.getAddress_name());
         address.setDefault_address(addressDto.getDefault_address());
         address.setLast_name(addressDto.getLast_name());
@@ -31,7 +31,7 @@ public class AddressConverter {
         return AddressResponse.builder()
                 .addressId(address.getAddressId())
                 .district_code(address.getDistrict_code())
-                .district_name(address.getDistric_name())
+                .district_name(address.getDistrict_name())
                 .address_name(address.getAddress_name())
                 .default_address(address.getDefault_address())
                 .last_name(address.getLast_name())

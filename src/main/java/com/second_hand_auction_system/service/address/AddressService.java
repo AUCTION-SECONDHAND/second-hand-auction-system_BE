@@ -7,10 +7,15 @@ import com.second_hand_auction_system.models.Address;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.AddressRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.service.email.EmailService;
+import com.second_hand_auction_system.service.jwt.IJwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -20,11 +25,25 @@ public class AddressService implements IAddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
-
+    private final IJwtService jwtService;
+    private final EmailService emailService;
     @Override
     public AddressResponse createAddress(AddressDto addressDto) throws Exception {
 
-        int addressCount = addressRepository.countByUserId(addressDto.getUserId());
+
+
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            throw new Exception("User not found");
+        }
+
+        int addressCount = addressRepository.countByUserId(requester.getId());
 
         // A user can only have 6 addresses
         if (addressCount >= 6) {
@@ -36,7 +55,7 @@ public class AddressService implements IAddressService {
 
         // Create a User instance to associate with the Address
         User user = new User();
-        user.setId(addressDto.getUserId());
+        user.setId(requester.getId());
 
         // Convert DTO to entity
         Address address = AddressConverter.convertToEntity(addressDto, user);
@@ -82,14 +101,21 @@ public class AddressService implements IAddressService {
     }
 
     @Override
-    public List<AddressResponse> getAllAddress(Integer userId) throws Exception {
-        List<Address> addresses = addressRepository.findByUserId(userId);
+    public List<AddressResponse> getAllAddress() throws Exception {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        List<Address> addresses = addressRepository.findByUserId(requester.getId());
         if (!addresses.isEmpty()) {
             return addresses.stream()
                     .map(AddressConverter::convertToResponse)
                     .collect(Collectors.toList());
         } else {
-            throw new Exception("No addresses found for user with ID: " + userId);
+            throw new Exception("No addresses found for user with ID: " + requester.getId());
         }
     }
 
@@ -124,4 +150,12 @@ public class AddressService implements IAddressService {
         return AddressConverter.convertToResponse(updatedAddress);
     }
 
+
+    public Integer extractUserIdFromToken(String token) throws Exception {
+        String userEmail = jwtService.extractUserEmail(token); // Extract email from token
+        User user = userRepository.findByEmail(userEmail) // Find user by email
+                .orElseThrow(() -> new Exception("User not found!!!"));
+        return user.getId();
+    }
 }
+

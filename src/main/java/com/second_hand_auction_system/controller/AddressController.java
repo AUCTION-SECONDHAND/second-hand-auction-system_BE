@@ -57,10 +57,10 @@ public class AddressController {
         }
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AddressResponse>> getAllAddress(@PathVariable Integer userId) {
+    @GetMapping("/user")
+    public ResponseEntity<List<AddressResponse>> getAllAddress() {
         try {
-            List<AddressResponse> addresses = addressService.getAllAddress(userId);
+            List<AddressResponse> addresses = addressService.getAllAddress();
             return new ResponseEntity<>(addresses, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
