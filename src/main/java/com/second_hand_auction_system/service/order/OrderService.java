@@ -143,8 +143,7 @@ public class OrderService implements IOrderService {
                     .description(order.getNote())
                     .amount(winningBid.getBidAmount())
                     .status(TransactionStatus.PENDING)
-//                    .virtualAccountName(paymentLinkData.getAccountNumber())
-                    .transactionTime(currentTime)
+                     .transactionTime(currentTime)
                     .build();
             transactionSystemRepository.save(transactionSystem);
             return createOrderByPayOS(order);

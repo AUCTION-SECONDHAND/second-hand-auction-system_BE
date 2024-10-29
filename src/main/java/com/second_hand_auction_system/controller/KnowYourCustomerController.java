@@ -31,9 +31,9 @@ public class KnowYourCustomerController {
     }
 
     @GetMapping()
-    public ResponseEntity<?> getAllKycs(@RequestParam(required = false) String search,
-                                        @RequestParam(required = false) Integer page,
-                                        @RequestParam(required = false) Integer size) {
-        return kycService.getKycs(search,page,size);
+    public ResponseEntity<?> getAllKycs(
+                                        @RequestParam(value = "page",defaultValue = "0") Integer page,
+                                        @RequestParam(value = "limit",defaultValue = "10") Integer size) {
+        return kycService.getKycs(page,size);
     }
 }

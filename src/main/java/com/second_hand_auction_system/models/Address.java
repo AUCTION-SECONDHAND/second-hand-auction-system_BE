@@ -15,7 +15,7 @@ public class Address extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer addressId;
 
-    @Column(name = "distric_code")
+    @Column(name = "district_code")
     private String district_code;
 
     @Column(name = "district_name")
