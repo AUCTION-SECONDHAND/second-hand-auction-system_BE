@@ -1,6 +1,6 @@
 package com.second_hand_auction_system.dtos.responses.kyc;
 
-import com.second_hand_auction_system.models.User;
+import com.second_hand_auction_system.dtos.responses.address.AddressResponse;
 import com.second_hand_auction_system.utils.Gender;
 import com.second_hand_auction_system.utils.KycStatus;
 import lombok.*;
@@ -25,7 +25,8 @@ public class KycResponse {
     private String backDocumentUrl;
     private KycStatus kycStatus;
     private Date submited;
-    private Integer user;
+    private Integer userId;
+    private AddressResponse address;
 
 
 

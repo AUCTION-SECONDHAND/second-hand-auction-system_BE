@@ -3,9 +3,11 @@ package com.second_hand_auction_system.service.knowYourCustomer;
 import com.second_hand_auction_system.dtos.request.kyc.ApproveKyc;
 import com.second_hand_auction_system.dtos.request.kyc.KycDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.address.AddressResponse;
 import com.second_hand_auction_system.dtos.responses.kyc.KycResponse;
 import com.second_hand_auction_system.models.KnowYourCustomer;
 import com.second_hand_auction_system.models.User;
+import com.second_hand_auction_system.repositories.AddressRepository;
 import com.second_hand_auction_system.repositories.KnowYourCustomerRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.service.email.EmailService;
@@ -25,10 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +38,8 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final EmailService emailService;
+    private final AddressRepository addressRepository;
+
 
     @Override
     @Transactional
@@ -105,7 +106,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .backDocumentUrl(kyc.getBackDocumentUrl())
                 .kycStatus(knowYourCustomer.getKycStatus())
                 .submited(knowYourCustomer.getSumbited())
-                .user(requester.getId()) // Gán userId
+                .userId(requester.getId()) // Gán userId
                 .build();
 
         // Trả về phản hồi thành công
@@ -157,9 +158,11 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     public ResponseEntity<?> getKycById(int kycId) {
         var kyc = knowYourCustomerRepository.findById(kycId).orElse(null);
         if (kyc != null) {
+            var address = addressRepository.findByUserIdAndStatusIsTrue(kyc.getKycId()).orElse(null);
+            AddressResponse addressResponse = modelMapper.map(address, AddressResponse.class);
             KycResponse kycResponse = KycResponse.builder()
                     .kycId(kycId)
-                    .user(kyc.getKycId())
+                    .userId(kyc.getKycId())
                     .dob(kyc.getDateOfBirth().toString())
                     .email(kyc.getEmail())
                     .gender(kyc.getGender())
@@ -172,6 +175,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                     .phoneNumber(kyc.getPhoneNumber())
                     .fullName(kyc.getFullName())
                     .submited(kyc.getSumbited())
+                    .address(addressResponse)
                     .build();
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .status(HttpStatus.OK)
@@ -187,44 +191,39 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     }
 
     @Override
-    public ResponseEntity<?> getKycs(String search, int page, int size) {
+    public ResponseEntity<?> getKycs(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-
-        Page<KnowYourCustomer> kycPage;
-        if (search != null && !search.isEmpty()) {
-            kycPage = knowYourCustomerRepository.findByFullNameContainingIgnoreCase(search, pageable);
-        } else {
-            kycPage = knowYourCustomerRepository.findAll(pageable);
-        }
+        Page<KnowYourCustomer> kycPage = knowYourCustomerRepository.findAll(pageable);
 
         List<KycResponse> kycResponses = kycPage.getContent()
                 .stream()
-                .map(kyc -> {
-
-                    return KycResponse.builder()
-                            .kycId(kyc.getKycId())
-                            .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null) // Chuyển đổi Date sang String nếu cần
-                            .age(kyc.getAge())
-                            .fullName(kyc.getFullName())
-                            .phoneNumber(kyc.getPhoneNumber())
-                            .email(kyc.getUser() != null ? kyc.getUser().getEmail() : null)
-                            .gender(kyc.getGender())
-                            .cccdNumber(kyc.getCccdNumber())
-                            .frontDocumentUrl(kyc.getFrontDocumentUrl())
-                            .backDocumentUrl(kyc.getBackDocumentUrl())
-                            .kycStatus(kyc.getKycStatus())
-                            .submited(kyc.getSumbited())
-                            .user(kyc.getUser() != null ? kyc.getUser().getId() : null)
-                            .build();
-                })
+                .map(kyc -> KycResponse.builder()
+                        .kycId(kyc.getKycId())
+                        .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null)
+                        .age(kyc.getAge())
+                        .fullName(kyc.getFullName())
+                        .phoneNumber(kyc.getPhoneNumber())
+                        .email(kyc.getUser() != null ? kyc.getUser().getEmail() : null)
+                        .gender(kyc.getGender())
+                        .cccdNumber(kyc.getCccdNumber())
+                        .frontDocumentUrl(kyc.getFrontDocumentUrl())
+                        .backDocumentUrl(kyc.getBackDocumentUrl())
+                        .kycStatus(kyc.getKycStatus())
+                        .submited(kyc.getSumbited())
+                        .userId(kyc.getUser() != null ? kyc.getUser().getId() : null)
+                        .build())
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(ResponseObject.builder()
-                .status(HttpStatus.OK)
-                .data(kycResponses)
-                .message("Fetched Kycs")
-                .build());
+        Map<String, Object> response = new HashMap<>();
+        response.put("data", kycResponses);
+        response.put("totalPages", kycPage.getTotalPages());
+        response.put("totalElements", kycPage.getTotalElements());
+        response.put("status", HttpStatus.OK);
+        response.put("message", "Fetched Kycs");
+
+        return ResponseEntity.ok(response);
     }
+
 
 
 

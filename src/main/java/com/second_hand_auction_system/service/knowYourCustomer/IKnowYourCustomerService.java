@@ -13,5 +13,5 @@ public interface IKnowYourCustomerService {
 
     ResponseEntity<?> getKycById(int kycId);
 
-    ResponseEntity<?> getKycs(String search, int page, int size);
+    ResponseEntity<?> getKycs( int page, int size);
 }
