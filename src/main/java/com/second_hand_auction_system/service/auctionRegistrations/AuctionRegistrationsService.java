@@ -247,6 +247,34 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 .build();
     }
 
+    @Override
+    public Map<String, Object> checkUserInAuction(Integer auctionRegistrationId) throws Exception {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            throw new Exception("User not found");
+        }
+
+        int userId = requester.getId();
+        System.out.println("Checking userId: " + userId + " for auctionRegistrationId: " + auctionRegistrationId);
+
+        boolean exists = auctionRegistrationsRepository.existsByUserIdAndAuctionRegistrationId(userId, auctionRegistrationId);
+
+        // Tạo Map để trả về
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", userId);
+        response.put("exists", exists);
+
+        return response;
+    }
+
+
+
 
     public Integer extractUserIdFromToken(String token) throws Exception {
         String userEmail = jwtService.extractUserEmail(token); // Extract email from token

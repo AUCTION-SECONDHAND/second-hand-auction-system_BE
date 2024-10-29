@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IAuctionRegistrationsService {
     ResponseEntity<?> addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
@@ -20,4 +21,6 @@ public interface IAuctionRegistrationsService {
     AuctionRegistrationsResponse findAuctionRegistrationById(int arId) throws Exception;
     List<CheckStatusAuctionRegisterResponse> getRegistrationsByUserId() throws Exception;
     CheckStatusAuctionRegisterResponse getRegistrationsByUserIdAnhAuctionId(Integer auctionId) throws Exception;
+
+    Map<String, Object> checkUserInAuction(Integer auctionId) throws Exception;
 }

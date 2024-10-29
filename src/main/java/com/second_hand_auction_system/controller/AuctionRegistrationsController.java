@@ -19,6 +19,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -133,4 +134,17 @@ public class AuctionRegistrationsController {
                         .build()
         );
     }
+
+
+
+    @GetMapping("/checkUser/{auctionId}")
+    public ResponseEntity<Map<String, Object>> checkUserInAuction(@PathVariable Integer auctionId) {
+        try {
+            Map<String, Object> response = auctionRegistrationsService.checkUserInAuction(auctionId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(null); // Trả về null trong thân dữ liệu nếu có lỗi
+        }
+    }
+
 }
