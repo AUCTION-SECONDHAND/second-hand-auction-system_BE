@@ -248,8 +248,9 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
     }
 
     @Override
-    public Map<String, Object> checkUserInAuction(Integer auctionRegistrationId) throws Exception {
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+    public Map<String, Object> checkUserInAuction(Integer auctionId) throws Exception {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
         }
@@ -261,7 +262,13 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         }
 
         int userId = requester.getId();
-        System.out.println("Checking userId: " + userId + " for auctionRegistrationId: " + auctionRegistrationId);
+        System.out.println("Checking userId: " + userId + " for auctionId: " + auctionId);
+
+        // Lấy auctionRegistrationId từ auctionId
+        Integer auctionRegistrationId = auctionRegistrationsRepository.findAuctionRegistrationIdByAuctionId(auctionId);
+        if (auctionRegistrationId == null) {
+            throw new Exception("Auction registration not found for the given auctionId");
+        }
 
         boolean exists = auctionRegistrationsRepository.existsByUserIdAndAuctionRegistrationId(userId, auctionRegistrationId);
 
@@ -272,6 +279,8 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
 
         return response;
     }
+
+
 
 
 

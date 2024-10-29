@@ -46,6 +46,150 @@ public class BidService implements IBidService {
 
     @Override
     @Transactional
+//    public ResponseEntity<?> createBid(BidRequest bidRequest) throws Exception {
+//        // Lấy token và kiểm tra người dùng
+//        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+//                .getRequest().getHeader("Authorization");
+//        if (token == null || !token.startsWith("Bearer ")) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+//                    ResponseObject.builder()
+//                            .data(null)
+//                            .message("Unauthorized")
+//                            .status(HttpStatus.UNAUTHORIZED)
+//                            .build());
+//        }
+//
+//        token = token.substring(7); // Lấy token sau "Bearer "
+//        String email = jwtService.extractUserEmail(token);
+//        User requester = userRepository.findByEmail(email).orElse(null);
+//        if (requester == null) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+//                    ResponseObject.builder()
+//                            .data(null)
+//                            .message("User not found")
+//                            .status(HttpStatus.NOT_FOUND)
+//                            .build());
+//        }
+//
+//        // Kiểm tra phiên đấu giá
+//        Auction auction = auctionRepository.findById(bidRequest.getAuctionId()).orElse(null);
+//        if (auction == null) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+//                    ResponseObject.builder()
+//                            .data(null)
+//                            .message("Auction not found")
+//                            .status(HttpStatus.NOT_FOUND)
+//                            .build());
+//        }
+//
+//        // Kiểm tra người dùng đã đăng ký tham gia đấu giá
+//        var auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndRegistration(requester.getId(), Registration.CONFIRMED);
+//        if (!auctionRegister) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+//                    ResponseObject.builder()
+//                            .data(null)
+//                            .message("Bạn chưa đăng ký tham gia đấu giá")
+//                            .status(HttpStatus.BAD_REQUEST)
+//                            .build());
+//        }
+//
+//        // Kiểm tra loại đấu giá
+//        if (!auction.getAuctionType().getAuctionTypeName().equals("Đấu giá kiểu Anh")) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+//                    ResponseObject.builder()
+//                            .data(null)
+//                            .message("Không thể đặt giá bid cho đấu giá ngược")
+//                            .status(HttpStatus.BAD_REQUEST)
+//                            .build());
+//        }
+//
+//        // Kiểm tra trạng thái phiên đấu giá
+//        if (!auction.getStatus().equals(AuctionStatus.OPEN)) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+//                    ResponseObject.builder()
+//                            .data(null)
+//                            .message("Auction is not open for bidding")
+//                            .status(HttpStatus.BAD_REQUEST)
+//                            .build());
+//        }
+//
+//        // Kiểm tra thời gian phiên đấu giá
+//        LocalDateTime auctionStartDateTime = auction.getStartDate().toInstant()
+//                .atZone(ZoneId.systemDefault())
+//                .toLocalDateTime()
+//                .with(auction.getStartTime().toLocalTime());
+//        LocalDateTime auctionEndDateTime = auction.getEndDate().toInstant()
+//                .atZone(ZoneId.systemDefault())
+//                .toLocalDateTime()
+//                .with(auction.getEndTime().toLocalTime());
+//        if (LocalDateTime.now().isBefore(auctionStartDateTime) || LocalDateTime.now().isAfter(auctionEndDateTime)) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+//                    ResponseObject.builder()
+//                            .data(null)
+//                            .message("Bidding is not allowed at this time")
+//                            .status(HttpStatus.BAD_REQUEST)
+//                            .build());
+//        }
+//
+//        // Kiểm tra nếu người dùng đã có bid nào cho phiên đấu giá này
+//        Optional<Bid> existingUserBid = bidRepository.findByUserAndAuction(requester, auction);
+//
+//        if (existingUserBid.isPresent()) {
+//            // Nếu đã có bid, kiểm tra số tiền bid hợp lệ
+//            Bid bid = existingUserBid.get();
+//
+//            // Kiểm tra số tiền bid hợp lệ
+//            Integer minimumRequiredBid = (int) (bid.getBidAmount() + auction.getPriceStep());
+//            if (bidRequest.getBidAmount() < minimumRequiredBid) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+//                        ResponseObject.builder()
+//                                .data(null)
+//                                .message("Bid amount must be at least " + minimumRequiredBid)
+//                                .status(HttpStatus.BAD_REQUEST)
+//                                .build());
+//            }
+//
+//            // Cập nhật bidAmount của bid hiện tại
+//            bid.setBidAmount(bidRequest.getBidAmount());
+//            bid.setBidTime(LocalDateTime.now()); // Cập nhật thời gian bid
+//            bidRepository.save(bid); // Lưu thay đổi
+//
+//            return ResponseEntity.status(HttpStatus.OK).body(
+//                    ResponseObject.builder()
+//                            .data(bid)
+//                            .message("Đã cập nhật giá đấu hiện tại")
+//                            .status(HttpStatus.OK)
+//                            .build());
+//        } else {
+//            // Nếu không có bid nào, tạo bid mới
+//            if (bidRequest.getBidAmount() < auction.getStartPrice()) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+//                        ResponseObject.builder()
+//                                .data(null)
+//                                .message("Bid amount must be at least the auction start price")
+//                                .status(HttpStatus.BAD_REQUEST)
+//                                .build());
+//            }
+//
+//            // Lưu bid mới và thiết lập winBid cho bid mới
+//            Bid savedBid = bidRepository.save(
+//                    Bid.builder()
+//                            .winBid(true) // Thiết lập winBid cho bid mới
+//                            .bidTime(LocalDateTime.now())
+//                            .auction(auction)
+//                            .user(requester)
+//                            .bidAmount(bidRequest.getBidAmount())
+//                            .build()
+//            );
+//
+//            return ResponseEntity.status(HttpStatus.CREATED).body(
+//                    ResponseObject.builder()
+//                            .data(savedBid)
+//                            .message("Đã tạo giá đấu mới")
+//                            .status(HttpStatus.CREATED)
+//                            .build());
+//        }
+//    }
     public ResponseEntity<?> createBid(BidRequest bidRequest) throws Exception {
         // Lấy token và kiểm tra người dùng
         String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
@@ -111,6 +255,9 @@ public class BidService implements IBidService {
                             .build());
         }
 
+
+
+
         // Kiểm tra thời gian phiên đấu giá
         LocalDateTime auctionStartDateTime = auction.getStartDate().toInstant()
                 .atZone(ZoneId.systemDefault())
@@ -129,11 +276,31 @@ public class BidService implements IBidService {
                             .build());
         }
 
+        // Kiểm tra nếu người dùng đã có bid nào cho phiên đấu giá này
+       Optional<Bid> existingUserBid = bidRepository.findByUserAndAuction(requester, auction);
+
+        if(existingUserBid.isPresent()){
+            Bid bid = existingUserBid.get();
+            // Cập nhật bidAmount của bid hiện tại
+            bid.setBidAmount(bidRequest.getBidAmount());
+            bid.setBidTime(LocalDateTime.now()); // Cập nhật thời gian bid
+            bidRepository.save(bid); // Lưu thay đổi
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Đã cập nhật giá đấu hiện tại")
+                            .status(HttpStatus.OK)
+                            .build());
+        }
+
+
         // Kiểm tra số tiền bid hợp lệ
         Optional<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
         Integer minimumRequiredBid;
 
         if (existingBids.isEmpty()) {
+
+
             // Không có bid nào trước đó, kiểm tra giá khởi điểm
             if (bidRequest.getBidAmount() < auction.getStartPrice()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -143,6 +310,9 @@ public class BidService implements IBidService {
                                 .status(HttpStatus.BAD_REQUEST)
                                 .build());
             }
+
+
+
         } else {
             // Có bid trước đó
             Bid highestBid = existingBids.get(); // Lấy bid cao nhất từ Optional
@@ -182,6 +352,8 @@ public class BidService implements IBidService {
                         .status(HttpStatus.OK)
                         .build());
     }
+
+
 
 
 
