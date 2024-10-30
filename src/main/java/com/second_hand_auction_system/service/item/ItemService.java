@@ -42,6 +42,7 @@ public class ItemService implements IItemService {
     private final EmailService emailService;
     private final AuctionRepository auctionRepository;
     private final AuctionItemConvert auctionItemConvert;
+    private final AuctionTypeRepository auctionTypeRepository;
 
     @Override
     @Transactional
@@ -50,6 +51,8 @@ public class ItemService implements IItemService {
 
         SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
                 .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
+        AuctionType auctionTypeExisted = auctionTypeRepository.findById(itemDto.getAuctionType())
+                .orElseThrow(() -> new DataNotFoundException("AuctionType not found with id: " + itemDto.getAuctionType()));
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
@@ -62,11 +65,11 @@ public class ItemService implements IItemService {
         }
         item.setItemStatus(ItemStatus.PENDING);
         item.setSubCategory(subCategory);
+        item.setAcutionType(auctionTypeExisted);
         item.setUser(requester);
         item.setCreateBy(requester.getUsername());
         item.setUpdateBy(requester.getUsername());
         if (itemDto.getItemSpecific() != null) {
-
             ItemSpecific itemSpecific = modelMapper.map(itemDto.getItemSpecific(), ItemSpecific.class);
             itemSpecific.setItem(item);
             item.setItemSpecific(itemSpecific);
@@ -81,8 +84,8 @@ public class ItemService implements IItemService {
             for (int i = 0; i < imgItemDtos.size(); i++) {
                 ImgItemDto imgItemDto = imgItemDtos.get(i);
                 ImageItem imageItem = new ImageItem();
-                imageItem.setImageUrl(imgItemDto.getImageUrl()); // Set image URL
-                imageItem.setItem(item);  // Set the relationship with Item
+                imageItem.setImageUrl(imgItemDto.getImageUrl());
+                imageItem.setItem(item);
                 imageItems.add(imageItem);
 
                 // Set the first image as thumbnail
