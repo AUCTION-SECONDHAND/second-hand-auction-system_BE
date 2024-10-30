@@ -33,5 +33,6 @@ public interface AuctionRegistrationsRepository extends JpaRepository<AuctionReg
     @Query("SELECT COUNT(ur) > 0 FROM AuctionRegistration ar JOIN ar.users ur WHERE ar.auctionRegistrationId = :auctionRegistrationId AND ur.id = :userId")
     boolean existsByUserIdAndAuctionRegistrationId(@Param("userId") Integer userId, @Param("auctionRegistrationId") Integer auctionRegistrationId);
 
-
+    @Query("SELECT ar.auctionRegistrationId FROM AuctionRegistration ar WHERE ar.auction.auctionId = :auctionId")
+    Integer findAuctionRegistrationIdByAuctionId(@Param("auctionId") Integer auctionId);
 }

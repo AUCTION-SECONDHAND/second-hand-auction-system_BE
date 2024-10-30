@@ -48,6 +48,9 @@ public class OrderService implements IOrderService {
     private final PayOS payOS;
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final WalletCustomerRepository walletCustomerRepository;
+    private final WalletSystemRepository walletSystemRepository;
+    private final TransactionWalletRepository transactionWalletRepository;
 
     @Override
     @Transactional
@@ -143,17 +146,47 @@ public class OrderService implements IOrderService {
                     .description(order.getNote())
                     .amount(winningBid.getBidAmount())
                     .status(TransactionStatus.PENDING)
-//                    .virtualAccountName(paymentLinkData.getAccountNumber())
-                    .transactionTime(currentTime)
+                     .transactionTime(currentTime)
                     .build();
             transactionSystemRepository.save(transactionSystem);
             return createOrderByPayOS(order);
+        }
+        if(order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)){
+            return paymentByWallet(requester.getId(), (int) orderEntity.getTotalAmount());
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseObject.builder()
                 .data(null)
                 .message("Order created successfully")
                 .status(HttpStatus.CREATED)
                 .build());
+    }
+
+    private ResponseEntity<?> paymentByWallet(Integer userId,int amount) {
+        WalletCustomer walletCustomer = walletCustomerRepository.findWalletCustomerByUser_Id(userId).orElse(null);
+        if (walletCustomer == null || walletCustomer.getBalance() < amount) {
+            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message("Wallet don't have enough balance")
+                    .data(null));
+        }
+        var user = userRepository.findById(userId).orElse(null);
+        if(user == null){
+            return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null));
+        }
+        WalletSystem walletSystem = walletSystemRepository.findFirstByOrderByWalletAdminIdAsc().orElse(null);
+        TransactionWallet transactionWallet = new TransactionWallet();
+        transactionWallet.setAmount((long) (walletCustomer.getBalance() - amount));
+        transactionWallet.setWalletCustomer(walletCustomer);
+        transactionWallet.setTransactionStatus(TransactionStatus.PENDING);
+        transactionWallet.setTransactionType(TransactionType.TRANSFER);
+        transactionWallet.setCommissionAmount((int) (0.05*amount));
+        transactionWallet.setCommissionRate(0.05);
+        transactionWallet.setWalletSystem(walletSystem);
+        transactionWalletRepository.save(transactionWallet);
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder().data(null).message("Create transactionWallet successfully").status(HttpStatus.OK));
     }
 
     public ResponseEntity<?> createOrderByPayOS(OrderDTO order) {

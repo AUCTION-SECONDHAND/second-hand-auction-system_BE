@@ -87,12 +87,12 @@ public class ItemService implements IItemService {
                 imageItem.setImageUrl(imgItemDto.getImageUrl());
                 imageItem.setItem(item);
                 imageItems.add(imageItem);
-
                 // Set the first image as thumbnail
                 if (i == 0) {
                     item.setThumbnail(imgItemDto.getImageUrl());
                 }
             }
+
             // Save all image items in one go
             imageItemRepository.saveAll(imageItems);
             // Optionally, associate the list of image items back to the item object

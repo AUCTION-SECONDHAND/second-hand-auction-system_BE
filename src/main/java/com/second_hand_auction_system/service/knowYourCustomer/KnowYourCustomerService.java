@@ -3,9 +3,11 @@ package com.second_hand_auction_system.service.knowYourCustomer;
 import com.second_hand_auction_system.dtos.request.kyc.ApproveKyc;
 import com.second_hand_auction_system.dtos.request.kyc.KycDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.address.AddressResponse;
 import com.second_hand_auction_system.dtos.responses.kyc.KycResponse;
 import com.second_hand_auction_system.models.KnowYourCustomer;
 import com.second_hand_auction_system.models.User;
+import com.second_hand_auction_system.repositories.AddressRepository;
 import com.second_hand_auction_system.repositories.KnowYourCustomerRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.service.email.EmailService;
@@ -25,10 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +38,8 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final EmailService emailService;
+    private final AddressRepository addressRepository;
+
 
     @Override
     @Transactional
@@ -105,7 +106,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .backDocumentUrl(kyc.getBackDocumentUrl())
                 .kycStatus(knowYourCustomer.getKycStatus())
                 .submited(knowYourCustomer.getSumbited())
-                .user(requester.getId()) // Gán userId
+                .userId(requester.getId()) // Gán userId
                 .build();
 
         // Trả về phản hồi thành công
@@ -118,113 +119,134 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
 
     @Override
     public ResponseEntity<?> approveKyc(ApproveKyc kycDto, int kycId) throws MessagingException {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseObject.builder()
+                            .data(null)
+                            .message("Missing or invalid Authorization header")
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .build());
+        }
+
+        String token = authHeader.substring(7);
+        String email = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(email).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Unauthorized request - User not found")
+                            .build());
+        }
+
         Optional<KnowYourCustomer> optionalKyc = knowYourCustomerRepository.findById(kycId);
-        if (optionalKyc.isPresent()) {
-            KnowYourCustomer kyc = optionalKyc.get();
-            kyc.setKycStatus(kycDto.getStatus());
-            kyc.setVerifiedBy(kycDto.getVerifiedBy());
-            kyc.setReason(kycDto.getReason());
-            knowYourCustomerRepository.save(kyc);
-
-            User user = userRepository.findById(kyc.getKycId()).orElse(null);
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                        .status(HttpStatus.NOT_FOUND)
-                        .message("User associated with this KYC not found.")
-                        .build());
-            }
-
-            if (kycDto.getStatus() == KycStatus.APPROVED) {
-                user.setRole(Role.SELLER);  // Cập nhật vai trò của người dùng thành SELLER
-                userRepository.save(user);  // Lưu thông tin người dùng
-            }
-            emailService.sendKycSuccessNotification(user.getEmail(), user.getFullName()); // Gửi email thông báo KYC thành công
-            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .data(null)
-                    .message("Approve KYC successful. User has been upgraded to SELLER.")
-                    .build());
-        } else {
+        if (optionalKyc.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .status(HttpStatus.NOT_FOUND)
                     .message("KYC not found with id: " + kycId)
                     .data(null)
                     .build());
         }
+
+        KnowYourCustomer kyc = optionalKyc.get();
+        kyc.setKycStatus(kycDto.getStatus());
+        kyc.setVerifiedBy(requester.getFullName());
+        kyc.setReason(kycDto.getReason());
+        knowYourCustomerRepository.save(kyc);
+        User user = userRepository.findById(kyc.getKycId()).orElse(null);
+//        if (user == null) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+//                    .status(HttpStatus.NOT_FOUND)
+//                    .message("User associated with this KYC not found.")
+//                    .build());
+//        }
+//
+//        if (kycDto.getStatus() == KycStatus.APPROVED) {
+//            user.setRole(Role.SELLER);  // Update the user's role to SELLER
+//            userRepository.save(user);  // Save user information
+//        }
+
+        emailService.sendKycSuccessNotification(user.getEmail(), user.getFullName()); // Send email notification for KYC success
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(null)
+                .message("Approve KYC successful. User has been upgraded to SELLER.")
+                .build());
     }
 
-    @Override
-    public ResponseEntity<?> getKycById(int kycId) {
-        var kyc = knowYourCustomerRepository.findById(kycId).orElse(null);
-        if (kyc != null) {
-            KycResponse kycResponse = KycResponse.builder()
-                    .kycId(kycId)
-                    .user(kyc.getKycId())
-                    .dob(kyc.getDateOfBirth().toString())
-                    .email(kyc.getEmail())
+
+@Override
+public ResponseEntity<?> getKycById(int kycId) {
+    var kyc = knowYourCustomerRepository.findById(kycId).orElse(null);
+    if (kyc != null) {
+        var address = addressRepository.findByUserIdAndStatusIsTrue(kyc.getKycId()).orElse(null);
+        AddressResponse addressResponse = modelMapper.map(address, AddressResponse.class);
+        KycResponse kycResponse = KycResponse.builder()
+                .kycId(kycId)
+                .userId(kyc.getKycId())
+                .dob(kyc.getDateOfBirth().toString())
+                .email(kyc.getEmail())
+                .gender(kyc.getGender())
+                .cccdNumber(kyc.getCccdNumber())
+                .frontDocumentUrl(kyc.getFrontDocumentUrl())
+                .backDocumentUrl(kyc.getBackDocumentUrl())
+                .kycStatus(kyc.getKycStatus())
+                .submited(kyc.getSumbited())
+                .age(kyc.getAge())
+                .phoneNumber(kyc.getPhoneNumber())
+                .fullName(kyc.getFullName())
+                .submited(kyc.getSumbited())
+                .address(addressResponse)
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(kycResponse)
+                .message("KYC record with id: " + kycId)
+                .build());
+    }
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+            .status(HttpStatus.NOT_FOUND)
+            .data(null)
+            .message("KYC not found with id: " + kycId)
+            .build());
+}
+
+@Override
+public ResponseEntity<?> getKycs(int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<KnowYourCustomer> kycPage = knowYourCustomerRepository.findAll(pageable);
+
+    List<KycResponse> kycResponses = kycPage.getContent()
+            .stream()
+            .map(kyc -> KycResponse.builder()
+                    .kycId(kyc.getKycId())
+                    .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null)
+                    .age(kyc.getAge())
+                    .fullName(kyc.getFullName())
+                    .phoneNumber(kyc.getPhoneNumber())
+                    .email(kyc.getUser() != null ? kyc.getUser().getEmail() : null)
                     .gender(kyc.getGender())
                     .cccdNumber(kyc.getCccdNumber())
                     .frontDocumentUrl(kyc.getFrontDocumentUrl())
                     .backDocumentUrl(kyc.getBackDocumentUrl())
                     .kycStatus(kyc.getKycStatus())
                     .submited(kyc.getSumbited())
-                    .age(kyc.getAge())
-                    .phoneNumber(kyc.getPhoneNumber())
-                    .fullName(kyc.getFullName())
-                    .submited(kyc.getSumbited())
-                    .build();
-            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .data(kycResponse)
-                    .message("KYC record with id: " + kycId)
-                    .build());
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                .status(HttpStatus.NOT_FOUND)
-                .data(null)
-                .message("KYC not found with id: " + kycId )
-                .build());
-    }
+                    .userId(kyc.getUser() != null ? kyc.getUser().getId() : null)
+                    .build())
+            .collect(Collectors.toList());
 
-    @Override
-    public ResponseEntity<?> getKycs(String search, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    Map<String, Object> response = new HashMap<>();
+    response.put("data", kycResponses);
+    response.put("totalPages", kycPage.getTotalPages());
+    response.put("totalElements", kycPage.getTotalElements());
+    response.put("status", HttpStatus.OK);
+    response.put("message", "Fetched Kycs");
 
-        Page<KnowYourCustomer> kycPage;
-        if (search != null && !search.isEmpty()) {
-            kycPage = knowYourCustomerRepository.findByFullNameContainingIgnoreCase(search, pageable);
-        } else {
-            kycPage = knowYourCustomerRepository.findAll(pageable);
-        }
+    return ResponseEntity.ok(response);
+}
 
-        List<KycResponse> kycResponses = kycPage.getContent()
-                .stream()
-                .map(kyc -> {
-
-                    return KycResponse.builder()
-                            .kycId(kyc.getKycId())
-                            .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null) // Chuyển đổi Date sang String nếu cần
-                            .age(kyc.getAge())
-                            .fullName(kyc.getFullName())
-                            .phoneNumber(kyc.getPhoneNumber())
-                            .email(kyc.getUser() != null ? kyc.getUser().getEmail() : null)
-                            .gender(kyc.getGender())
-                            .cccdNumber(kyc.getCccdNumber())
-                            .frontDocumentUrl(kyc.getFrontDocumentUrl())
-                            .backDocumentUrl(kyc.getBackDocumentUrl())
-                            .kycStatus(kyc.getKycStatus())
-                            .submited(kyc.getSumbited())
-                            .user(kyc.getUser() != null ? kyc.getUser().getId() : null)
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(ResponseObject.builder()
-                .status(HttpStatus.OK)
-                .data(kycResponses)
-                .message("Fetched Kycs")
-                .build());
-    }
 
 
 
