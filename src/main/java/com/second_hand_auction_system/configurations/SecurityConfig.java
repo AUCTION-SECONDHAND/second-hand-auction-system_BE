@@ -77,7 +77,7 @@ public class SecurityConfig {
                         //kyc
                         .requestMatchers(POST,"/api/v1/kyc/**").hasRole("BUYER")
                         .requestMatchers(PUT,"/api/v1/kyc").hasRole("SELLER")
-                        .requestMatchers(PUT,"/api/v1/kyc/approve/**").hasRole("STAFF")
+                        .requestMatchers(PUT,"/api/v1/kyc/approve/**").hasAnyRole("STAFF","ADMIN")
                         .requestMatchers(GET,"/api/v1/kyc/**").permitAll()
 
                         ///transactionWallet

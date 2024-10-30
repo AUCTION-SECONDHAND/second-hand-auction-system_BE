@@ -12,8 +12,8 @@ import lombok.*;
 @Getter
 @Setter
 public class ApproveKyc {
-    @NotBlank(message = "Verified By cannot be blank")
-    private String verifiedBy;
+//    @NotBlank(message = "Verified By cannot be blank")
+//    private String verifiedBy;
 
     private String reason;
 
