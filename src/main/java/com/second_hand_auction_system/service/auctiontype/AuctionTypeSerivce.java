@@ -2,9 +2,11 @@ package com.second_hand_auction_system.service.auctiontype;
 
 import com.second_hand_auction_system.dtos.request.auctiontype.AuctionTypeDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResponse;
 import com.second_hand_auction_system.models.AuctionType;
 import com.second_hand_auction_system.repositories.AuctionTypeRepository;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,10 +14,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class AuctionTypeSerivce implements IAuctionTypeService {
     private final AuctionTypeRepository auctionTypeRepository;
+    private final ModelMapper modelMapper;
 
     @Override
     public ResponseEntity<?> createAuctionType(AuctionTypeDTO auctionType) {
@@ -117,5 +123,14 @@ public class AuctionTypeSerivce implements IAuctionTypeService {
                 .message("Auctions found")
                 .data(auctionTypes)
                 .build());
+    }
+
+    @Override
+    public List<AuctionTypeResponse> getAuctionTypes() throws Exception {
+        List<AuctionType> auctionTypes = auctionTypeRepository.findAll();
+        List<AuctionTypeResponse> auctionTypeResponses = auctionTypes.stream()
+                .map(auctionType -> modelMapper.map(auctionType, AuctionTypeResponse.class))
+                .collect(Collectors.toList());
+        return auctionTypeResponses;
     }
 }
