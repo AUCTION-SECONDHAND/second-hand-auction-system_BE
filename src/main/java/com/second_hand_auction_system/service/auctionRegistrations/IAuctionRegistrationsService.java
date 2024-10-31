@@ -17,7 +17,7 @@ public interface IAuctionRegistrationsService {
 
     void removeAuctionRegistration(int arId) throws Exception;
     Page<AuctionRegistrationsResponse> findAllAuctionRegistrations(PageRequest pageRequest) throws Exception;
-//    Page<AuctionRegistrationsResponse> findAllAuctionRegistrationsByUserId(PageRequest pageRequest) throws Exception;
+    Page<AuctionRegistrationsResponse> findAllAuctionRegistrationsByUserId(PageRequest pageRequest) throws Exception;
     AuctionRegistrationsResponse findAuctionRegistrationById(int arId) throws Exception;
     List<CheckStatusAuctionRegisterResponse> getRegistrationsByUserId() throws Exception;
     CheckStatusAuctionRegisterResponse getRegistrationsByUserIdAnhAuctionId(Integer auctionId) throws Exception;

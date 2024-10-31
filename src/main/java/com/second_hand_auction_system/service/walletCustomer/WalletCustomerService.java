@@ -70,9 +70,9 @@ public class WalletCustomerService implements IWalletCustomerService {
             User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
 
             if (requester == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ResponseObject.builder()
-                                .status(HttpStatus.UNAUTHORIZED)
+                                .status(HttpStatus.NOT_FOUND)
                                 .message("Unauthorized request - User not found")
                                 .build());
             }
@@ -269,12 +269,37 @@ public class WalletCustomerService implements IWalletCustomerService {
         return ResponseEntity.ok(new ResponseObject("Giao dịch đã được xử lý", HttpStatus.OK, response));
     }
 
+    @Override
+    public ResponseEntity<ResponseObject> getWalletCustomerBalance() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Missing or invalid Authorization header")
+                            .build());
+        }
 
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
 
-
-
-
-
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.NOT_FOUND)
+                            .message(" User not found")
+                            .build());
+        }
+//        var walletCustomer = walletCustomerRepository.findByWalletCustomerId(requester.getId());
+        double balance = walletCustomerRepository.findBalanceByUserId(requester.getId());
+        return ResponseEntity.ok(ResponseObject.builder()
+                        .data(balance)
+                        .status(HttpStatus.OK)
+                        .message("Get balance  ")
+                .build());
+    }
 
 
 }

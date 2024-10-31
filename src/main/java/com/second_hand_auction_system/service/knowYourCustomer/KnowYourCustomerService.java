@@ -161,17 +161,17 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         kyc.setReason(kycDto.getReason());
         knowYourCustomerRepository.save(kyc);
         User user = userRepository.findById(kyc.getKycId()).orElse(null);
-//        if (user == null) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-//                    .status(HttpStatus.NOT_FOUND)
-//                    .message("User associated with this KYC not found.")
-//                    .build());
-//        }
-//
-//        if (kycDto.getStatus() == KycStatus.APPROVED) {
-//            user.setRole(Role.SELLER);  // Update the user's role to SELLER
-//            userRepository.save(user);  // Save user information
-//        }
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User associated with this KYC not found.")
+                    .build());
+        }
+
+        if (kycDto.getStatus() == KycStatus.APPROVED) {
+            user.setRole(Role.SELLER);  // Update the user's role to SELLER
+            userRepository.save(user);  // Save user information
+        }
 
         emailService.sendKycSuccessNotification(user.getEmail(), user.getFullName()); // Send email notification for KYC success
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()

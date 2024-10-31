@@ -39,6 +39,10 @@ public class WalletCustomerController {
 
 
 
+    @GetMapping("/get-balance")
+    public ResponseEntity<ResponseObject> getBalance () {
+        return walletCustomerService.getWalletCustomerBalance();
+    }
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getWalletCustomer(@PathVariable Long id) {
         return walletCustomerService.getWalletCustomer(id);

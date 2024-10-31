@@ -10,5 +10,7 @@ public interface IWalletCustomerService {
 
     ResponseEntity<ResponseObject> getWalletCustomer(Long id);
 
+    ResponseEntity<ResponseObject> getWalletCustomerBalance();
+
 //    ResponseEntity<?> updateStatus(PaymentRequest payment);
 }

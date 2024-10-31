@@ -15,5 +15,7 @@ public interface WalletCustomerRepository extends JpaRepository<WalletCustomer, 
 
     Optional<WalletCustomer> findByUserId(Integer id);
 
-//    Optional<WalletCustomer> findBy
+    @Query("SELECT wc.balance FROM WalletCustomer wc WHERE wc.user.id = :userId")
+    Double findBalanceByUserId(@Param("userId") Integer userId);
+
 }

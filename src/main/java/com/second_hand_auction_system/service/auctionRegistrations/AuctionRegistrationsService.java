@@ -187,14 +187,14 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         return auctionRegistrations.map(auctionRegistrationsConverter::toAuctionRegistrationsResponse);
     }
 
-//    @Override
-//    public Page<AuctionRegistrationsResponse> findAllAuctionRegistrationsByUserId(PageRequest pageRequest) throws Exception {
-//        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
-//                .getRequest().getHeader("Authorization").substring(7);
-//        Integer userId = extractUserIdFromToken(token);
-//        Page<AuctionRegistration> auctionRegistrations = auctionRegistrationsRepository.findByUserId(userId, pageRequest);
-//        return auctionRegistrations.map(auctionRegistrationsConverter::toAuctionRegistrationsResponse);
-//    }
+    @Override
+    public Page<AuctionRegistrationsResponse> findAllAuctionRegistrationsByUserId(PageRequest pageRequest) throws Exception {
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization").substring(7);
+        Integer userId = extractUserIdFromToken(token);
+        Page<AuctionRegistration> auctionRegistrations = auctionRegistrationsRepository.findAuctionRegistrationsByUserId(userId, pageRequest);
+        return auctionRegistrations.map(auctionRegistrationsConverter::toAuctionRegistrationsResponse);
+    }
 
     @Override
     public AuctionRegistrationsResponse findAuctionRegistrationById(int arId) throws Exception {
