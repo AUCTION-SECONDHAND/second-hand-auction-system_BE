@@ -27,7 +27,8 @@ public class KycResponse {
     private Date submited;
     private Integer userId;
     private AddressResponse address;
-
+    private String reason;
+    private String verified_by;
 
 
 }

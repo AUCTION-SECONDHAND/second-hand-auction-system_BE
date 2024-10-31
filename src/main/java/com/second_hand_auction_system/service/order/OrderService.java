@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
+import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
 import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
 import com.second_hand_auction_system.models.*;
@@ -146,12 +148,12 @@ public class OrderService implements IOrderService {
                     .description(order.getNote())
                     .amount(winningBid.getBidAmount())
                     .status(TransactionStatus.PENDING)
-                     .transactionTime(currentTime)
+                    .transactionTime(currentTime)
                     .build();
             transactionSystemRepository.save(transactionSystem);
             return createOrderByPayOS(order);
         }
-        if(order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)){
+        if (order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)) {
             return paymentByWallet(requester.getId(), (int) orderEntity.getTotalAmount());
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseObject.builder()
@@ -161,17 +163,17 @@ public class OrderService implements IOrderService {
                 .build());
     }
 
-    private ResponseEntity<?> paymentByWallet(Integer userId,int amount) {
+    private ResponseEntity<?> paymentByWallet(Integer userId, int amount) {
         WalletCustomer walletCustomer = walletCustomerRepository.findWalletCustomerByUser_Id(userId).orElse(null);
         if (walletCustomer == null || walletCustomer.getBalance() < amount) {
-            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .message("Wallet don't have enough balance")
                     .data(null));
         }
         var user = userRepository.findById(userId).orElse(null);
-        if(user == null){
-            return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .status(HttpStatus.NOT_FOUND)
                     .message("User not found")
                     .data(null));
@@ -182,7 +184,7 @@ public class OrderService implements IOrderService {
         transactionWallet.setWalletCustomer(walletCustomer);
         transactionWallet.setTransactionStatus(TransactionStatus.PENDING);
         transactionWallet.setTransactionType(TransactionType.TRANSFER);
-        transactionWallet.setCommissionAmount((int) (0.05*amount));
+        transactionWallet.setCommissionAmount((int) (0.05 * amount));
         transactionWallet.setCommissionRate(0.05);
         transactionWallet.setWalletSystem(walletSystem);
         transactionWalletRepository.save(transactionWallet);
@@ -318,14 +320,32 @@ public class OrderService implements IOrderService {
         List<OrderResponse> orderResponses = orders.stream()
                 .map(order -> {
                     OrderResponse response = new OrderResponse();
+                    response.setOrderId(order.getOrderId());
                     response.setOrderStatus(order.getStatus()); // Nếu OrderStatus là enum
                     response.setPaymentMethod(order.getPaymentMethod()); // Nếu PaymentMethod là enum
                     response.setEmail(order.getEmail());
                     response.setPhoneNumber(order.getPhoneNumber());
                     response.setQuantity(order.getQuantity());
                     response.setNote(order.getNote());
-                    response.setItemId(order.getItem() != null ? order.getItem().getItemId() : null);
-                    response.setAuctionId(order.getAuction() != null ? order.getAuction().getAuctionId() : null);
+                    Item item = order.getItem(); // Giả sử order.getItem() trả về Item
+                    if (item != null) {
+                        response.setItem(ItemBriefResponseOrder.builder()
+                                .itemId(item.getItemId())
+                                .itemName(item.getItemName())
+                                .thumbnail(item.getThumbnail())
+                                .sellerName(item.getUser() != null ? item.getCreateBy() : null)
+                                .build());
+                    }
+                    Auction auction = order.getAuction();
+                    if (auction != null) {
+                        response.setAuctionOrder(AuctionOrder.builder()
+                                .auctionId(auction.getAuctionId())
+                                .termConditions(auction.getTermConditions())
+                                .auctionTypeName(auction.getAuctionType().getAuctionTypeName())
+                                .priceStep(auction.getPriceStep())
+                                .status(auction.getStatus())
+                                .build());
+                    }
                     response.setCreateBy(order.getCreateBy());
                     response.setTotalPrice(order.getTotalAmount());
                     response.setShippingType(order.getShippingMethod());
@@ -371,14 +391,33 @@ public class OrderService implements IOrderService {
         List<OrderResponse> orderResponses = orders.stream()
                 .map(order -> {
                     OrderResponse response = new OrderResponse();
+                    response.setOrderId(order.getOrderId());
                     response.setOrderStatus(order.getStatus()); // Assuming OrderStatus is enum
                     response.setPaymentMethod(order.getPaymentMethod()); // Assuming PaymentMethod is enum
                     response.setEmail(order.getEmail());
                     response.setPhoneNumber(order.getPhoneNumber());
                     response.setQuantity(order.getQuantity());
                     response.setNote(order.getNote());
-                    response.setItemId(order.getItem() != null ? order.getItem().getItemId() : null);
-                    response.setAuctionId(order.getAuction() != null ? order.getAuction().getAuctionId() : null);
+                    Item item = order.getItem(); // Giả sử order.getItem() trả về Item
+                    if (item != null) {
+                        response.setItem(ItemBriefResponseOrder.builder()
+                                .itemId(item.getItemId())
+                                .itemName(item.getItemName())
+                                .thumbnail(item.getThumbnail())
+                                .sellerName(item.getUser() != null ? item.getCreateBy() : null)
+                                .build());
+                    }
+
+                    Auction auction = order.getAuction();
+                    if (auction != null) {
+                        response.setAuctionOrder(AuctionOrder.builder()
+                                .auctionId(auction.getAuctionId())
+                                .termConditions(auction.getTermConditions())
+                                .auctionTypeName(auction.getAuctionType().getAuctionTypeName())
+                                .priceStep(auction.getPriceStep())
+                                .status(auction.getStatus())
+                                .build());
+                    }
                     response.setCreateBy(order.getCreateBy());
                     response.setTotalPrice(order.getTotalAmount());
                     response.setShippingType(order.getShippingMethod());
