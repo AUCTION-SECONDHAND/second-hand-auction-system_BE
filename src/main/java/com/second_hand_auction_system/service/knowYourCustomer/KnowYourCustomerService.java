@@ -91,6 +91,8 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .sumbited(new Date())
                 .phoneNumber(kyc.getPhoneNumber())
                 .user(requester)
+                .sumbited(new Date())
+                .verifiedBy(requester.getFullName())
                 .build();
         knowYourCustomerRepository.save(knowYourCustomer);
         KycResponse kycResponse = KycResponse.builder()
@@ -107,6 +109,9 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .kycStatus(knowYourCustomer.getKycStatus())
                 .submited(knowYourCustomer.getSumbited())
                 .userId(requester.getId()) // Gán userId
+                .verified_by(knowYourCustomer.getVerifiedBy())
+                .submited(new Date())
+                .reason(null)
                 .build();
 
         // Trả về phản hồi thành công
@@ -181,7 +186,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
 public ResponseEntity<?> getKycById(int kycId) {
     var kyc = knowYourCustomerRepository.findById(kycId).orElse(null);
     if (kyc != null) {
-        var address = addressRepository.findByUserIdAndStatusIsTrue(kyc.getKycId()).orElse(null);
+        var address = addressRepository.findByUserIdAndStatusIsTrue(kyc.getUser().getId()).orElse(null);
         AddressResponse addressResponse = modelMapper.map(address, AddressResponse.class);
         KycResponse kycResponse = KycResponse.builder()
                 .kycId(kycId)

@@ -17,6 +17,5 @@ public class ApproveKyc {
 
     private String reason;
 
-    @NotNull(message = "Status cannot be null")
     private KycStatus status;
 }
