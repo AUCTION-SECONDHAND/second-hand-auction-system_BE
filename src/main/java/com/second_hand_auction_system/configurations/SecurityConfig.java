@@ -93,7 +93,7 @@ public class SecurityConfig {
                         .requestMatchers(PUT,"/api/v1/withdrawRequest/**").hasRole("STAFF")
                         .requestMatchers(GET,"api/v1/withdrawRequest/**").permitAll()
                         //auction_type
-                        .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF", "SELLER")
                         //order
                         .requestMatchers(POST,"/api/v1/orders/**").hasAnyRole("SELLER", "BUYER")
                         .requestMatchers(GET,"/api/v1/orders/**").permitAll()
