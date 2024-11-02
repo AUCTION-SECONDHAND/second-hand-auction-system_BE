@@ -27,24 +27,24 @@ import java.util.Map;
 public class AuctionRegistrationsController {
     private final IAuctionRegistrationsService auctionRegistrationsService;
 
-    @PostMapping("")
-    public ResponseEntity<?> createAuctionRegister(
-            @Valid @RequestBody AuctionRegistrationsDto auctionRegistrationsDto,
-            BindingResult result
-    ) throws Exception {
-        if (result.hasErrors()) {
-            List<String> errors = result.getFieldErrors().stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-            return ResponseEntity.badRequest().body(
-                    ResponseObject.builder()
-                            .status(HttpStatus.BAD_REQUEST)
-                            .message(String.valueOf(errors))
-                            .build()
-            );
-        }
-        return auctionRegistrationsService.addAuctionRegistration(auctionRegistrationsDto);
-    }
+//    @PostMapping("")
+//    public ResponseEntity<?> createAuctionRegister(
+//            @Valid @RequestBody AuctionRegistrationsDto auctionRegistrationsDto,
+//            BindingResult result
+//    ) throws Exception {
+//        if (result.hasErrors()) {
+//            List<String> errors = result.getFieldErrors().stream()
+//                    .map(FieldError::getDefaultMessage)
+//                    .toList();
+//            return ResponseEntity.badRequest().body(
+//                    ResponseObject.builder()
+//                            .status(HttpStatus.BAD_REQUEST)
+//                            .message(String.valueOf(errors))
+//                            .build()
+//            );
+//        }
+//        return auctionRegistrationsService.addAuctionRegistration(auctionRegistrationsDto);
+//    }
 
     @GetMapping("")
     public ResponseEntity<?> getAuctionRegistrations(

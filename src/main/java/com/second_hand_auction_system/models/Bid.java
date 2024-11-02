@@ -23,9 +23,6 @@ public class Bid extends BaseEntity{
     @Column(name = "bid_time")
     private LocalDateTime bidTime;
 
-//    @Column(name = "bid_change")
-//    private double bidChange;
-
     @Column(name = "win_bid")
     private boolean winBid;
 
@@ -33,7 +30,7 @@ public class Bid extends BaseEntity{
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "auction_id")
     private Auction auction;
 }

@@ -6,6 +6,7 @@ import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.service.bid.IBidService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BidController {
 
+    private final SimpMessagingTemplate messagingTemplate;
 
     private final IBidService bidService;
 

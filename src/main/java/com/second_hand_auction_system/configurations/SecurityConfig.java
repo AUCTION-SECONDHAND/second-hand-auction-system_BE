@@ -97,7 +97,7 @@ public class SecurityConfig {
                         //order
                         .requestMatchers(POST,"/api/v1/orders/**").hasAnyRole("SELLER", "BUYER")
                         .requestMatchers(GET,"/api/v1/orders/**").permitAll()
-                        //transactionSystem
+                        //transactionType
                         .requestMatchers("/api/v1/transactionSystem/**").permitAll()
                         .anyRequest().authenticated()
 

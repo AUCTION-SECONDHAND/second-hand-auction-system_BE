@@ -15,20 +15,17 @@ public class Deposit {
     @NotNull(message = "Payment method cannot be null")
     private PaymentMethod paymentMethod;
 
-    @NotNull(message = "BankName cannot be null")
-    private String bankName;
-
     @NotNull(message = "Description cannot be null")
     private String description;
 
     @Positive(message = "Amount must be a positive number")
     private int amount;
 
-    @NotBlank(message = "Return success URL cannot be blank")
-    private String returnSuccess;
-
-    @NotBlank(message = "Return error URL cannot be blank")
-    private String returnError;
+//    @NotBlank(message = "Return success URL cannot be blank")
+//    private String returnSuccess;
+//
+//    @NotBlank(message = "Return error URL cannot be blank")
+//    private String returnError;
 
 
 }

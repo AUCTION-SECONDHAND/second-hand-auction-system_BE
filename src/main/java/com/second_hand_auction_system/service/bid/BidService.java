@@ -25,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -43,6 +44,7 @@ public class BidService implements IBidService {
     private final AuctionRegistrationsRepository auctionRegistrationsRepository;
     private final AuctionRepository auctionRepository;
     private final EmailService emailService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional
@@ -285,6 +287,8 @@ public class BidService implements IBidService {
             bid.setBidAmount(bidRequest.getBidAmount());
             bid.setBidTime(LocalDateTime.now()); // Cập nhật thời gian bid
             bidRepository.save(bid); // Lưu thay đổi
+            messagingTemplate.convertAndSend("/topic/bids", bidRequest);
+
             return ResponseEntity.status(HttpStatus.OK).body(
                     ResponseObject.builder()
                             .data(null)

@@ -28,7 +28,7 @@ public class AuctionRegistration extends BaseEntity {
 
     @ManyToMany
     @JoinTable(
-            name = "user_auction_registration",
+            name = "deposite_user",
             joinColumns = @JoinColumn(name = "auction_registration_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )

@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.models;
 
 import com.second_hand_auction_system.utils.StatusWallet;
+import com.second_hand_auction_system.utils.WalletType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,8 +11,8 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-@Table(name = "wallet_customer")
-public class WalletCustomer extends BaseEntity{
+@Table(name = "wallet")
+public class Wallet extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer walletCustomerId;
@@ -21,6 +22,10 @@ public class WalletCustomer extends BaseEntity{
 
     @Enumerated(EnumType.STRING)
     private StatusWallet statusWallet;
+
+
+    @Enumerated(EnumType.STRING)
+    private WalletType walletType;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

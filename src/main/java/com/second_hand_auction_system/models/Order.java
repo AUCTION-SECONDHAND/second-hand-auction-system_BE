@@ -52,8 +52,8 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "auction_id")
     private Auction auction;
 
-    @OneToOne(mappedBy = "order",cascade = CascadeType.ALL)
-    private TransactionSystem transactionSystem;
+//    @OneToOne(mappedBy = "order",cascade = CascadeType.ALL)
+//    private TransactionType transactionType;
 
     @ManyToOne
     @JoinColumn(name = "user_id")  // Khóa ngoại user_id trong Order

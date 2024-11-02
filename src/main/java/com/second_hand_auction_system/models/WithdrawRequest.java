@@ -41,5 +41,5 @@ public class WithdrawRequest extends BaseEntity{
 
     @ManyToOne
     @JoinColumn(name = "wallet_customer_id")
-    private WalletCustomer walletCustomer;
+    private Wallet wallet;
 }

@@ -1,7 +1,5 @@
 package com.second_hand_auction_system.models;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.second_hand_auction_system.models.BaseEntity;
 import com.second_hand_auction_system.utils.TransactionStatus;
 import com.second_hand_auction_system.utils.TransactionType;
 import jakarta.persistence.*;
@@ -13,13 +11,13 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-@Table(name = "transaction_wallet")
-public class TransactionWallet extends BaseEntity {
+@Table(name = "transaction")
+public class Transaction extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer transactionWalletId;
 
-    @Column(name = "transaction_wallet_code")
+    @Column(name = "transaction_code", unique = true)
     private long transactionWalletCode;
 
     @Column(name = "amount")
@@ -31,22 +29,27 @@ public class TransactionWallet extends BaseEntity {
     @Column(name = "commission_rate")
     private double commissionRate;
 
-    @Enumerated(EnumType.STRING)
-    private TransactionType transactionType;
+    @OneToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
+
+    @Column(name = "recipient_id")
+    private int recipientId;
+
+    @Column(name = "sender_id")
+    private int senderId;
 
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
-    @Column(name = "image",nullable = true)
+    @Column(name = "image", length = 255, nullable = true)
     private String image;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_customer_id")
-    @JsonBackReference
-    private WalletCustomer walletCustomer;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JsonBackReference
     @JoinColumn(name = "wallet_id")
-    private WalletSystem walletSystem;
+    private Wallet wallet;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_type")
+    private TransactionType transactionType;
 }

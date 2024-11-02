@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 public interface IWalletCustomerService {
     ResponseEntity<ResponseObject> depositWallet(Deposit deposit);
 
-    ResponseEntity<ResponseObject> getWalletCustomer(Long id);
+//    ResponseEntity<ResponseObject> getWalletCustomer(Long id);
 
     ResponseEntity<ResponseObject> getWalletCustomerBalance();
 

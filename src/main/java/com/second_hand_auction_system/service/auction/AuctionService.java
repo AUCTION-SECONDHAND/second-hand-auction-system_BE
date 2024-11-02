@@ -105,7 +105,7 @@ public class AuctionService implements IAuctionService {
     }
 
 
-    @Scheduled(fixedRate = 50000) // Kiểm tra mỗi 2 giây
+    @Scheduled(fixedRate = 50000)
     public void checkAuctionStatus() {
         Date currentDate = new Date(System.currentTimeMillis());
         Time currentTime = new Time(System.currentTimeMillis());

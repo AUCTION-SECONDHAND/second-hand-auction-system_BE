@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface IAuctionRegistrationsService {
-    ResponseEntity<?> addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
+//    ResponseEntity<?> addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
 
     void updateAuctionRegistration(int arId, AuctionRegistrationsDto auctionRegistrationsDto) throws Exception;
 

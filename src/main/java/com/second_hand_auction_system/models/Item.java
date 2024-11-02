@@ -55,9 +55,6 @@ public class Item extends BaseEntity{
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToOne(optional = true)
-    @JoinColumn(name = "feedback_id")
-    private FeedBack feedback;
 
     @OneToOne(mappedBy = "item",cascade = CascadeType.ALL,optional = true)
     private Auction auction;

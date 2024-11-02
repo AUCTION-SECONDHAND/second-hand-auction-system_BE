@@ -5,7 +5,7 @@ import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawReque
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.withdraw.WithdrawResponse;
 import com.second_hand_auction_system.models.User;
-import com.second_hand_auction_system.models.WalletCustomer;
+import com.second_hand_auction_system.models.Wallet;
 import com.second_hand_auction_system.models.WithdrawRequest;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.repositories.WalletCustomerRepository;
@@ -67,7 +67,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                     .build());
         }
 
-        WalletCustomer walletCustomer = walletCustomerRepository.findByWalletCustomerId(requester.getId()).orElse(null);
+        Wallet wallet = walletCustomerRepository.findByWalletCustomerId(requester.getId()).orElse(null);
 
         WithdrawRequest withdrawRequest1 = WithdrawRequest.builder()
                 .requestAmount(withdrawRequest.getRequestAmount())
@@ -76,12 +76,12 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 .note(withdrawRequest.getNote())
                 .bankAccount(withdrawRequest.getBankAccount())
                 .accountNumber(withdrawRequest.getBankNumber())
-                .walletCustomer(walletCustomer)
+                .wallet(wallet)
                 .build();
 
         withdrawRequestRepository.save(withdrawRequest1);
 
-        assert walletCustomer != null;
+        assert wallet != null;
         WithdrawResponse withdrawResponse = WithdrawResponse.builder()
                 .requestAmount(withdrawRequest1.getRequestAmount())
                 .requestStatus(withdrawRequest1.getRequestStatus())
@@ -90,7 +90,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 .transactionType(TransactionType.WITHDRAWAL)
                 .accountNumber(withdrawRequest1.getAccountNumber())
                 .bankAccount(withdrawRequest1.getBankAccount())
-                .walletCustomer(walletCustomer.getWalletCustomerId())
+                .walletCustomer(wallet.getWalletCustomerId())
                 .build();
 
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
