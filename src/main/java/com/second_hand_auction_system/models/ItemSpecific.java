@@ -41,6 +41,9 @@ public class ItemSpecific extends BaseEntity{
     @Column(name = "material")
     private String material;
 
+    @Column(name = "price_buy_now")
+    private double priceBuyNow;
+
     @OneToOne
     @JoinColumn(name = "item_id")
     private Item item;

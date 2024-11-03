@@ -56,6 +56,10 @@ public class ItemSpecificDto {
     @JsonProperty("material")
     private String material;
 
+    @Min(value = 0, message = "Buy now price must be greater than or equal to 0")
+    @JsonProperty("buy_now_price")
+    private double buyNowPrice;
+
     // Liên kết với đối tượng Item
     @JsonProperty("item")
     private Integer item;

@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
-public interface WalletCustomerRepository extends JpaRepository<Wallet, Integer> {
+public interface WalletRepository extends JpaRepository<Wallet, Integer> {
     Optional<Wallet> findByWalletCustomerId(int id);
     Optional<Wallet> findWalletCustomerByUser_Id(int id);
 

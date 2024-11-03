@@ -44,6 +44,10 @@ public class AuctionDto {
     @Size(max = 1000, message = "Terms and conditions should not exceed 1000 characters")
     private String termConditions;
 
+    @JsonProperty("buy_now_price")
+    @Positive(message = "Price now buy must be a positive value")
+    private double buyNowPrice;
+
     @JsonProperty("price_step")
     @Positive(message = "Price step must be a positive value")
     private double priceStep;
@@ -60,14 +64,14 @@ public class AuctionDto {
     @NotNull(message = "Status is required")
     private AuctionStatus status;
 
-    @JsonProperty("approved_by")
-    private String approveBy;
+//    @JsonProperty("approved_by")
+//    private String approveBy;
 
     @JsonProperty("approved_at")
     private Date approveAt;
 
-    @JsonProperty("created_by")
-    private String createBy;
+//    @JsonProperty("created_by")
+//    private String createBy;
 
     @JsonProperty("item")
     @NotNull(message = "Item is required")
@@ -82,4 +86,9 @@ public class AuctionDto {
     @NotNull(message = "Start date is required")
     @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
     private Date startDate;
+
+
+    @JsonProperty("auction_type_id")
+    @NotNull(message = "Auction type is required")
+    private Integer auctionTypeId;
 }

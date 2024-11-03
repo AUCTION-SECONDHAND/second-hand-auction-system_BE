@@ -28,6 +28,9 @@ public class Auction extends BaseEntity{
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Time endTime;
 
+    @Column(name = "buy_now_price") // Thêm trường mới
+    private double buyNowPrice;
+
     @Column(name = "start_date")
     private Date startDate;
 

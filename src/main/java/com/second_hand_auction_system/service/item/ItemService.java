@@ -67,8 +67,8 @@ public class ItemService implements IItemService {
         item.setSubCategory(subCategory);
         item.setAcutionType(auctionTypeExisted);
         item.setUser(requester);
-        item.setCreateBy(requester.getUsername());
-        item.setUpdateBy(requester.getUsername());
+        item.setCreateBy(requester.getFullName());
+        item.setUpdateBy(requester.getFullName());
         if (itemDto.getItemSpecific() != null) {
             ItemSpecific itemSpecific = modelMapper.map(itemDto.getItemSpecific(), ItemSpecific.class);
             itemSpecific.setItem(item);

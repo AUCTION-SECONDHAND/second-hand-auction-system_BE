@@ -68,6 +68,7 @@ public class UserService implements IUserService {
                     .email(registerRequest.getEmail())
                     .password(passwordEncoder.encode(registerRequest.getPassword()))
                     .role(Role.BUYER)
+                    .avatar("https://nld.mediacdn.vn/thumb_w/698/2017/stvalentine1-1489973474049.jpg")
                     .fullName(registerRequest.getFullName())
                     .phoneNumber(registerRequest.getPhoneNumber())
                     .status(false)
