@@ -4,12 +4,18 @@ import com.second_hand_auction_system.configurations.VNPayConfig;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
+import com.second_hand_auction_system.service.jwt.IJwtService;
+import com.second_hand_auction_system.utils.StatusWallet;
 import com.second_hand_auction_system.utils.TransactionStatus;
+import com.second_hand_auction_system.utils.TransactionType;
+import com.second_hand_auction_system.utils.WalletType;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -22,9 +28,11 @@ import java.util.*;
 @RequiredArgsConstructor
 public class VNPAYService implements VNPaySerivce {
     private final WithdrawRequestRepository withdrawRequestRepository;
-//    private final TransactionWalletRepository transactionWalletRepository;
-//    private final WalletSystemRepository walletSystemRepository;
+    private final IJwtService jwtService;
+    private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
 //    private final TransactionSystemRepository transactionSystemRepository;
 //    public String createOrder(HttpServletRequest request, int amount, String orderInfor, String urlReturn) {
 //        //Các bạn có thể tham khảo tài liệu hướng dẫn và điều chỉnh các tham số
@@ -101,7 +109,7 @@ public class VNPAYService implements VNPaySerivce {
         Map<String, String> fields = new HashMap<>();
 
         // Lấy tất cả các tham số từ request
-        for (Enumeration<String> params = request.getParameterNames(); params.hasMoreElements();) {
+        for (Enumeration<String> params = request.getParameterNames(); params.hasMoreElements(); ) {
             String fieldName = params.nextElement();
             String fieldValue = request.getParameter(fieldName);
             if (fieldValue != null && !fieldValue.isEmpty()) {
@@ -147,8 +155,6 @@ public class VNPAYService implements VNPaySerivce {
                     .build());
         }
     }
-
-
 
 
     public ResponseEntity<?> createOrder(int total, int withdrawId, String urlReturn) {
@@ -356,6 +362,21 @@ public class VNPAYService implements VNPaySerivce {
     }
 
     public String deposite(int amount, String description) {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        // Kiểm tra Authorization header
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+
+        // Kiểm tra người dùng
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+           throw new RuntimeException("User not found");
+        }
+        // Kiểm tra ví của người dùng
+        Wallet wallet = walletRepository.findByUserId(requester.getId()).orElse(null);
         String orderInfo = description;
         String vnp_Version = "2.1.0";
         String bankCode = "NCB";
@@ -426,19 +447,47 @@ public class VNPAYService implements VNPaySerivce {
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
         String paymentUrl = VNPayConfig.vnp_PayUrl + "?" + queryUrl;
         String transactionCode = code();
-//        TransactionType transactionType = TransactionType.builder()
-//
-//                .transactionType(com.second_hand_auction_system.utils.TransactionType.TRANSFER)
-//                .transactionSystemCode(transactionCode)
-//                .description(orderInfo)
-//                .amount(amount)
-//                .transactionSystemId(1)
-//                .status(TransactionStatus.PENDING)
-//                .virtualAccountName(bankCode)
-//                .transactionTime(vnp_CreateDate)
-//                .build();
-//        transactionSystemRepository.save(transactionType);
-
+        var walletAdmin = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
+        assert walletAdmin != null;
+        var walletCustomer = walletRepository.findByUserId(requester.getId()).orElse(null);
+        if(walletCustomer == null){
+            Wallet wallet1 = Wallet.builder()
+                    .user(requester)
+                    .statusWallet(StatusWallet.ACTIVE)
+                    .balance(0)
+                    .walletType(WalletType.CUSTOMER)
+                    .build();
+            walletRepository.save(wallet1);
+            Transaction transactionType = Transaction.builder()
+                    .transactionType(TransactionType.DEPOSIT)
+                    .transactionWalletCode(Long.parseLong(transactionCode))
+                    .description(orderInfo)
+                    .amount(0)
+                    .description(description)
+                    .wallet(wallet1)
+                    .recipient(walletAdmin.getUser().getFullName())
+                    .sender(wallet1.getUser().getFullName())
+                    .commissionAmount(0)
+                    .commissionRate(0)
+                    .transactionStatus(TransactionStatus.PENDING)
+                    .build();
+            transactionRepository.save(transactionType);
+        } else  {
+            Transaction transactionType = Transaction.builder()
+                    .transactionType(TransactionType.DEPOSIT)
+                    .transactionWalletCode(Long.parseLong(transactionCode))
+                    .description(orderInfo)
+                    .amount((long) walletCustomer.getBalance())
+                    .wallet(walletCustomer)
+                    .description(description)
+                    .recipient(walletAdmin.getUser().getFullName())
+                    .sender(walletCustomer.getUser().getFullName())
+                    .commissionAmount(0)
+                    .commissionRate(0)
+                    .transactionStatus(TransactionStatus.PENDING)
+                    .build();
+            transactionRepository.save(transactionType);
+        }
         return paymentUrl;
     }
 }

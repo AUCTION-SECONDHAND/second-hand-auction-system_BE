@@ -1,7 +1,5 @@
 package com.second_hand_auction_system.service.order;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
@@ -28,11 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import vn.payos.PayOS;
-import vn.payos.type.CheckoutResponseData;
-import vn.payos.type.ItemData;
-import vn.payos.type.PaymentData;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -50,7 +44,7 @@ public class OrderService implements IOrderService {
     private final PayOS payOS;
     private final JwtService jwtService;
     private final UserRepository userRepository;
-    private final WalletCustomerRepository walletCustomerRepository;
+    private final WalletRepository walletRepository;
 //    private final WalletSystemRepository walletSystemRepository;
 //    private final TransactionWalletRepository transactionWalletRepository;
 

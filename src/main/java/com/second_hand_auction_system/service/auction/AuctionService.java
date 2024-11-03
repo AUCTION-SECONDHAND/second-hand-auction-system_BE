@@ -3,13 +3,12 @@ package com.second_hand_auction_system.service.auction;
 import com.second_hand_auction_system.dtos.request.auction.AuctionDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
-import com.second_hand_auction_system.models.Auction;
-import com.second_hand_auction_system.models.AuctionType;
-import com.second_hand_auction_system.models.Item;
-import com.second_hand_auction_system.models.User;
+import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.AuctionStatus;
+import com.second_hand_auction_system.utils.StatusWallet;
+import com.second_hand_auction_system.utils.WalletType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -43,6 +42,8 @@ public class AuctionService implements IAuctionService {
     private final AuctionTypeRepository auctionTypeRepository;
     private final IJwtService jwtService;
     private final UserRepository userRepository;
+    private final WalletRepository walletRepository;
+
     @Override
     public void addAuction(@Valid AuctionDto auctionDto) throws Exception {
         Item itemExist = itemRepository.findById(auctionDto.getItem())
@@ -77,7 +78,16 @@ public class AuctionService implements IAuctionService {
         auction.setApproveBy(requester.getFullName());
         auction.setItem(itemExist);
         auction.setAuctionType(auctionType);
+        Wallet wallet = Wallet.builder()
+                .balance(0)
+                .walletType(WalletType.AUCTION)
+                .statusWallet(StatusWallet.ACTIVE)
+                .user(null)
+                .build();
+        walletRepository.save(wallet);
+        auction.setWallet(wallet);
         auctionRepository.save(auction);
+
     }
 
 
@@ -143,7 +153,7 @@ public class AuctionService implements IAuctionService {
     }
 
 
-    @Scheduled(fixedRate = 60000) // Cứ 60 giây chạy một lần
+    @Scheduled(fixedRate = 120000) // Cứ 60 giây chạy một lần
     public void updateAuctionStatus() {
         List<Auction> auctions = auctionRepository.findAll();
         Calendar now = Calendar.getInstance(); // Lấy thời gian hiện tại
@@ -170,7 +180,7 @@ public class AuctionService implements IAuctionService {
             } else {
                 auction.setStatus(AuctionStatus.CLOSED);
             }
-
+            System.out.println("hello");
             auctionRepository.save(auction);
         }
     }

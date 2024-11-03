@@ -8,7 +8,7 @@ import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.models.Wallet;
 import com.second_hand_auction_system.models.WithdrawRequest;
 import com.second_hand_auction_system.repositories.UserRepository;
-import com.second_hand_auction_system.repositories.WalletCustomerRepository;
+import com.second_hand_auction_system.repositories.WalletRepository;
 import com.second_hand_auction_system.repositories.WithdrawRequestRepository;
 import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.jwt.JwtService;
@@ -33,7 +33,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
     private final WithdrawRequestRepository withdrawRequestRepository;
     private final JwtService jwtService;
     private final UserRepository userRepository;
-    private final WalletCustomerRepository walletCustomerRepository;
+    private final WalletRepository walletRepository;
     private final ModelMapper modelMapper;
     private final VNPAYService vnpayService;
 
@@ -67,7 +67,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                     .build());
         }
 
-        Wallet wallet = walletCustomerRepository.findByWalletCustomerId(requester.getId()).orElse(null);
+        Wallet wallet = walletRepository.findByWalletId(requester.getId()).orElse(null);
 
         WithdrawRequest withdrawRequest1 = WithdrawRequest.builder()
                 .requestAmount(withdrawRequest.getRequestAmount())
@@ -90,7 +90,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 .transactionType(TransactionType.WITHDRAWAL)
                 .accountNumber(withdrawRequest1.getAccountNumber())
                 .bankAccount(withdrawRequest1.getBankAccount())
-                .walletCustomer(wallet.getWalletCustomerId())
+                .walletCustomer(wallet.getWalletId())
                 .build();
 
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()

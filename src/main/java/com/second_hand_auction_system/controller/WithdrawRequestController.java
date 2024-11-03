@@ -3,8 +3,13 @@ package com.second_hand_auction_system.controller;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawApprove;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawRequestDTO;
 import com.second_hand_auction_system.dtos.responses.withdraw.APiResponse;
+import com.second_hand_auction_system.models.Transaction;
+import com.second_hand_auction_system.repositories.TransactionRepository;
 import com.second_hand_auction_system.service.VNPay.VNPAYService;
+import com.second_hand_auction_system.service.transactionSystem.ITransactionSystemSerivce;
+import com.second_hand_auction_system.service.transactionWallet.ITransactionWalletService;
 import com.second_hand_auction_system.service.withdrawRequest.IWithdrawRequestService;
+import com.second_hand_auction_system.utils.TransactionStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class WithdrawRequestController {
     private final IWithdrawRequestService withdrawRequestService;
     private final VNPAYService vnpayService;
-//    private final TransactionSystemRepository transactionSystemRepository;
+    private final ITransactionWalletService transactionWalletService;
 
     @PostMapping("")
     public ResponseEntity<?> withdraw(@RequestBody WithdrawRequestDTO withdrawRequest) {
@@ -49,27 +54,14 @@ public class WithdrawRequestController {
                                        @RequestParam(name = "vnp_TransactionNo") String vnpTransactionNo,
                                        @RequestParam(name = "vnp_TransactionStatus") String vnpTransactionStatus,
                                        @RequestParam(name = "vnp_TxnRef") String vnpTxnRef,
-                                       @RequestParam(name = "vnp_SecureHash") String vnpSecureHash
-//                                       @RequestParam(name = "id") Integer transactionId
+                                       @RequestParam(name = "vnp_SecureHash") String vnpSecureHash,
+                                       @RequestParam(name = "transactionId") Integer transactionId
     ) {
         log.info("vnpAmount|{}|vnpBankCode|{}|vnpBankTranNo|{}|vnpCardType|{}|vnpOrderInfo|{}|vnpPayDate|{}|" +
                         "vnpPayDate|{}|vnpTmnCode|{}|vnpTransactionNo|{}|vnpTransactionStatus|{}|vnpTxnRef|{}|vnpSecureHash|{}",
                 vnpAmount, vnpBankCode, vnpBankTranNo, vnpCardType, vnpOrderInfo, vnpPayDate, vnpPayDate, vnpTmnCode,
                 vnpTransactionNo, vnpTransactionStatus, vnpTxnRef, vnpSecureHash);
-//        var transactionType = transactionSystemRepository.findById(transactionId).orElseThrow(null);
+        return transactionWalletService.updateTransaction(transactionId,vnpTransactionStatus,vnpAmount );
 
-        APiResponse response = new APiResponse();
-        if(vnpTransactionStatus.equals("00")) {
-            response.setCode("200");
-            response.setMessage("Payment success");
-//            transactionType.setStatus(TransactionStatus.COMPLETED);
-//            transactionSystemRepository.save(transactionType);
-        } else {
-            response.setCode("500");
-            response.setMessage("Payment processing error");
-//            transactionType.setStatus(TransactionStatus.FAILED);
-//            transactionSystemRepository.save(transactionType);
-        }
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

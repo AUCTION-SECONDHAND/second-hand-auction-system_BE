@@ -2,7 +2,7 @@ package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.walletCustomer.Deposit;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
-import com.second_hand_auction_system.service.walletCustomer.IWalletCustomerService;
+import com.second_hand_auction_system.service.walletCustomer.IWalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("api/v1/walletCustomer")
 @RequiredArgsConstructor
-public class WalletCustomerController {
-    private final IWalletCustomerService walletCustomerService;
+public class WalletController {
+    private final IWalletService walletService;
 
     @PostMapping("/deposit")
     public ResponseEntity<ResponseObject> deposit (@RequestBody Deposit deposit) {
-        return walletCustomerService.depositWallet(deposit);
+        return walletService.depositWallet(deposit);
     }
 
     @GetMapping("/get-balance")
     public ResponseEntity<ResponseObject> getBalance () {
-        return walletCustomerService.getWalletCustomerBalance();
+        return walletService.getWalletCustomerBalance();
     }
 //    @GetMapping("/{id}")
 //    public ResponseEntity<ResponseObject> getWalletCustomer(@PathVariable Long id) {

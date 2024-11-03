@@ -4,8 +4,9 @@ import com.second_hand_auction_system.dtos.request.walletCustomer.Deposit;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.models.Wallet;
+import com.second_hand_auction_system.repositories.TransactionRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
-import com.second_hand_auction_system.repositories.WalletCustomerRepository;
+import com.second_hand_auction_system.repositories.WalletRepository;
 import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
@@ -23,13 +24,13 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-public class WalletCustomerService implements IWalletCustomerService {
-    private final WalletCustomerRepository walletCustomerRepository;
+public class WalletService implements IWalletService {
+    private final WalletRepository walletRepository;
     private final PayOS payOS;
     private final IJwtService jwtService;
     private final UserRepository userRepository;
 //    private final TransactionWalletRepository transactionWalletRepository;
-//    private final TransactionSystemRepository transactionSystemRepository;
+    private final TransactionRepository transactionRepository;
     private final EmailService emailService;
     private final VNPAYService vnpayService;
 
@@ -79,13 +80,13 @@ public class WalletCustomerService implements IWalletCustomerService {
 
     // Phương thức để tạo hoặc lấy ví của người dùng
     private Wallet getOrCreateWallet(User requester) {
-        return walletCustomerRepository.findByUserId(requester.getId())
+        return walletRepository.findByUserId(requester.getId())
                 .orElseGet(() -> {
                     Wallet wallet = Wallet.builder()
                             .statusWallet(StatusWallet.ACTIVE)
                             .user(requester)
                             .build();
-                    return walletCustomerRepository.save(wallet);
+                    return walletRepository.save(wallet);
                 });
     }
 
@@ -224,7 +225,7 @@ public class WalletCustomerService implements IWalletCustomerService {
                             .build());
         }
 //        var walletCustomer = walletCustomerRepository.findByWalletCustomerId(requester.getId());
-        double balance = walletCustomerRepository.findBalanceByUserId(requester.getId());
+        double balance = walletRepository.findBalanceByUserId(requester.getId());
         return ResponseEntity.ok(ResponseObject.builder()
                 .data(balance)
                 .status(HttpStatus.OK)

@@ -15,14 +15,13 @@ import lombok.*;
 public class Wallet extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer walletCustomerId;
+    private Integer walletId;
 
     @Column(name = "balance")
     private double balance;
 
     @Enumerated(EnumType.STRING)
     private StatusWallet statusWallet;
-
 
     @Enumerated(EnumType.STRING)
     private WalletType walletType;

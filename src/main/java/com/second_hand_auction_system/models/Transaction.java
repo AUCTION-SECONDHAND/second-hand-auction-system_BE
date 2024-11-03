@@ -29,15 +29,17 @@ public class Transaction extends BaseEntity {
     @Column(name = "commission_rate")
     private double commissionRate;
 
+    @Column(name = "description")
+    private String description;
     @OneToOne
     @JoinColumn(name = "order_id")
     private Order order;
 
-    @Column(name = "recipient_id")
-    private int recipientId;
+    @Column(name = "recipient_name")
+    private String recipient;
 
-    @Column(name = "sender_id")
-    private int senderId;
+    @Column(name = "sender_name")
+    private String sender;
 
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;

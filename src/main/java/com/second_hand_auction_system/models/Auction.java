@@ -75,4 +75,7 @@ public class Auction extends BaseEntity{
     @JoinColumn(name = "auction_type_id")
     private AuctionType auctionType;
 
+    @OneToOne
+    @JoinColumn(name = "wallet_id")
+    private Wallet wallet;
 }

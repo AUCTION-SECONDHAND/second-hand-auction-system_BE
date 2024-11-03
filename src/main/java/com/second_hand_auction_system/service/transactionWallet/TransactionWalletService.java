@@ -1,9 +1,14 @@
 package com.second_hand_auction_system.service.transactionWallet;
 
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.withdraw.APiResponse;
 import com.second_hand_auction_system.models.Transaction;
+import com.second_hand_auction_system.repositories.TransactionRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.repositories.WalletRepository;
 import com.second_hand_auction_system.service.jwt.IJwtService;
+import com.second_hand_auction_system.utils.TransactionStatus;
+import com.second_hand_auction_system.utils.WalletType;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
@@ -20,13 +25,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.lang.Double.parseDouble;
+
 @Service
 @RequiredArgsConstructor
 public class TransactionWalletService implements ITransactionWalletService {
-//    private final TransactionWalletRepository transactionWalletRepository;
+    private final TransactionRepository transactionRepository;
     private final ModelMapper modelMapper;
     private final IJwtService jwtService;
     private final UserRepository userRepository;
+    private final WalletRepository walletRepository;
 
     @Override
     public ResponseEntity<?> getAll(String keyword, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
@@ -149,8 +157,55 @@ public class TransactionWalletService implements ITransactionWalletService {
                 .build());
     }
 
+    @Override
+    public ResponseEntity<?> updateTransaction(Integer transactionId, String vnpTransactionStatus, String vnpAmount) {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Unauthorized")
+                            .data(null)
+                            .build()
+            );
+        }
+        String token = authHeader.substring(7);
+        String email = jwtService.extractUserEmail(token);
+        var user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null)
+                    .build());
+        }
+        var transactionType = transactionRepository.findById(transactionId).orElseThrow(null);
+        var wallet = walletRepository.findByUserId(user.getId()).orElse(null);
+        double balance = Double.parseDouble(vnpAmount);
 
+        APiResponse response = new APiResponse();
+        if (vnpTransactionStatus.equals("00")) {
+            response.setCode("200");
+            response.setMessage("Payment success");
+            transactionType.setTransactionStatus(TransactionStatus.COMPLETED);
+            transactionRepository.save(transactionType);
+            if (wallet != null) {
+                wallet.setBalance(wallet.getBalance() + balance);
+                walletRepository.save(wallet);
+            }
 
+        } else {
+            response.setCode("500");
+            response.setMessage("Payment processing error");
+            transactionType.setTransactionStatus(TransactionStatus.FAILED);
+            transactionRepository.save(transactionType);
+            if (wallet != null) {
+                wallet.setBalance(wallet.getBalance());
+                walletRepository.save(wallet);
+            }
+        }
+        return ResponseEntity.ok(response);
+    }
 
 
 }
