@@ -42,7 +42,9 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
     @Override
     @Transactional
     public ResponseEntity<?> addAuctionRegistration(AuctionRegistrationsDto auctionRegistrationsDto) throws Exception {
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
         // Kiểm tra Authorization header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
@@ -66,8 +68,8 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         }
 
         // Kiểm tra ví của người dùng
-        Wallet wallet = walletRepository.findByUserId(requester.getId()).orElse(null);
-        if (wallet == null || wallet.getBalance() < 0) {
+        Wallet userWallet = walletRepository.findByUserId(requester.getId()).orElse(null);
+        if (userWallet == null || userWallet.getBalance() <= 0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .data(null)
@@ -86,11 +88,23 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         }
 
         if (auctionExist.getStatus().equals(AuctionStatus.OPEN)) {
-            // Tính số tiền cọc 10% gia khoi diem
+            // Kiểm tra xem người dùng đã đăng ký phiên này chưa
+            Optional<AuctionRegistration> existingRegistration = auctionRegistrationsRepository
+                    .findByAuction_AuctionIdAndUsers_Id(auctionRegistrationsDto.getAuction(), requester.getId());
+
+            if (existingRegistration.isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseObject.builder()
+                        .status(HttpStatus.CONFLICT)
+                        .data(null)
+                        .message("You have already registered for this auction")
+                        .build());
+            }
+
+            // Tính số tiền cọc 10% giá khởi điểm
             double depositAmount = 0.1 * auctionExist.getStartPrice();
 
             // Kiểm tra số dư ví có đủ cho tiền cọc không
-            if (wallet.getBalance() < depositAmount) {
+            if (userWallet.getBalance() < depositAmount) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                         .status(HttpStatus.BAD_REQUEST)
                         .data(null)
@@ -98,54 +112,40 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                         .build());
             }
 
-            // Kiểm tra đăng ký hiện có
-            // Tìm kiếm bản ghi AuctionRegistration theo auction ID
-            AuctionRegistration auctionRegistration = auctionRegistrationsRepository.findByAuction_AuctionId(auctionRegistrationsDto.getAuction()).orElse(null);
+            // Thêm đăng ký mới
+            List<User> userAuction = new ArrayList<>();
+            userAuction.add(requester);
 
-            if (auctionRegistration == null) {
-                // Chèn mới
-                List<User> userAuction = new ArrayList<>();
-                userAuction.add(requester);
+            AuctionRegistration newRegistration = AuctionRegistration.builder()
+                    .registration(Registration.CONFIRMED)
+                    .auction(auctionExist)
+                    .users(userAuction)
+                    .depositeAmount(depositAmount)
+                    .build();
+            auctionRegistrationsRepository.save(newRegistration);
 
-                AuctionRegistration createAuctionRegistration = AuctionRegistration.builder()
-                        .registration(Registration.CONFIRMED)
-                        .auction(auctionExist)
-                        .users(userAuction) // Sử dụng Set đã tạo
-                        .depositeAmount(depositAmount)
-                        .build();
-                auctionRegistrationsRepository.save(createAuctionRegistration);
-            } else {
-                // Cập nhật bản ghi đã tồn tại
-                auctionRegistration.setRegistration(Registration.CONFIRMED);
-                auctionRegistration.getUsers().add(requester); // Thêm requester vào Set hiện có
-                auctionRegistration.setDepositeAmount(auctionRegistration.getDepositeAmount() + depositAmount);
-                auctionRegistrationsRepository.save(auctionRegistration);
+            // Trừ tiền từ ví của người dùng và cộng vào ví đấu giá
+            userWallet.setBalance(userWallet.getBalance() - depositAmount);
+            walletRepository.save(userWallet);
+
+            Wallet auctionWallet = walletRepository.findWalletByAuctionId(auctionExist.getAuctionId()).orElse(null);
+            if (auctionWallet != null) {
+                auctionWallet.setBalance(auctionWallet.getBalance() + depositAmount);
+                walletRepository.save(auctionWallet);
             }
 
-            // Trừ tiền cọc từ ví của người dùng
-            wallet.setBalance(wallet.getBalance() - depositAmount);
-            walletRepository.save(wallet);
-
-            // Cập nhật số dư ví của phien dau gia
-            Wallet wallet1 = walletRepository.findWalletByAuctionId(auctionExist.getAuctionId()).orElse(null);
-            if (wallet1 != null) {
-                wallet.setBalance(wallet.getBalance() + depositAmount);
-                walletRepository.save(wallet);
-            }
-
-            // Lưu giao dịch voi muc hoa hong 5%
-            double commissionRate = 0.05; // 5%
-            long commissionAmount = (long) (depositAmount * commissionRate);
-            assert wallet1 != null;
+            // Lưu giao dịch với mức hoa hồng 5%
+            double commissionRate = 0.05;
+            double commissionAmount = depositAmount * commissionRate;
             Transaction transactionWallet = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
                     .amount((long) depositAmount)
                     .transactionStatus(TransactionStatus.COMPLETED)
-                    .recipient(wallet1.getUser().getFullName())
+                    .recipient("SYSTEM")
                     .sender(requester.getFullName())
                     .commissionAmount((int) commissionAmount)
                     .commissionRate(commissionRate)
-                    .transactionWalletCode(generate())
+                    .transactionWalletCode(generateTransactionCode())
                     .build();
             transactionRepository.save(transactionWallet);
 
@@ -163,12 +163,11 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 .build());
     }
 
-
-    private static long generate() {
+    private static long generateTransactionCode() {
         SecureRandom secureRandom = new SecureRandom();
-        long randomNumber = 100000 + secureRandom.nextInt(900000); // nextInt(900000) tạo số từ 0 đến 899999
-        return randomNumber;
+        return 100000 + secureRandom.nextInt(900000);
     }
+
 
 
     @Override
