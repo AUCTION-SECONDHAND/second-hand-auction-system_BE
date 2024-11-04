@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MainCategoryResponse extends BaseResponse {
+public class MainCategoryResponse  {
     @JsonProperty("main_category_id")
     private Integer mainCategoryId;
 

@@ -2,12 +2,15 @@ package com.second_hand_auction_system.service.mainCategory;
 
 import com.second_hand_auction_system.converters.mainCategory.MainCategoryConverter;
 import com.second_hand_auction_system.dtos.request.mainCategory.MainCategoryDto;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.mainCategory.CategoryVsSubCategoryResponse;
 import com.second_hand_auction_system.dtos.responses.mainCategory.MainCategoryResponse;
 import com.second_hand_auction_system.models.MainCategory;
 import com.second_hand_auction_system.repositories.MainCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -71,6 +74,18 @@ public class MainCategoryService implements IMainCategoryService {
     public List<CategoryVsSubCategoryResponse> getMainCategoryVsSubCategory() throws Exception {
         List<MainCategory> mainCategoryList = mainCategoryRepository.findAll();
         return mainCategoryList.stream().map(mainCategoryConverter::toCategoryVsSubCategoryResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public ResponseEntity<?> getMainCategorys() {
+        List<MainCategory> mainCategoryList = mainCategoryRepository.findAll();
+        List<MainCategoryResponse> mainCategoryResponses = mainCategoryList.stream()
+                .map(mainCategory -> modelMapper.map(mainCategory, MainCategoryResponse.class))
+                .toList();
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder().status(HttpStatus.OK)
+                .data(mainCategoryResponses)
+                .message("List of main categories")
+                .build());
     }
 
 }

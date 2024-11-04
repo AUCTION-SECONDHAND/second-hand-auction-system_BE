@@ -10,7 +10,6 @@ import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.AddressRepository;
 import com.second_hand_auction_system.repositories.KnowYourCustomerRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
-import com.second_hand_auction_system.service.cloud.CloudinaryService;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.KycStatus;
@@ -40,7 +39,6 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     private final ModelMapper modelMapper;
     private final EmailService emailService;
     private final AddressRepository addressRepository;
-    private final CloudinaryService cloudinary;
 
     @Override
     @Transactional

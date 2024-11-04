@@ -126,4 +126,9 @@ public class MainCategoryController {
         }
 
     }
+
+    @GetMapping("get-main")
+    public ResponseEntity<?> getMainCategoryT() throws Exception {
+        return mainCategoryService.getMainCategorys();
+    }
 }
