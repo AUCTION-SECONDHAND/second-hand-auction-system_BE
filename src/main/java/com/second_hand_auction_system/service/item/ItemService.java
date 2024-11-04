@@ -65,7 +65,7 @@ public class ItemService implements IItemService {
         }
         item.setItemStatus(ItemStatus.PENDING);
         item.setSubCategory(subCategory);
-        item.setAcutionType(auctionTypeExisted);
+        item.setAuctionType(auctionTypeExisted);
         item.setUser(requester);
         item.setCreateBy(requester.getFullName());
         item.setUpdateBy(requester.getFullName());

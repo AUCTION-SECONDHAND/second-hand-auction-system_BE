@@ -72,4 +72,16 @@ public class SellerInformationController {
         }
     }
 
+
+    @GetMapping("/auction/{auctionId}")
+    public ResponseEntity<?> getSellerInformationByAuctionId(
+            @PathVariable Integer auctionId) {
+        try {
+            SellerInformationResponse response = sellerInformationService.getSellerInformationByAuctionId(auctionId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(e.getMessage());
+        }
+    }
+
 }

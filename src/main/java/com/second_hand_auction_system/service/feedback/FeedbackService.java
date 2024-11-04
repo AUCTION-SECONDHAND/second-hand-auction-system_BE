@@ -10,6 +10,9 @@ import com.second_hand_auction_system.repositories.FeedbackRepository;
 import com.second_hand_auction_system.repositories.ItemRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -85,10 +88,13 @@ public class FeedbackService implements IFeedbackService {
     }
 
     @Override
-    public List<FeedbackResponse> getFeedbackBySellerUserId(Integer userId) throws Exception {
-        List<FeedBack> feedbackList = feedbackRepository.findAllBySellerUserId(userId);
-        return feedbackList.stream()
-                .map(FeedbackConverter::convertToResponse)
-                .collect(Collectors.toList());
+    public Page<FeedbackResponse> getFeedbackBySellerUserId(Integer userId, int page, int size) throws Exception {
+        Pageable pageable = PageRequest.of(page, size); // Tạo đối tượng Pageable với trang và kích thước đã chỉ định
+        Page<FeedBack> feedbackPage = feedbackRepository.findAllBySellerUserId(userId, pageable); // Sử dụng phương thức tìm kiếm phân trang trong repository
+
+        // Chuyển đổi từ Page<FeedBack> sang Page<FeedbackResponse>
+        return feedbackPage.map(FeedbackConverter::convertToResponse);
     }
+
+
 }

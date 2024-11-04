@@ -6,7 +6,6 @@ import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.jwt.IJwtService;
-import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.StatusWallet;
 import com.second_hand_auction_system.utils.WalletType;
 import jakarta.validation.Valid;
@@ -16,15 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.sql.Time;
-import java.time.LocalDateTime;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -50,7 +44,7 @@ public class AuctionService implements IAuctionService {
                 .orElseThrow(() -> new Exception("Item not found"));
         AuctionType auctionType = auctionTypeRepository.findById(auctionDto.getAuctionTypeId())
                 .orElseThrow(() -> new Exception("Auction type not found"));
-        if (!auctionType.getAuctionTypeName().equals(itemExist.getAcutionType().getAuctionTypeName())) {
+        if (!auctionType.getAuctionTypeName().equals(itemExist.getAuctionType().getAuctionTypeName())) {
             throw new Exception("Auction type does not match the item's auction type");
         }
 
