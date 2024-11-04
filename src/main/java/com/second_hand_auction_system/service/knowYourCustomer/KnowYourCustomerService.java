@@ -10,6 +10,7 @@ import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.AddressRepository;
 import com.second_hand_auction_system.repositories.KnowYourCustomerRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.service.cloud.CloudinaryService;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.KycStatus;
@@ -39,13 +40,16 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     private final ModelMapper modelMapper;
     private final EmailService emailService;
     private final AddressRepository addressRepository;
-
+    private final CloudinaryService cloudinary;
 
     @Override
     @Transactional
     public ResponseEntity<?> register(KycDto kyc) {
+        // Lấy header Authorization từ yêu cầu
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
+
+        // Kiểm tra header Authorization
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ResponseObject.builder()
@@ -54,8 +58,12 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .status(HttpStatus.UNAUTHORIZED)
                             .build());
         }
+
+        // Trích xuất email từ token
         String token = authHeader.substring(7);
         String email = jwtService.extractUserEmail(token);
+
+        // Kiểm tra người dùng
         User requester = userRepository.findByEmailAndStatusIsTrue(email).orElse(null);
         if (requester == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -64,6 +72,8 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .message("Unauthorized request - User not found")
                             .build());
         }
+
+        // Kiểm tra vai trò của người dùng
         if (requester.getRole() != Role.BUYER) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ResponseObject.builder()
@@ -71,6 +81,8 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .message("Forbidden request - Only buyers can register for KYC")
                             .build());
         }
+
+        // Kiểm tra xem KYC đã tồn tại hay chưa
         if (knowYourCustomerRepository.existsByCccdNumber(kyc.getCccdNumber())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ResponseObject.builder()
@@ -78,6 +90,9 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .message("KYC record already exists for this CCCD number")
                             .build());
         }
+
+
+
         KnowYourCustomer knowYourCustomer = KnowYourCustomer.builder()
                 .age(kyc.getAge())
                 .dateOfBirth(kyc.getDob())
@@ -91,10 +106,13 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .sumbited(new Date())
                 .phoneNumber(kyc.getPhoneNumber())
                 .user(requester)
-                .sumbited(new Date())
                 .verifiedBy(requester.getFullName())
                 .build();
+
+        // Lưu đối tượng KYC vào cơ sở dữ liệu
         knowYourCustomerRepository.save(knowYourCustomer);
+
+        // Tạo phản hồi KYC
         KycResponse kycResponse = KycResponse.builder()
                 .kycId(knowYourCustomer.getKycId())
                 .dob(kyc.getDob().toString())
@@ -104,13 +122,12 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .email(kyc.getEmail())
                 .gender(kyc.getGender())
                 .cccdNumber(kyc.getCccdNumber())
-                .frontDocumentUrl(kyc.getFrontDocumentUrl())
+                .frontDocumentUrl(knowYourCustomer.getFrontDocumentUrl())
                 .backDocumentUrl(kyc.getBackDocumentUrl())
                 .kycStatus(knowYourCustomer.getKycStatus())
                 .submited(knowYourCustomer.getSumbited())
                 .userId(requester.getId()) // Gán userId
                 .verified_by(knowYourCustomer.getVerifiedBy())
-                .submited(new Date())
                 .reason(null)
                 .build();
 
@@ -121,6 +138,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .status(HttpStatus.OK)
                 .build());
     }
+
 
     @Override
     public ResponseEntity<?> approveKyc(ApproveKyc kycDto, int kycId) throws MessagingException {

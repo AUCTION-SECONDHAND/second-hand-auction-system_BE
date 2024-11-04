@@ -2,6 +2,7 @@ package com.second_hand_auction_system.service.VNPay;
 
 import com.second_hand_auction_system.configurations.VNPayConfig;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.wallet.WalletResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.jwt.IJwtService;
@@ -361,7 +362,7 @@ public class VNPAYService implements VNPaySerivce {
         return String.valueOf(otp);
     }
 
-    public String deposite(int amount, String description) {
+    public WalletResponse deposite(int amount, String description) {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         // Kiểm tra Authorization header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -373,7 +374,7 @@ public class VNPAYService implements VNPaySerivce {
         // Kiểm tra người dùng
         User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
         if (requester == null) {
-           throw new RuntimeException("User not found");
+            throw new RuntimeException("User not found");
         }
         // Kiểm tra ví của người dùng
         Wallet wallet = walletRepository.findByUserId(requester.getId()).orElse(null);
@@ -390,7 +391,7 @@ public class VNPAYService implements VNPaySerivce {
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(amount * 100));
+        vnp_Params.put("vnp_Amount", String.valueOf(amount*100));
         vnp_Params.put("vnp_CurrCode", "VND");
         if (bankCode != null && !bankCode.isEmpty()) {
             vnp_Params.put("vnp_BankCode", bankCode);
@@ -450,7 +451,9 @@ public class VNPAYService implements VNPaySerivce {
         var walletAdmin = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
         assert walletAdmin != null;
         var walletCustomer = walletRepository.findByUserId(requester.getId()).orElse(null);
-        if(walletCustomer == null){
+        Transaction transaction1;
+
+        if (walletCustomer == null) {
             Wallet wallet1 = Wallet.builder()
                     .user(requester)
                     .statusWallet(StatusWallet.ACTIVE)
@@ -458,7 +461,7 @@ public class VNPAYService implements VNPaySerivce {
                     .walletType(WalletType.CUSTOMER)
                     .build();
             walletRepository.save(wallet1);
-            Transaction transactionType = Transaction.builder()
+            transaction1 = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT)
                     .transactionWalletCode(Long.parseLong(transactionCode))
                     .description(orderInfo)
@@ -471,13 +474,13 @@ public class VNPAYService implements VNPaySerivce {
                     .commissionRate(0)
                     .transactionStatus(TransactionStatus.PENDING)
                     .build();
-            transactionRepository.save(transactionType);
-        } else  {
-            Transaction transactionType = Transaction.builder()
+            transactionRepository.save(transaction1);
+        } else {
+            transaction1 = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT)
                     .transactionWalletCode(Long.parseLong(transactionCode))
                     .description(orderInfo)
-                    .amount((long) walletCustomer.getBalance())
+                    .amount(amount)
                     .wallet(walletCustomer)
                     .description(description)
                     .recipient(walletAdmin.getUser().getFullName())
@@ -486,8 +489,8 @@ public class VNPAYService implements VNPaySerivce {
                     .commissionRate(0)
                     .transactionStatus(TransactionStatus.PENDING)
                     .build();
-            transactionRepository.save(transactionType);
+            transactionRepository.save(transaction1);
         }
-        return paymentUrl;
+        return new WalletResponse(paymentUrl, transaction1.getTransactionWalletId());
     }
 }

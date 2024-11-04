@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.service.transactionWallet;
 
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.transactionWallet.TransactionWalletResponse;
 import com.second_hand_auction_system.dtos.responses.withdraw.APiResponse;
 import com.second_hand_auction_system.models.Transaction;
 import com.second_hand_auction_system.repositories.TransactionRepository;
@@ -8,9 +9,10 @@ import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.repositories.WalletRepository;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.TransactionStatus;
-import com.second_hand_auction_system.utils.WalletType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -24,10 +26,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import static java.lang.Double.parseDouble;
+import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class TransactionWalletService implements ITransactionWalletService {
     private final TransactionRepository transactionRepository;
@@ -102,15 +104,14 @@ public class TransactionWalletService implements ITransactionWalletService {
 
     @Override
     public ResponseEntity<?> getTransactionById(int id) {
-//        TransactionWallet transactionWallet = transactionWalletRepository.findById(id).orElse(null);
-//        if (transactionWallet != null) {
-//            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-//                    .data(transactionWallet)
-//                    .message("Transaction wallet found")
-//                    .status(HttpStatus.OK)
-//                    .build());
-//        }
-
+        Transaction transactionWallet = transactionRepository.findById(id).orElse(null);
+        if (transactionWallet != null) {
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .data(transactionWallet)
+                    .message("Transaction wallet found")
+                    .status(HttpStatus.OK)
+                    .build());
+        }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                 .data(null)
                 .message("Transaction wallet found")
@@ -123,32 +124,51 @@ public class TransactionWalletService implements ITransactionWalletService {
         Pageable pageable = PageRequest.of(page, size);
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
+
+        // Kiểm tra sự tồn tại của token và định dạng
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
                     .status(HttpStatus.UNAUTHORIZED)
                     .data(null)
-                    .message("Unauthorized")
+                    .message("Unauthorized: Token is missing or invalid")
                     .build());
         }
+
+        // Trích xuất email từ token
         String token = authHeader.substring(7);
         String email = jwtService.extractUserEmail(token);
+
         var user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .status(HttpStatus.NOT_FOUND)
                     .data(null)
-                    .message("User not found")
+                    .message("User not found with email: " + email)
                     .build());
         }
 
-//        Page<TransactionWallet> transactionWalletsPage = transactionWalletRepository
-//                .findTransactionWalletByWalletCustomer_User_Id(user.getId(), pageable);
+        Page<Transaction> transactionWalletsPage = transactionRepository.findTransactionWalletByWallet_User_Id(user.getId(), pageable);
 
+        List<TransactionWalletResponse> transactionWallets = transactionWalletsPage.getContent().stream()
+
+                .map(transaction ->
+                        TransactionWalletResponse.builder()
+                        .transactionId(transaction.getTransactionWalletId())
+                        .amount(transaction.getAmount())
+                        .transactionWalletCode(transaction.getTransactionWalletCode())
+                        .transactionType(transaction.getTransactionType())
+                        .transactionStatus(transaction.getTransactionStatus())
+                        .senderName(transaction.getSender())
+                        .recipientName(transaction.getRecipient())
+                        .transactionDate(transaction.getCreateAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Chuẩn bị phản hồi
         Map<String, Object> responseData = new HashMap<>();
-//        responseData.put("data", transactionWalletsPage.getContent());
-//
-//        responseData.put("totalPages", transactionWalletsPage.getTotalPages());
-//        responseData.put("totalElements", transactionWalletsPage.getTotalElements());
+        responseData.put("data", transactionWallets); // Sử dụng danh sách đã ánh xạ
+        responseData.put("totalPages", transactionWalletsPage.getTotalPages());
+        responseData.put("totalElements", transactionWalletsPage.getTotalElements());
 
         return ResponseEntity.ok(ResponseObject.builder()
                 .status(HttpStatus.OK)
@@ -157,8 +177,10 @@ public class TransactionWalletService implements ITransactionWalletService {
                 .build());
     }
 
+
+
     @Override
-    public ResponseEntity<?> updateTransaction(Integer transactionId, String vnpTransactionStatus, String vnpAmount) {
+    public ResponseEntity<?> updateTransaction(Integer transactionId, String vnpTransactionStatus) {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
@@ -181,7 +203,6 @@ public class TransactionWalletService implements ITransactionWalletService {
         }
         var transactionType = transactionRepository.findById(transactionId).orElseThrow(null);
         var wallet = walletRepository.findByUserId(user.getId()).orElse(null);
-        double balance = Double.parseDouble(vnpAmount);
 
         APiResponse response = new APiResponse();
         if (vnpTransactionStatus.equals("00")) {
@@ -190,7 +211,7 @@ public class TransactionWalletService implements ITransactionWalletService {
             transactionType.setTransactionStatus(TransactionStatus.COMPLETED);
             transactionRepository.save(transactionType);
             if (wallet != null) {
-                wallet.setBalance(wallet.getBalance() + balance);
+                wallet.setBalance((wallet.getBalance() + transactionType.getAmount()));
                 walletRepository.save(wallet);
             }
 

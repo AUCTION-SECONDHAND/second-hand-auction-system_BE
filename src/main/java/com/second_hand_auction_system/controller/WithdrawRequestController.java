@@ -61,7 +61,7 @@ public class WithdrawRequestController {
                         "vnpPayDate|{}|vnpTmnCode|{}|vnpTransactionNo|{}|vnpTransactionStatus|{}|vnpTxnRef|{}|vnpSecureHash|{}",
                 vnpAmount, vnpBankCode, vnpBankTranNo, vnpCardType, vnpOrderInfo, vnpPayDate, vnpPayDate, vnpTmnCode,
                 vnpTransactionNo, vnpTransactionStatus, vnpTxnRef, vnpSecureHash);
-        return transactionWalletService.updateTransaction(transactionId,vnpTransactionStatus,vnpAmount );
+        return transactionWalletService.updateTransaction(transactionId,vnpTransactionStatus );
 
     }
 }

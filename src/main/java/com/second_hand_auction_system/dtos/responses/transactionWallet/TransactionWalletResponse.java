@@ -9,7 +9,6 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -18,13 +17,13 @@ import java.util.Date;
 @Getter
 public class TransactionWalletResponse {
     @Positive(message = "Transaction ID must be a positive number")
-    private int transactionId;
+    private Integer transactionId;
 
     @NotNull(message = "Transaction type cannot be null")
     private TransactionType transactionType;
 
     @PositiveOrZero(message = "Amount must be zero or positive")
-    private int amount;
+    private long amount;
 
     @Positive(message = "Transaction wallet code must be a positive number")
     private long transactionWalletCode;
@@ -32,8 +31,11 @@ public class TransactionWalletResponse {
     @NotNull(message = "Transaction status cannot be null")
     private TransactionStatus transactionStatus;
 
-    @NotBlank(message = "Wallet customer name cannot be blank")
-    private String walletCustomerName;
+    @NotBlank(message = "Sender name cannot be blank")
+    private String senderName;
+
+    @NotBlank(message = "Recipient name cannot be blank")
+    private String recipientName;
 
     @NotNull(message = "Transaction date cannot be null")
     private LocalDateTime transactionDate;

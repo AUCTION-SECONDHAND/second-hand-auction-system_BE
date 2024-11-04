@@ -7,6 +7,7 @@ import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
+import com.second_hand_auction_system.dtos.responses.item.ItemResponse;
 import com.second_hand_auction_system.exceptions.DataNotFoundException;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
@@ -65,7 +66,7 @@ public class ItemService implements IItemService {
         }
         item.setItemStatus(ItemStatus.PENDING);
         item.setSubCategory(subCategory);
-        item.setAcutionType(auctionTypeExisted);
+        item.setAuctionType(auctionTypeExisted);
         item.setUser(requester);
         item.setCreateBy(requester.getFullName());
         item.setUpdateBy(requester.getFullName());
@@ -169,11 +170,11 @@ public class ItemService implements IItemService {
     }
 
     public List<AuctionItemResponse> getTop10FeaturedItem() {
-        List<Item> items = itemRepository.findAll();
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Item> items = itemRepository.findTop10Items(pageable);
         return items.stream()
                 .map(auctionItemConvert::toAuctionItemResponse)
                 .collect(Collectors.toList());
-//        return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
     @Override
@@ -254,6 +255,44 @@ public class ItemService implements IItemService {
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
         AuctionItemResponse auctionItemResponse = auctionItemConvert.toAuctionItemResponse(item);
         return auctionItemResponse;
+    }
+
+    @Override
+    public ResponseEntity<?> getItemByUser(int page, int limit) {
+        Pageable pageable = PageRequest.of(page, limit);
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .message("Unauthorized")
+                    .data(null)
+                    .build());
+        }
+
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null)
+                    .build());
+        }
+        Page<Item> items = itemRepository.findItemByUser_Id(requester.getId(),pageable);
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("items", items.map(auctionItemConvert::toAuctionItemResponse).getContent());
+        responseData.put("totalPages", items.getTotalPages());
+        responseData.put("totalElements", items.getTotalElements());
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Success")
+                .data(responseData)
+                .build());
     }
 
     public Integer extractUserIdFromToken(String token) throws Exception {

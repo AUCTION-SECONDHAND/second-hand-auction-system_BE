@@ -14,5 +14,5 @@ public interface ITransactionWalletService {
 
     ResponseEntity<?> getTransactionWalletsBider(int size, int page);
 
-    ResponseEntity<?> updateTransaction(Integer transactionId,String vnpTransactionStatus,String vnpAmount);
+    ResponseEntity<?> updateTransaction(Integer transactionId,String vnpTransactionStatus);
 }

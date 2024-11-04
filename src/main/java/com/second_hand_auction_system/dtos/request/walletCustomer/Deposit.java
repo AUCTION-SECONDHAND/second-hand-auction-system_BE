@@ -21,11 +21,7 @@ public class Deposit {
     @Positive(message = "Amount must be a positive number")
     private int amount;
 
-//    @NotBlank(message = "Return success URL cannot be blank")
-//    private String returnSuccess;
-//
-//    @NotBlank(message = "Return error URL cannot be blank")
-//    private String returnError;
+
 
 
 }

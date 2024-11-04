@@ -134,6 +134,11 @@ public class ItemController {
         );
     }
 
+    @GetMapping("product-user")
+    public ResponseEntity<?> getProductSeller(@RequestParam(value = "page",defaultValue = "0") int page,
+                                              @RequestParam(value = "limit", defaultValue = "10") int limit) throws Exception {
+        return itemService.getItemByUser(page,limit);
+    }
     @GetMapping("product-appraisal")
     public ResponseEntity<?> getProductAppraisal(
             @RequestParam(value = "page", defaultValue = "0") int page, @RequestParam(value = "limit", defaultValue = "10") int limit

@@ -2,6 +2,7 @@ package com.second_hand_auction_system.service.walletCustomer;
 
 import com.second_hand_auction_system.dtos.request.walletCustomer.Deposit;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.wallet.WalletResponse;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.models.Wallet;
 import com.second_hand_auction_system.repositories.TransactionRepository;
@@ -11,6 +12,7 @@ import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.StatusWallet;
+import com.second_hand_auction_system.utils.WalletType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,7 +31,7 @@ public class WalletService implements IWalletService {
     private final PayOS payOS;
     private final IJwtService jwtService;
     private final UserRepository userRepository;
-//    private final TransactionWalletRepository transactionWalletRepository;
+    //    private final TransactionWalletRepository transactionWalletRepository;
     private final TransactionRepository transactionRepository;
     private final EmailService emailService;
     private final VNPAYService vnpayService;
@@ -37,11 +39,11 @@ public class WalletService implements IWalletService {
     @Override
     @Transactional
     public ResponseEntity<ResponseObject> depositWallet(Deposit deposit) {
-
-
         try {
             String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                     .getRequest().getHeader("Authorization");
+
+            // Kiểm tra tiêu đề Authorization
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ResponseObject.builder()
@@ -49,11 +51,10 @@ public class WalletService implements IWalletService {
                                 .message("Missing or invalid Authorization header")
                                 .build());
             }
-
+            // Trích xuất email người dùng từ token
             String token = authHeader.substring(7);
             String userEmail = jwtService.extractUserEmail(token);
             User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
-
             if (requester == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ResponseObject.builder()
@@ -61,8 +62,10 @@ public class WalletService implements IWalletService {
                                 .message("Unauthorized request - User not found")
                                 .build());
             }
-//            String baseUrl = deposit.getReturnSuccess();
-            String vnpay = vnpayService.deposite(deposit.getAmount(), deposit.getDescription());
+            // Gọi dịch vụ VNPay để thực hiện giao dịch
+            WalletResponse vnpay = vnpayService.deposite(deposit.getAmount(), deposit.getDescription());
+
+            // Trả về kết quả
             return ResponseEntity.status(HttpStatus.OK)
                     .body(ResponseObject.builder()
                             .status(HttpStatus.OK)
@@ -70,12 +73,17 @@ public class WalletService implements IWalletService {
                             .data(vnpay)
                             .build());
 
-
         } catch (Exception e) {
+            // Xử lý lỗi chung
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject("Giao dich that bai", HttpStatus.INTERNAL_SERVER_ERROR, null));
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .message("Transaction failed: " + e.getMessage())
+                            .data(null)
+                            .build());
         }
     }
+
 
 
     // Phương thức để tạo hoặc lấy ví của người dùng
@@ -224,14 +232,30 @@ public class WalletService implements IWalletService {
                             .message(" User not found")
                             .build());
         }
-//        var walletCustomer = walletCustomerRepository.findByWalletCustomerId(requester.getId());
-        double balance = walletRepository.findBalanceByUserId(requester.getId());
-        return ResponseEntity.ok(ResponseObject.builder()
-                .data(balance)
+        var wallet = walletRepository.findWalletByUserId(requester.getId()).orElse(null);
+        if (wallet == null) {
+            wallet = Wallet.builder()
+                    .user(requester)
+                    .balance(0.0)
+                    .walletId(requester.getId())
+                    .walletType(WalletType.CUSTOMER)
+                    .statusWallet(StatusWallet.ACTIVE)
+                    .user(requester)
+                    .build();
+            walletRepository.save(wallet);
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .data(wallet.getBalance() )
+                    .message("Get balance successfully")
+                    .build());
+        }
+        Double walletCustomer = walletRepository.findBalanceByUserId(requester.getId());
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .status(HttpStatus.OK)
-                .message("Get balance  ")
+                .data(wallet.getBalance() )
+                .message("Get balance successfully")
                 .build());
+
+
     }
-
-
 }

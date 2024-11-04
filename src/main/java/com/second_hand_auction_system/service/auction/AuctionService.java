@@ -50,7 +50,7 @@ public class AuctionService implements IAuctionService {
                 .orElseThrow(() -> new Exception("Item not found"));
         AuctionType auctionType = auctionTypeRepository.findById(auctionDto.getAuctionTypeId())
                 .orElseThrow(() -> new Exception("Auction type not found"));
-        if (!auctionType.getAuctionTypeName().equals(itemExist.getAcutionType().getAuctionTypeName())) {
+        if (!auctionType.getAuctionTypeName().equals(itemExist.getAuctionType().getAuctionTypeName())) {
             throw new Exception("Auction type does not match the item's auction type");
         }
 

@@ -67,6 +67,6 @@ public class Item extends BaseEntity{
     private SubCategory subCategory;
 
     @ManyToOne
-    @JoinColumn(name = "acution_type_id")
-    private AuctionType acutionType;
+    @JoinColumn(name = "auction_type_id")
+    private AuctionType auctionType;
 }

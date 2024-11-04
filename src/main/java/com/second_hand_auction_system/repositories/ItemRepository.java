@@ -13,7 +13,9 @@ import java.util.List;
 
 public interface ItemRepository extends JpaRepository<Item, Integer> {
     Page<Item> findAllByItemStatus(ItemStatus itemStatus, Pageable pageable);
+
     Page<Item> findAllByAuction_StatusAndUserId(AuctionStatus auction_status, Integer user_id, Pageable pageable);
+
     //Page<Item> findAllByAuction_Status
     @Query("SELECT i FROM Item i " +
             "JOIN i.auction a " +
@@ -30,8 +32,10 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
             Pageable pageable
     );
 
-//    Item findByAuctionId(int auctionId);
+    @Query("SELECT i FROM Item i ORDER BY i.itemId ASC ")
+    List<Item> findTop10Items(Pageable pageable);
 
+    Page<Item> findItemByUser_Id(Integer user_id, Pageable pageable);
     Item findByAuction_AuctionId(Integer auction);
 
     Page<Item> findAllByUserIdAndAuctionStatus(Integer user_id, AuctionStatus auctionStatus, Pageable pageable);
