@@ -4,6 +4,7 @@ import com.second_hand_auction_system.dtos.request.feedback.FeedbackDto;
 import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.service.feedback.IFeedbackService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,12 +56,16 @@ public class FeedbackController {
 
 
     @GetMapping("/seller/{userId}")
-    public ResponseEntity<List<FeedbackResponse>> getFeedbackBySellerUserId(@PathVariable Integer userId) {
+    public ResponseEntity<Page<FeedbackResponse>> getFeedbackBySellerUserId(@PathVariable Integer userId,
+                                                                            @RequestParam(defaultValue = "0") int page,
+                                                                            @RequestParam(defaultValue = "10") int size) {
         try {
-            List<FeedbackResponse> responses = feedbackService.getFeedbackBySellerUserId(userId);
+            Page<FeedbackResponse> responses = feedbackService.getFeedbackBySellerUserId(userId, page, size);
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+
 }
