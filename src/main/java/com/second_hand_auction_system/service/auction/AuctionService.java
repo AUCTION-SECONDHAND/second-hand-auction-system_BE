@@ -85,7 +85,6 @@ public class AuctionService implements IAuctionService {
     }
 
 
-
     @Override
     public void updateAuction(int auctionId, AuctionDto auctionDto) throws Exception {
         Item itemExist = itemRepository.findById(auctionDto.getItem())

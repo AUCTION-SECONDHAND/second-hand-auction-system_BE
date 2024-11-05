@@ -38,6 +38,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
     private final IJwtService jwtService;
     private final AuctionRegistrationsConverter auctionRegistrationsConverter;
     private final WalletRepository walletRepository;
+    private final AuctionRegistrationUserRepository registrationUserRepository;
 
     @Override
     @Transactional
@@ -169,7 +170,6 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
     }
 
 
-
     @Override
     public void updateAuctionRegistration(int arId, AuctionRegistrationsDto auctionRegistrationsDto) throws Exception {
 
@@ -235,6 +235,9 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization").substring(7);
         Integer user = extractUserIdFromToken(token);
+        AuctionRegistrationUser auctionUserDeposite = registrationUserRepository
+                .findByAuctionRegistration_Auction_AuctionIdAndUser_Id(auctionId, user)
+                .orElseThrow(() -> new RuntimeException("AuctionUserDeposite not found"));
 //        CheckStatusAuctionRegisterResponse checkStatusAuctionRegisterResponse = auctionRegistrationsRepository
 //                .findByUserIdAndAuction_AuctionId(user,auction.getAuctionId());
         AuctionRegistration checkStatusAuctionRegisterResponse = auctionRegistrationsRepository
@@ -243,6 +246,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 .auctionId(auction.getAuctionId())
                 .userId(user)
                 .registration(checkStatusAuctionRegisterResponse.getRegistration())
+                .statusRegistration(auctionUserDeposite.getStatusRegistration())
                 .build();
     }
 

@@ -15,6 +15,10 @@ public class AuctionRegistrationUser extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    //@Enumerated(EnumType.STRING)
+    @JoinColumn(name = "status_registration")
+    private Boolean statusRegistration;
+
     @ManyToOne
     @JoinColumn(name = "auction_registration_id")
     private AuctionRegistration auctionRegistration;
@@ -22,6 +26,5 @@ public class AuctionRegistrationUser extends BaseEntity{
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-
 
 }

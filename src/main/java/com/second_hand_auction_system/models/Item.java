@@ -55,7 +55,6 @@ public class Item extends BaseEntity{
     @JoinColumn(name = "user_id")
     private User user;
 
-
     @OneToOne(mappedBy = "item",cascade = CascadeType.ALL,optional = true)
     private Auction auction;
 
