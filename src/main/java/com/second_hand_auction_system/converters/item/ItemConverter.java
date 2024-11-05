@@ -1,4 +1,11 @@
 package com.second_hand_auction_system.converters.item;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
 public class ItemConverter {
+
+
 }

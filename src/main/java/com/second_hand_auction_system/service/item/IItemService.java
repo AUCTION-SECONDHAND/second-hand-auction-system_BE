@@ -35,4 +35,8 @@ public interface IItemService {
     AuctionItemResponse getAuctionItemById(int itemId) throws Exception;
 
     ResponseEntity<?> getItemByUser(int page, int limit);
+
+    ResponseEntity<?> getItemByCondition();
+
+    ResponseEntity<?> getItemPending(int page, int limit);
 }

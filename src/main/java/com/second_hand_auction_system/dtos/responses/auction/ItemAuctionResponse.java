@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import lombok.*;
 
 import java.sql.Time;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @AllArgsConstructor
@@ -45,6 +46,15 @@ public class ItemAuctionResponse {
 
     @Column(name = "status")
     private AuctionStatus status;
+
+    @Column(name = "create_at")
+    @JsonProperty("create_at")
+    private LocalDateTime createAt;
+
+    @Column(name = "update_at")
+    @JsonProperty("update_at")
+    private LocalDateTime updateAt;
+
 
 
 }

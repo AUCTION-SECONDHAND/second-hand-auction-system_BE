@@ -35,9 +35,7 @@ public class KycDto {
     @Size(min = 12, max = 12)
     private String cccdNumber;
 
-    @Pattern(regexp = "^(http(s?):)([/|.|\\w|\\s|-])*\\.(?:jpg|jpeg|png)$", message = "Invalid image URL format for image 1")
     private String frontDocumentUrl;
 
-    @Pattern(regexp = "^(http(s?):)([/|.|\\w|\\s|-])*\\.(?:jpg|jpeg|png)$", message = "Invalid image URL format for image 1")
     private String backDocumentUrl;
 }

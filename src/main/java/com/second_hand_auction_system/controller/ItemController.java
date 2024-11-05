@@ -256,4 +256,16 @@ public class ItemController {
                         .build()
         );
     }
+
+    @GetMapping("condition")
+    public ResponseEntity<?> getItemCondition(){
+        return itemService.getItemByCondition();
+    }
+
+    @GetMapping("pending")
+    public ResponseEntity<?> getItemPending(@RequestParam(value = "page",defaultValue = "0")int page,
+                                            @RequestParam(value = "limit",defaultValue = "10") int limit){
+
+        return itemService.getItemPending(page,limit);
+    }
 }

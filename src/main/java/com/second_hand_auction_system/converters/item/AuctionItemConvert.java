@@ -6,7 +6,6 @@ import com.second_hand_auction_system.dtos.responses.item.ImageItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemSpecificResponse;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
-import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.models.ItemSpecific;
@@ -40,6 +39,8 @@ public class AuctionItemConvert {
                     .status(auction.getStatus())
                     .build();
         }
+
+        // Ánh xạ danh mục phụ nếu tồn tại
         SubCategoryItemResponse subCategoryResponse = null;
         if (item.getSubCategory() != null) {
             SubCategory subCategory = item.getSubCategory();
@@ -49,6 +50,7 @@ public class AuctionItemConvert {
                     .build();
         }
 
+        // Trả về AuctionItemResponse đã được ánh xạ
         return AuctionItemResponse.builder()
                 .itemId(item.getItemId())
                 .thumbnail(item.getThumbnail())
@@ -60,15 +62,15 @@ public class AuctionItemConvert {
                 .build();
     }
 
-
     public ItemDetailResponse toAuctionDetailItemResponse(Item item) {
-
-        List<ImageItemResponse> subCategoryResponses = item.getImageItems().stream()
+        // Ánh xạ danh sách ảnh
+        List<ImageItemResponse> imageResponses = item.getImageItems().stream()
                 .map(image -> ImageItemResponse.builder()
                         .idImage(image.getImageItemId())
                         .image(image.getImageUrl())
                         .build())
                 .collect(Collectors.toList());
+
         // Ánh xạ Auction nếu tồn tại
         ItemAuctionResponse auctionResponse = null;
         if (item.getAuction() != null) {
@@ -85,6 +87,8 @@ public class AuctionItemConvert {
                     .status(auction.getStatus())
                     .build();
         }
+
+        // Ánh xạ danh mục phụ nếu tồn tại
         SubCategoryItemResponse subCategoryResponse = null;
         if (item.getSubCategory() != null) {
             SubCategory subCategory = item.getSubCategory();
@@ -94,6 +98,7 @@ public class AuctionItemConvert {
                     .build();
         }
 
+        // Ánh xạ các thông tin cụ thể của item nếu có
         ItemSpecificResponse itemSpecificResponse = null;
         if (item.getItemSpecific() != null) {
             ItemSpecific itemSpecific = item.getItemSpecific();
@@ -109,7 +114,7 @@ public class AuctionItemConvert {
                     .build();
         }
 
-        // Sử dụng builder pattern để tạo AuctionItemResponse
+        // Trả về ItemDetailResponse đã được ánh xạ
         return ItemDetailResponse.builder()
                 .itemId(item.getItemId())
                 .thumbnail(item.getThumbnail())
@@ -119,7 +124,7 @@ public class AuctionItemConvert {
                 .auction(auctionResponse)
                 .scId(subCategoryResponse)
                 .itemSpecific(itemSpecificResponse)
-                .images(subCategoryResponses)
+                .images(imageResponses)
                 .build();
     }
 }

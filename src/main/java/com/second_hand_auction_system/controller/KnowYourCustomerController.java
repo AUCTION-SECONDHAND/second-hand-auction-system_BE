@@ -17,7 +17,7 @@ public class KnowYourCustomerController {
 
     @PostMapping()
     public ResponseEntity<?> registerKyc(@Valid  @RequestBody KycDto kyc) {
-        return kycService.register(kyc);
+         return kycService.register(kyc);
     }
 
     @PutMapping("/{kycId}")

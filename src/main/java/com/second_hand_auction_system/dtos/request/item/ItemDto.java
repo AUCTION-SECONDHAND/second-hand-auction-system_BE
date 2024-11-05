@@ -38,6 +38,8 @@ public class ItemDto {
     @JsonProperty("brand_name")
     private String brandName;
 
+
+
     @JsonProperty("img_item")
     private List<ImgItemDto> imgItem;
 

@@ -19,6 +19,9 @@ public class AuctionRegistrationUser extends BaseEntity{
     @JoinColumn(name = "status_registration")
     private Boolean statusRegistration;
 
+    @Column(name = "status")
+    private String status;
+
     @ManyToOne
     @JoinColumn(name = "auction_registration_id")
     private AuctionRegistration auctionRegistration;

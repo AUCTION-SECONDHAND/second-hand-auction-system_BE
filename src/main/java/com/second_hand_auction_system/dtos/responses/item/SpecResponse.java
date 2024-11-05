@@ -7,12 +7,12 @@ import java.util.Date;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
 @Setter
+@Getter
 @Builder
-public class ItemSpecificResponse {
+public class SpecResponse {
     private double percent;
-    private Integer itemSpecId;
+    private Integer itemSpecificId;
     private String type;
 
     private String color;
@@ -27,5 +27,4 @@ public class ItemSpecificResponse {
     private Date manufactureDate;
 
     private String material;
-
 }

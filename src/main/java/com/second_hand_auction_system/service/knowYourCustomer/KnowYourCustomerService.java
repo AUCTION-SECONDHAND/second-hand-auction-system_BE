@@ -80,6 +80,16 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .build());
         }
 
+        // Kiểm tra xem KYC đã tồn tại hay chưa và trạng thái là PENDING
+        Optional<KnowYourCustomer> existingKyc = knowYourCustomerRepository.findByUserIdAndKycStatus(requester.getId(), KycStatus.PENDING);
+        if (existingKyc.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.CONFLICT)
+                            .message("KYC registration already exists and is pending for this user")
+                            .build());
+        }
+
         // Kiểm tra xem KYC đã tồn tại hay chưa
         if (knowYourCustomerRepository.existsByCccdNumber(kyc.getCccdNumber())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -88,8 +98,6 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .message("KYC record already exists for this CCCD number")
                             .build());
         }
-
-
 
         KnowYourCustomer knowYourCustomer = KnowYourCustomer.builder()
                 .age(kyc.getAge())
@@ -121,7 +129,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .gender(kyc.getGender())
                 .cccdNumber(kyc.getCccdNumber())
                 .frontDocumentUrl(knowYourCustomer.getFrontDocumentUrl())
-                .backDocumentUrl(kyc.getBackDocumentUrl())
+                .backDocumentUrl(knowYourCustomer.getBackDocumentUrl())
                 .kycStatus(knowYourCustomer.getKycStatus())
                 .submited(knowYourCustomer.getSumbited())
                 .userId(requester.getId()) // Gán userId
@@ -136,6 +144,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .status(HttpStatus.OK)
                 .build());
     }
+
 
 
     @Override

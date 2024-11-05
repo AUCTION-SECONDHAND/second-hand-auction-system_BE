@@ -5,9 +5,7 @@ import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
-import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
-import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
-import com.second_hand_auction_system.dtos.responses.item.ItemResponse;
+import com.second_hand_auction_system.dtos.responses.item.*;
 import com.second_hand_auction_system.exceptions.DataNotFoundException;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
@@ -96,8 +94,9 @@ public class ItemService implements IItemService {
 
             // Save all image items in one go
             imageItemRepository.saveAll(imageItems);
-            // Optionally, associate the list of image items back to the item object
             item.setImageItems(imageItems);
+            item.setThumbnail(imgItemDtos.get(0).getImageUrl());
+
         }
         itemRepository.save(item);
     }
@@ -170,8 +169,8 @@ public class ItemService implements IItemService {
     }
 
     public List<AuctionItemResponse> getTop10FeaturedItem() {
-        Pageable pageable = PageRequest.of(0, 10);
-        List<Item> items = itemRepository.findTop10Items(pageable);
+//        Pageable pageable = PageRequest.of(0, 10);
+        List<Item> items = itemRepository.findAll();
         return items.stream()
                 .map(auctionItemConvert::toAuctionItemResponse)
                 .collect(Collectors.toList());
@@ -294,6 +293,59 @@ public class ItemService implements IItemService {
                 .data(responseData)
                 .build());
     }
+
+    @Override
+    public ResponseEntity<?> getItemByCondition() {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<?> getItemPending(int page, int limit) {
+        Pageable pageable = PageRequest.of(page, limit);
+        Page<Item> listItemPending = itemRepository.findAllByItemStatus(ItemStatus.PENDING, pageable);
+
+        List<ItemResponse2> itemResponses = listItemPending.getContent().stream()
+                .map(item -> ItemResponse2.builder()
+                        .itemId(item.getItemId())
+                        .itemName(item.getItemName())
+                        .brandName(item.getBrandName())
+                        .createBy(item.getCreateBy())
+                        .itemSpecific(item.getItemSpecific() != null ?
+                                ItemSpecificResponse.builder() // Đảm bảo sử dụng đúng lớp
+                                        .itemSpecId(item.getItemSpecific().getItemSpecificId())
+                                        .color(item.getItemSpecific().getColor())
+                                        .manufactureDate(item.getItemSpecific().getManufactureDate())
+                                        .type(item.getItemSpecific().getType())
+                                        .weight(item.getItemSpecific().getWeight())
+                                        .percent(item.getItemSpecific().getPercent())
+                                        .material(item.getItemSpecific().getMaterial())
+                                        .dimension(item.getItemSpecific().getDimension())
+                                        .original(item.getItemSpecific().getOriginal())
+                                        .build() : null)
+                        .itemCondition(String.valueOf(item.getItemCondition()))
+                        .itemDescription(item.getItemDescription())
+                        .thumbnail(item.getThumbnail())
+                        .itemStatus(item.getItemStatus())
+                        .create_at(item.getCreateAt())
+                        .update_at(item.getUpdateAt())
+                        .build())
+                .toList();
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("items", itemResponses);
+        responseData.put("totalPages", listItemPending.getTotalPages());
+        responseData.put("totalElements", listItemPending.getTotalElements());
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Success")
+                .data(responseData)
+                .build());
+    }
+
+
+
+
 
     public Integer extractUserIdFromToken(String token) throws Exception {
         String userEmail = jwtService.extractUserEmail(token); // Extract email from token
