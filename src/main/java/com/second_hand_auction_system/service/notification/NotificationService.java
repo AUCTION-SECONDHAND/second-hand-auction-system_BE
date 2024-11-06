@@ -3,10 +3,10 @@ package com.second_hand_auction_system.service.notification;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Bid;
+import com.second_hand_auction_system.models.Notifications;
 import com.second_hand_auction_system.models.User;
-import com.second_hand_auction_system.repositories.AuctionRegistrationUserRepository;
-import com.second_hand_auction_system.repositories.AuctionRepository;
-import com.second_hand_auction_system.repositories.BidRepository;
+import com.second_hand_auction_system.repositories.*;
+import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,17 +23,35 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class NotificationService implements INotificationService {
-//    private final NotificationRepository notificationRepository;
+    private final NotificationsRepository notificationRepository;
     private final AuctionRepository auctionRepository;
     private final BidRepository bidRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final AuctionRegistrationUserRepository auctionRegistrationUserRepository;
+    private final IJwtService jwtService;
+    private final UserRepository userRepository;
     @Override
     @Transactional
-    public ResponseEntity<?> closeAuction( Integer auctionId) {
+    public ResponseEntity<?> closeAuction(Integer auctionId) {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
-        if(authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .message("UNAUTHORIZED")
+                    .data(null)
+                    .build()
+            );
+        }
+        String token = authHeader.substring(7);
+        String email = jwtService.extractUserEmail(token);
+        User user = userRepository.findByEmailAndStatusIsTrue(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null)
+                    .build()
+            );
         }
         // Kiểm tra nếu phiên đấu giá không tồn tại
         Auction auction = auctionRepository.findById(auctionId).orElse(null);
@@ -87,10 +105,13 @@ public class NotificationService implements INotificationService {
 
         messagingTemplate.convertAndSend("/topic/auctionResult",
                 "Auction " + auctionId + " closed. Winner: " + winningBid.getUser().getEmail());
-//        Notifications notification = Notifications.builder()
-//                .message("THong bao ket qua")
-//                .users(userList)
-//                .createBy()
+        Notifications notifications;
+        notifications = Notifications.builder()
+                .message("THong bao ket qua")
+                .users(userList)
+                .createBy(user.getFullName())
+                .build();
+        notificationRepository.save(notifications);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseObject.builder()
                         .data(winningBid)

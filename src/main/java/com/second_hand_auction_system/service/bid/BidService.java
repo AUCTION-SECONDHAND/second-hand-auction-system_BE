@@ -133,24 +133,41 @@ public class BidService implements IBidService {
                             .build());
         }
 
-        // Kiểm tra giá đấu không được là giá âm hoặc 0
-        if (bidRequest.getBidAmount() <= 0) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    ResponseObject.builder()
-                            .data(null)
-                            .message("Bid amount must be greater than 0")
-                            .status(HttpStatus.BAD_REQUEST)
-                            .build());
-        }
-
         // Kiểm tra nếu người dùng đã có bid nào cho phiên đấu giá này
         Optional<Bid> existingUserBid = bidRepository.findByUserAndAuction(requester, auction);
+
+        // If there is an existing bid from the user
         if (existingUserBid.isPresent()) {
             Bid bid = existingUserBid.get();
+
+            // Kiểm tra giá trị bid mới
+            if (bidRequest.getBidAmount() <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        ResponseObject.builder()
+                                .data(null)
+                                .message("Bid amount must be greater than 0")
+                                .status(HttpStatus.BAD_REQUEST)
+                                .build());
+            }
+
+            // Kiểm tra giá trị bid mới phải cao hơn giá cao nhất hiện tại
+            List<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+            Integer minimumRequiredBid = existingBids.isEmpty() ? (int) auction.getStartPrice() : (int) (existingBids.get(0).getBidAmount() + auction.getPriceStep());
+
+            if (bidRequest.getBidAmount() <= existingBids.get(0).getBidAmount()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        ResponseObject.builder()
+                                .data(null)
+                                .message("Bid amount must be greater than the highest current:  " + existingBids.get(0).getBidAmount())
+                                .status(HttpStatus.BAD_REQUEST)
+                                .build());
+            }
+
             // Cập nhật bidAmount của bid hiện tại
             bid.setBidAmount(bidRequest.getBidAmount());
             bid.setBidTime(LocalDateTime.now()); // Cập nhật thời gian bid
             bidRepository.save(bid); // Lưu thay đổi
+
             messagingTemplate.convertAndSend("/topic/bids", bidRequest);
 
             return ResponseEntity.status(HttpStatus.OK).body(
@@ -161,41 +178,17 @@ public class BidService implements IBidService {
                             .build());
         }
 
-        // Kiểm tra số tiền bid hợp lệ
-        List<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
-        Integer minimumRequiredBid;
-        if (existingBids.isEmpty()) {
-            // Nếu không có bid nào trước đó, kiểm tra giá khởi điểm
-            if (bidRequest.getBidAmount() < auction.getStartPrice()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        ResponseObject.builder()
-                                .data(null)
-                                .message("Bid amount must be at least the auction start price")
-                                .status(HttpStatus.BAD_REQUEST)
-                                .build());
-            }
-        } else {
-            // Có bid trước đó
-            Bid highestBid = existingBids.get(0); // Lấy bid cao nhất từ danh sách
-            minimumRequiredBid = (int) (highestBid.getBidAmount() + auction.getPriceStep());
-
-            // Kiểm tra giá đấu không được thấp hơn giá đấu cao nhất trước đó
-            if (bidRequest.getBidAmount() <= highestBid.getBidAmount()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        ResponseObject.builder()
-                                .data(null)
-                                .message("Bid amount must be greater than the current highest bid of " + highestBid.getBidAmount())
-                                .status(HttpStatus.BAD_REQUEST)
-                                .build());
-            }
-
-            // Cập nhật winBid cho tất cả các bid trước đó thành false
-            for (Bid bid : existingBids) {
-                bid.setWinBid(false);
-            }
-            bidRepository.saveAll(existingBids); // Lưu thay đổi cho tất cả các bid một lần
+        // Kiểm tra số tiền bid hợp lệ khi tạo bid mới
+        if (bidRequest.getBidAmount() <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Bid amount must be greater than 0")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
         }
 
+        // Tiếp tục các kiểm tra cho bid mới (như đã làm trước đây)
         // Lưu bid mới và thiết lập winBid cho bid mới
         Bid savedBid = bidRepository.save(
                 Bid.builder()
