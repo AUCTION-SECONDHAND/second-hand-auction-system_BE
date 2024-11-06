@@ -1,22 +1,21 @@
 package com.second_hand_auction_system.controller;
 
+import com.second_hand_auction_system.service.notification.INotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/notification")
 @RequiredArgsConstructor
 public class Notification {
-    private final SimpMessagingTemplate messagingTemplate;
+    private final INotificationService notificationSerice;
 
-
-
-    @PostMapping("/send-notification")
-    public void sendNotification(@RequestBody String message) {
-        messagingTemplate.convertAndSend("/topic/notifications", message);
+    @PutMapping("closed-auction")
+    public ResponseEntity<?> closedAuction(@RequestParam Integer auctionId) {
+        return  notificationSerice.closeAuction(auctionId);
     }
 }
