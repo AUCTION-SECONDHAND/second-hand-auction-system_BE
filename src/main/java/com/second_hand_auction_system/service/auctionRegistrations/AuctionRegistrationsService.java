@@ -24,6 +24,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -118,7 +119,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             userAuction.add(requester);
 
             AuctionRegistration newRegistration = AuctionRegistration.builder()
-                    .registration(Registration.CONFIRMED)
+                    .registration(Registration.TRUE)
                     .auction(auctionExist)
                     .users(userAuction)
                     .depositeAmount(depositAmount)
@@ -134,8 +135,13 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 auctionWallet.setBalance(auctionWallet.getBalance() + depositAmount);
                 walletRepository.save(auctionWallet);
             }
-
-            // Lưu giao dịch với mức hoa hồng 5%
+            AuctionRegistrationUser auctionRegistrationUser = registrationUserRepository.findByAuctionRegistration_AuctionRegistrationId(newRegistration.getAuctionRegistrationId()).orElse(null);
+            if (auctionRegistrationUser != null) {
+                auctionRegistrationUser.setStatusRegistration(true);
+                auctionRegistrationUser.setCreateAt(LocalDateTime.now());
+                auctionRegistrationUser.setUpdateAt(LocalDateTime.now());
+                registrationUserRepository.save(auctionRegistrationUser);
+            }
             double commissionRate = 0.05;
             double commissionAmount = depositAmount * commissionRate;
             Transaction transactionWallet = Transaction.builder()

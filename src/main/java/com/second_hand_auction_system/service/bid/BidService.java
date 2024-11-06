@@ -83,7 +83,7 @@ public class BidService implements IBidService {
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
-        var auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndRegistration(requester.getId(), Registration.CONFIRMED);
+        var auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndRegistration(requester.getId(), Registration.TRUE);
         if (!auctionRegister) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
