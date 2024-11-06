@@ -24,8 +24,8 @@ public class AuctionRegistration extends BaseEntity {
     @Column(name = "deposite_amount")
     private double depositeAmount;
 
-    @Enumerated(EnumType.STRING)
-    private Registration registration;
+    @Column(name = "registrantion")
+    private Boolean registration;
 
     @ManyToMany
     @JoinTable(

@@ -12,15 +12,9 @@ import lombok.*;
 @Builder
 public class CheckStatusAuctionRegisterResponse {
     private Integer userId;
-    @JsonProperty("registration_status")
-    private Registration registration;
+
     private Integer auctionId;
     private Boolean statusRegistration;
 
-    public CheckStatusAuctionRegisterResponse(Integer userId, Integer auctionId,Registration registration ) {
-        this.userId = userId;
-        this.auctionId = auctionId;
-        this.registration = registration;
-//        this.statusRegistration = statusRegistration;
-    }
+
 }

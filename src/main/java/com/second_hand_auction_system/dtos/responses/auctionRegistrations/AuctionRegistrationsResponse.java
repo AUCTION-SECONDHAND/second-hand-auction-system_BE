@@ -20,10 +20,10 @@ public class AuctionRegistrationsResponse extends BaseResponse {
     private double depositeAmount;
 
     @JsonProperty("registration")
-    private Registration registration;
+    private Boolean registration;
 
-    @JsonProperty("note")
-    private String note;
+//    @JsonProperty("note")
+//    private String note;
 
     private AuctionItemResponse auctionItem;
 }

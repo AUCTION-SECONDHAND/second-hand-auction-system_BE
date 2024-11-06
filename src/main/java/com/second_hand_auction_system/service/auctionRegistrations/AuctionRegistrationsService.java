@@ -119,7 +119,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             userAuction.add(requester);
 
             AuctionRegistration newRegistration = AuctionRegistration.builder()
-                    .registration(Registration.TRUE)
+                    .registration(true)
                     .auction(auctionExist)
                     .users(userAuction)
                     .depositeAmount(depositAmount)
@@ -209,6 +209,9 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         return auctionRegistrationsResponse;
     }
 
+
+
+
     @Override
     public List<CheckStatusAuctionRegisterResponse> getRegistrationsByUserId() throws Exception {
         String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
@@ -228,6 +231,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                             userId, // Use the userId extracted from the stream
                             registration.getAuction().getAuctionId(),
                             registration.getRegistration()
+//                            registration
                     );
                 })
                 .collect(Collectors.toList());
@@ -251,7 +255,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         return CheckStatusAuctionRegisterResponse.builder()
                 .auctionId(auction.getAuctionId())
                 .userId(user)
-                .registration(checkStatusAuctionRegisterResponse.getRegistration())
+//                .registration(checkStatusAuctionRegisterResponse.getRegistration())
                 .statusRegistration(auctionUserDeposite.getStatusRegistration())
                 .build();
     }
