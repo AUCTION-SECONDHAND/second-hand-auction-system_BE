@@ -143,9 +143,11 @@ public class ItemService implements IItemService {
 
     @Override
     public void approve(int itemId, ItemApprove approve) throws Exception {
-        Item item = itemRepository.findById(itemId).orElseThrow(() -> new DataNotFoundException("Item not found"));
-
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        var item = itemRepository.findById(itemId).orElseThrow(null);
+        if(item== null){
+            throw new Exception("Item not found");
+        }
+            String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
         }

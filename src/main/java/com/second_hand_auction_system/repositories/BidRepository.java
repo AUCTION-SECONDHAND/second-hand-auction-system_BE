@@ -18,7 +18,7 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
 
     Optional<Bid> findTopByAuction_AuctionIdAndBidAmount(Integer auctionId, Integer bid);
 
-    Optional<Bid> findByAuction_AuctionIdOrderByBidAmountDesc(Integer auctionId);
+    List<Bid> findByAuction_AuctionIdOrderByBidAmountDesc(Integer auctionId);
 
     Page<Bid> findAllByAuction_AuctionIdOrderByBidAmountDesc(Integer auctionId, Pageable pageable);
 

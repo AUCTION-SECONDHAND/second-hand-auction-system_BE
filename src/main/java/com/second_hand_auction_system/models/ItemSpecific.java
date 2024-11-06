@@ -18,7 +18,7 @@ public class ItemSpecific extends BaseEntity{
     private Integer itemSpecificId;
 
     @Column(name = "percent")
-    private double percent;
+    private Double percent;
 
     @Column(name = "type")
     private String type;
@@ -27,7 +27,7 @@ public class ItemSpecific extends BaseEntity{
     private String color;
 
     @Column(name = "weight")
-    private double weight;
+    private Double weight;
 
     @Column(name = "dimension")
     private String dimension;
@@ -42,7 +42,7 @@ public class ItemSpecific extends BaseEntity{
     private String material;
 
     @Column(name = "price_buy_now")
-    private double priceBuyNow;
+    private Double priceBuyNow;
 
     @OneToOne
     @JoinColumn(name = "item_id")

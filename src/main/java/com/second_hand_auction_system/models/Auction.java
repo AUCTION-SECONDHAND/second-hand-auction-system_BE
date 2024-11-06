@@ -29,7 +29,7 @@ public class Auction extends BaseEntity{
     private Time endTime;
 
     @Column(name = "buy_now_price") // Thêm trường mới
-    private double buyNowPrice;
+    private Double buyNowPrice;
 
     @Column(name = "start_date")
     private Date startDate;

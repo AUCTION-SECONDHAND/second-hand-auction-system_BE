@@ -75,7 +75,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .data(null)
-                    .message("Wallet not found or balance is insufficient")
+                    .message("Wallet not balance is insufficient")
                     .build());
         }
 
@@ -130,10 +130,10 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             userWallet.setBalance(userWallet.getBalance() - depositAmount);
             walletRepository.save(userWallet);
 
-            Wallet auctionWallet = walletRepository.findWalletByAuctionId(auctionExist.getAuctionId()).orElse(null);
-            if (auctionWallet != null) {
-                auctionWallet.setBalance(auctionWallet.getBalance() + depositAmount);
-                walletRepository.save(auctionWallet);
+            Wallet viCoc = walletRepository.findWalletByAuctionId(auctionExist.getWallet().getWalletId()).orElse(null);
+            if (viCoc != null) {
+                viCoc.setBalance(viCoc.getBalance() + depositAmount);
+                walletRepository.save(viCoc);
             }
             AuctionRegistrationUser auctionRegistrationUser = registrationUserRepository.findByAuctionRegistration_AuctionRegistrationId(newRegistration.getAuctionRegistrationId()).orElse(null);
             if (auctionRegistrationUser != null) {

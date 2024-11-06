@@ -20,12 +20,11 @@ public interface AuctionRegistrationsRepository extends JpaRepository<AuctionReg
     AuctionRegistration findByUsersIdAndAuction_AuctionId(Integer user_id, Integer auction_auctionId);
     //AuctionRegistration findByUsersIdAndAuction_AuctionId
     Optional<AuctionRegistration> findByAuction_AuctionId(Integer auction_auctionId);
-
     @Query("SELECT CASE WHEN COUNT(ar) > 0 THEN true ELSE false END " +
             "FROM AuctionRegistration ar JOIN ar.users u " +
-            "WHERE u.id = :userId AND ar.registration = :registration")
-    boolean existsAuctionRegistrationByUserIdAndRegistration(@Param("userId") Integer userId,
-                                                             @Param("registration") Registration registration);
+            "WHERE u.id = :userId AND ar.registration = true")
+    boolean existsAuctionRegistrationByUserIdAndRegistrationTrue(@Param("userId") Integer userId);
+
 
 //    AuctionRegistration findByAuction_AuctionIdAndUsersContaining(@NotNull(message = "Auction ID is required") Integer auction, User requester);
 

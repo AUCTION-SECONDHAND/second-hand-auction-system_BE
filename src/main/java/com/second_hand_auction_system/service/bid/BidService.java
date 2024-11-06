@@ -83,7 +83,9 @@ public class BidService implements IBidService {
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
-        var auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndRegistration(requester.getId(), Registration.TRUE);
+
+        // Kiểm tra người dùng đã đăng ký đấu giá chưa
+        boolean auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndRegistrationTrue(requester.getId());
         if (!auctionRegister) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
@@ -94,14 +96,15 @@ public class BidService implements IBidService {
         }
 
         // Kiểm tra loại đấu giá
-        if (!auction.getAuctionType().getAuctionTypeName().equals("Đấu giá kiểu Anh")) {
+        if (Objects.equals(auction.getAuctionType().getAuctionTypeName(), "TRADITIONAL")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("Không thể đặt giá bid cho đấu giá ngược")
+                            .message("Bạn vui lòng tham gia lại đấu giá truyền thống")
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
+
 
         // Kiểm tra trạng thái phiên đấu giá
         if (!auction.getStatus().equals(AuctionStatus.OPEN)) {
@@ -112,9 +115,6 @@ public class BidService implements IBidService {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-
-
-
 
         // Kiểm tra thời gian phiên đấu giá
         LocalDateTime auctionStartDateTime = auction.getStartDate().toInstant()
@@ -135,9 +135,8 @@ public class BidService implements IBidService {
         }
 
         // Kiểm tra nếu người dùng đã có bid nào cho phiên đấu giá này
-       Optional<Bid> existingUserBid = bidRepository.findByUserAndAuction(requester, auction);
-
-        if(existingUserBid.isPresent()){
+        Optional<Bid> existingUserBid = bidRepository.findByUserAndAuction(requester, auction);
+        if (existingUserBid.isPresent()) {
             Bid bid = existingUserBid.get();
             // Cập nhật bidAmount của bid hiện tại
             bid.setBidAmount(bidRequest.getBidAmount());
@@ -153,14 +152,10 @@ public class BidService implements IBidService {
                             .build());
         }
 
-
         // Kiểm tra số tiền bid hợp lệ
-        Optional<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+        List<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
         Integer minimumRequiredBid;
-
         if (existingBids.isEmpty()) {
-
-
             // Không có bid nào trước đó, kiểm tra giá khởi điểm
             if (bidRequest.getBidAmount() < auction.getStartPrice()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -170,13 +165,11 @@ public class BidService implements IBidService {
                                 .status(HttpStatus.BAD_REQUEST)
                                 .build());
             }
-
-
-
         } else {
             // Có bid trước đó
-            Bid highestBid = existingBids.get(); // Lấy bid cao nhất từ Optional
+            Bid highestBid = existingBids.get(0); // Lấy bid cao nhất từ danh sách
             minimumRequiredBid = (int) (highestBid.getBidAmount() + auction.getPriceStep());
+
             if (bidRequest.getBidAmount() < minimumRequiredBid) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         ResponseObject.builder()
@@ -187,11 +180,10 @@ public class BidService implements IBidService {
             }
 
             // Cập nhật winBid cho tất cả các bid trước đó thành false
-            List<Bid> allBids = bidRepository.findByAuction_AuctionId(auction.getAuctionId());
-            for (Bid bid : allBids) {
+            for (Bid bid : existingBids) {
                 bid.setWinBid(false);
-                bidRepository.save(bid); // Lưu thay đổi cho mỗi bid
             }
+            bidRepository.saveAll(existingBids); // Lưu thay đổi cho tất cả các bid một lần
         }
 
         // Lưu bid mới và thiết lập winBid cho bid mới
@@ -212,7 +204,6 @@ public class BidService implements IBidService {
                         .status(HttpStatus.OK)
                         .build());
     }
-
 
 
 
