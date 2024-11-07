@@ -345,8 +345,16 @@ public class ItemService implements IItemService {
                 .build());
     }
 
-
-
+    @Override
+    public ResponseEntity<?> getTop10ItemParticipating() {
+        List<Item> itemList = itemRepository.findTop10ItemsWithMostBids(PageRequest.of(0, 10));
+        List<AuctionItemResponse> auctionItemResponses = new ArrayList<>();
+        for (Item item : itemList) {
+            AuctionItemResponse auctionItemResponse = auctionItemConvert.toAuctionItemResponse(item);
+            auctionItemResponses.add(auctionItemResponse);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(auctionItemResponses);
+    }
 
 
     public Integer extractUserIdFromToken(String token) throws Exception {

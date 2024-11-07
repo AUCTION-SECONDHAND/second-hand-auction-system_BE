@@ -4,6 +4,7 @@ import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.ItemStatus;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,4 +40,11 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
     Item findByAuction_AuctionId(Integer auction);
 
     Page<Item> findAllByUserIdAndAuctionStatus(Integer user_id, AuctionStatus auctionStatus, Pageable pageable);
+
+    @Query("SELECT i, COUNT(b) AS bidCount " +
+            "FROM Bid b " +
+            "JOIN b.auction.item i " +
+            "GROUP BY i.itemId " +
+            "ORDER BY bidCount DESC")
+    List<Item> findTop10ItemsWithMostBids(Pageable pageable);
 }

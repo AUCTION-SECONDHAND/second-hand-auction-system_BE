@@ -39,4 +39,7 @@ public interface IItemService {
     ResponseEntity<?> getItemByCondition();
 
     ResponseEntity<?> getItemPending(int page, int limit);
+
+
+    ResponseEntity<?> getTop10ItemParticipating();
 }

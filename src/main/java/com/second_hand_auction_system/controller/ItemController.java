@@ -268,4 +268,9 @@ public class ItemController {
 
         return itemService.getItemPending(page,limit);
     }
+
+    @GetMapping("/top-10-most-participating-products")
+    public ResponseEntity<?> top10MostParticipatingProducts(){
+        return itemService.getTop10ItemParticipating();
+    }
 }
