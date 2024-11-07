@@ -89,11 +89,6 @@
 			<artifactId>dotenv-java</artifactId>
 			<version>2.2.4</version>
 		</dependency>
-		<!-- Maven dependency -->
-		<dependency>
-			<groupId>com.cloudinary</groupId>
-			<artifactId>cloudinary</artifactId>
-		</dependency>
 
 		<dependency>
 			<groupId>org.modelmapper</groupId>
@@ -149,6 +144,14 @@
 			<artifactId>stomp-websocket</artifactId>
 			<version>2.3.3</version>
 		</dependency>
+<!--		webflux-->
+		<!-- https://mvnrepository.com/artifact/org.springframework/spring-webflux -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webflux</artifactId>
+			<version>6.1.5</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
