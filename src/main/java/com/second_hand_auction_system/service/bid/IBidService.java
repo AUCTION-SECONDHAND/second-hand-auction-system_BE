@@ -23,4 +23,6 @@ public interface IBidService {
     ResponseEntity<?> findWinnerAuction(int auctionId);
 
     ResponseEntity<?> getAllBids(Integer auctionId,int limit, int page);
+
+    ResponseEntity<?> getInformationBid(Integer auctionId);
 }

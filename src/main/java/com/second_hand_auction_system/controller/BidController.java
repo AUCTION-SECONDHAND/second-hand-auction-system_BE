@@ -66,5 +66,10 @@ public class BidController {
         return bidService.getAllBids(auctionId,limit, page);
     }
 
+    @GetMapping("information-bid/{auctionId}")
+    public ResponseEntity<?> getBidInformationById(@PathVariable Integer auctionId) throws Exception {
+        return bidService.getInformationBid(auctionId);
+    }
+
 
 }

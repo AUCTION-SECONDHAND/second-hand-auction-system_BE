@@ -96,7 +96,7 @@ public class BidService implements IBidService {
         }
 
         // Kiểm tra loại đấu giá
-        if (!Objects.equals(auction.getAuctionType().getAuctionTypeName(), "TRADITIONAL")) {
+        if (auction.getAuctionType() == null || !"TRADITIONAL".equals(auction.getAuctionType().getAuctionTypeName().trim())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
@@ -104,6 +104,7 @@ public class BidService implements IBidService {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
+
 
         // Kiểm tra trạng thái và thời gian phiên đấu giá
         LocalDateTime auctionStartDateTime = auction.getStartDate().toInstant()
@@ -362,37 +363,85 @@ public class BidService implements IBidService {
 
     @Override
     public ResponseEntity<?> findWinnerAuction(int auctionId) {
+        // Lấy token từ header Authorization
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Unauthorized")
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .build());
+        }
+        token = token.substring(7); // Lấy token sau "Bearer "
+        String email = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmail(email).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("User not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+        }
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
-
         List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId);
-
         if (bids.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // No bids found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("No bids found for this auction")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
         }
-
+        // Tìm ra bid thắng cuộc (giá cao nhất)
         Bid winningBid = bids.stream()
-                .filter(Bid::isWinBid)
                 .max(Comparator.comparingInt(Bid::getBidAmount))
                 .orElse(null);
-
         if (winningBid == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("No winning bid found for this auction")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
         }
-        BidResponse winningBidResponse = new BidResponse(); // Create a BidResponse object
-        winningBidResponse.setBidAmount(winningBid.getBidAmount());
-        winningBidResponse.setBidTime(winningBid.getBidTime());
-        winningBidResponse.setWinBid(winningBid.isWinBid());
-        winningBidResponse.setUserId(winningBid.getUser().getId());
-        winningBidResponse.setAuctionId(auctionId);
-        winningBidResponse.setUsername(winningBid.getUser().getFullName());
-        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                .status(HttpStatus.OK)
-                .message("Find winner")
-                .data(winningBidResponse)
-                .build());
+        // Kiểm tra xem người dùng có đặt giá cao hơn bid thắng cuộc không
+        Optional<Bid> userBid = bids.stream()
+                .filter(bid -> Objects.equals(bid.getUser().getId(), requester.getId()))
+                .findFirst();
+        // Chuẩn bị dữ liệu phản hồi cho người dùng
+        if (userBid.isPresent()) {
+            Bid userPlacedBid = userBid.get();
+            boolean isWinner = userPlacedBid.getBidAmount() >= winningBid.getBidAmount();
+            // Tạo response với thông tin thắng thua và chi tiết bid của người dùng
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.OK)
+                            .message(isWinner ? "You have won the auction" : "You did not win the auction")
+                            .data(BidResponse.builder()
+                                    .bidAmount(userPlacedBid.getBidAmount())
+                                    .bidTime(userPlacedBid.getBidTime())
+                                    .winBid(isWinner)
+                                    .userId(userPlacedBid.getUser().getId())
+                                    .auctionId(auctionId)
+                                    .username(userPlacedBid.getUser().getFullName())
+                                    .build())
+                            .build());
+        }
 
+        // Nếu người dùng không có bid trong phiên đấu giá này
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.NOT_FOUND)
+                        .message("You did not participate in this auction")
+                        .data(null)
+                        .build());
     }
+
+
 
     @Override
     public ResponseEntity<?> getAllBids(Integer auctionId, int limit, int page) {
@@ -442,6 +491,20 @@ public class BidService implements IBidService {
                 "totalElements", bidPage.getTotalElements(),
                 "totalPages", bidPage.getTotalPages()
         ));
+    }
+
+    @Override
+    public ResponseEntity<?> getInformationBid(Integer auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElse(null);
+        if(auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .data(null)
+                    .message("Auction not found")
+                    .build());
+        }
+//        var amountBid = bidRepository.
+        return null;
     }
 
 
