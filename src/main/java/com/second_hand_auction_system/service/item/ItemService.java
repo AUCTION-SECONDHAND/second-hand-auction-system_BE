@@ -353,7 +353,11 @@ public class ItemService implements IItemService {
             AuctionItemResponse auctionItemResponse = auctionItemConvert.toAuctionItemResponse(item);
             auctionItemResponses.add(auctionItemResponse);
         }
-        return ResponseEntity.status(HttpStatus.OK).body(auctionItemResponses);
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                        .data(auctionItemResponses)
+                        .message("Success")
+                        .status(HttpStatus.OK)
+                .build());
     }
 
 
