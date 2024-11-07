@@ -1,13 +1,15 @@
 package com.second_hand_auction_system.dtos.responses.sellerInformation;
 
 import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.util.List;
 
 @Builder
 @Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class SellerInformationResponse {
     private Integer sellerId;
     private String storeName;
@@ -19,4 +21,10 @@ public class SellerInformationResponse {
     private Integer totalFeedbackCount;
     private Double totalStars;
     private List<FeedbackResponse> feedbackList;
+
+    private double rating1Percentage;
+    private double rating2Percentage;
+    private double rating3Percentage;
+    private double rating4Percentage;
+    private double rating5Percentage;
 }
