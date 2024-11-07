@@ -144,9 +144,10 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             }
             double commissionRate = 0.05;
             double commissionAmount = depositAmount * commissionRate;
+            //Transaction của ví cọc
             Transaction transactionWallet = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
-                    .amount((long) depositAmount)
+                    .amount(+(long) depositAmount)
                     .transactionStatus(TransactionStatus.COMPLETED)
                     .recipient("SYSTEM")
                     .sender(requester.getFullName())
@@ -155,7 +156,19 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .transactionWalletCode(generateTransactionCode())
                     .build();
             transactionRepository.save(transactionWallet);
-
+            //tracsaction cuar thang nap
+            Transaction transactionUser = Transaction.builder()
+                    .transactionType(TransactionType.DEPOSIT_AUCTION)
+                    .amount(-(long) depositAmount)
+                    .transactionStatus(TransactionStatus.COMPLETED)
+                    .recipient("SYSTEM")
+                    .sender(requester.getFullName())
+                    .commissionAmount((int) commissionAmount)
+                    .commissionRate(commissionRate)
+                    .wallet(userWallet)
+                    .transactionWalletCode(generateTransactionCode())
+                    .build();
+            transactionRepository.save(transactionUser);
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .status(HttpStatus.OK)
                     .data(null)

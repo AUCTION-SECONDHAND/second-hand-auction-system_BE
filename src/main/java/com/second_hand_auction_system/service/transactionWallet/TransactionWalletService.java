@@ -211,7 +211,7 @@ public class TransactionWalletService implements ITransactionWalletService {
             transactionType.setTransactionStatus(TransactionStatus.COMPLETED);
             transactionRepository.save(transactionType);
             if (wallet != null) {
-                wallet.setBalance((wallet.getBalance() + transactionType.getAmount()));
+                wallet.setBalance(+(wallet.getBalance() + transactionType.getAmount()));
                 walletRepository.save(wallet);
             }
 

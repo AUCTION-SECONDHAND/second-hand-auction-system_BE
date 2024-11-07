@@ -99,6 +99,8 @@ public class SecurityConfig {
                         .requestMatchers(GET,"/api/v1/orders/**").permitAll()
                         //transactionType
                         .requestMatchers("/api/v1/transactionSystem/**").permitAll()
+                        //notification
+                        .requestMatchers(PUT,"/api/v1/notifications/**").hasAnyRole("ADMIN", "STAFF")
                         .anyRequest().authenticated()
 
 

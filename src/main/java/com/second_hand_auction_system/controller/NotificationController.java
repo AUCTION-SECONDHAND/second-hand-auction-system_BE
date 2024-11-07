@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/notification")
+@RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
-public class Notification {
+public class NotificationController {
     private final INotificationService notificationSerice;
 
     @PutMapping("closed-auction")
