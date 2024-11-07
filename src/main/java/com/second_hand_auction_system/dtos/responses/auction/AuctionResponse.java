@@ -35,8 +35,8 @@ public class AuctionResponse  {
     @JsonProperty("ship_type")
     private String shipType;
 
-    @JsonProperty("comment")
-    private String comment;
+//    @JsonProperty("comment")
+//    private String comment;
 
     @JsonProperty("status")
     private AuctionStatus status;

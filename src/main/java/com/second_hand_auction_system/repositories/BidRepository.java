@@ -24,4 +24,5 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
 
     Optional<Bid> findByUserAndAuction(User user, Auction auction);
 
+    long countByAuction_AuctionId(Integer auctionId);
 }

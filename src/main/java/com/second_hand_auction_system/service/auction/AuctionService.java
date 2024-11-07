@@ -222,7 +222,7 @@ public class AuctionService implements IAuctionService {
                 .termConditions(auction.getTermConditions())
                 .priceStep(auction.getPriceStep())
                 .shipType(auction.getShipType())
-                .comment(auction.getComment())
+//                .comment(auction.getComment())
                 .status(auction.getStatus())
                 .approveBy(auction.getApproveBy())
                 .approveAt(auction.getApproveAt())

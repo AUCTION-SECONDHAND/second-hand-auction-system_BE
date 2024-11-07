@@ -4,6 +4,8 @@ import com.second_hand_auction_system.converters.bid.BidConverter;
 import com.second_hand_auction_system.dtos.request.bid.BidDto;
 import com.second_hand_auction_system.dtos.request.bid.BidRequest;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
+import com.second_hand_auction_system.dtos.responses.bid.BidInformation;
 import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.AuctionRegistration;
@@ -45,7 +47,7 @@ public class BidService implements IBidService {
     private final AuctionRepository auctionRepository;
     private final EmailService emailService;
     private final SimpMessagingTemplate messagingTemplate;
-
+    private final ModelMapper modelMapper;
     @Override
     @Transactional
     public ResponseEntity<?> createBid(BidRequest bidRequest) throws Exception {
@@ -496,16 +498,48 @@ public class BidService implements IBidService {
     @Override
     public ResponseEntity<?> getInformationBid(Integer auctionId) {
         Auction auction = auctionRepository.findById(auctionId).orElse(null);
-        if(auction == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                    .status(HttpStatus.NOT_FOUND)
-                    .data(null)
-                    .message("Auction not found")
-                    .build());
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.NOT_FOUND)
+                            .data(null)
+                            .message("Auction not found")
+                            .build()
+            );
         }
-//        var amountBid = bidRepository.
-        return null;
+        // Tìm danh sách bid theo thứ tự giảm dần của giá
+        List<Bid> bids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+        long bidCount = bidRepository.countByAuction_AuctionId(auctionId);
+        double minimumBidPrice;
+        if (bids.isEmpty()) {
+            minimumBidPrice = auction.getStartPrice() + auction.getPriceStep();
+        } else {
+            minimumBidPrice = bids.get(0).getBidAmount() + auction.getPriceStep();
+        }
+        double minimumBidPrice1 = minimumBidPrice;
+        double minimumBidPrice2 = minimumBidPrice1 + auction.getPriceStep();
+        double minimumBidPrice3 = minimumBidPrice2 + auction.getPriceStep();
+        BidInformation bidInformation = BidInformation.builder()
+                .qualityBid((int) bidCount)
+                .priceStep(auction.getPriceStep())
+                .endDate(auction.getEndDate())
+                .startDate(auction.getStartDate())
+                .startTime(auction.getStartTime())
+                .endTime(auction.getEndTime())
+                .minimumBidPrice1(minimumBidPrice1)
+                .minimumBidPrice2(minimumBidPrice2)
+                .minimumBidPrice3(minimumBidPrice3)
+                .build();
+
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .data(bidInformation)
+                        .message("Auction and bid information retrieved successfully")
+                        .build()
+        );
     }
+
 
 
     public Bid findWinner(int auctionId) {
