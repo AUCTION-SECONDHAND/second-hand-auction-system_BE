@@ -387,6 +387,7 @@ public class BidService implements IBidService {
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
+
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
         List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId);
@@ -398,38 +399,41 @@ public class BidService implements IBidService {
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
+
         // Tìm ra bid thắng cuộc (giá cao nhất)
         Bid winningBid = bids.stream()
                 .max(Comparator.comparingInt(Bid::getBidAmount))
                 .orElse(null);
-        if (winningBid == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    ResponseObject.builder()
-                            .data(null)
-                            .message("No winning bid found for this auction")
-                            .status(HttpStatus.NOT_FOUND)
-                            .build());
-        }
-        // Kiểm tra xem người dùng có đặt giá cao hơn bid thắng cuộc không
-        Optional<Bid> userBid = bids.stream()
+
+        // Kiểm tra xem người dùng hiện tại có đặt bid trong phiên đấu giá này không
+        List<Bid> userBids = bids.stream()
                 .filter(bid -> Objects.equals(bid.getUser().getId(), requester.getId()))
-                .findFirst();
-        // Chuẩn bị dữ liệu phản hồi cho người dùng
-        if (userBid.isPresent()) {
-            Bid userPlacedBid = userBid.get();
-            boolean isWinner = userPlacedBid.getBidAmount() >= winningBid.getBidAmount();
-            // Tạo response với thông tin thắng thua và chi tiết bid của người dùng
+                .collect(Collectors.toList());
+
+        if (!userBids.isEmpty()) {
+            // Số lượng bid của người dùng
+            int userBidCount = userBids.size();
+
+            // Bid của người dùng với giá cao nhất
+            Bid userHighestBid = userBids.stream()
+                    .max(Comparator.comparingInt(Bid::getBidAmount))
+                    .orElse(null);
+
+            // Kiểm tra xem bid cao nhất của người dùng có phải là bid thắng không
+            boolean isWinner = userHighestBid != null && userHighestBid.getBidAmount().equals(winningBid.getBidAmount());
+
+            // Trả về thông tin với số lượng bid, số tiền bid cao nhất và trạng thái thắng thua của người dùng
             return ResponseEntity.status(HttpStatus.OK).body(
                     ResponseObject.builder()
                             .status(HttpStatus.OK)
                             .message(isWinner ? "You have won the auction" : "You did not win the auction")
                             .data(BidResponse.builder()
-                                    .bidAmount(userPlacedBid.getBidAmount())
-                                    .bidTime(userPlacedBid.getBidTime())
+                                    .bidAmount(winningBid.getBidAmount())
+                                    .bidTime(userHighestBid.getBidTime())
                                     .winBid(isWinner)
-                                    .userId(userPlacedBid.getUser().getId())
+                                    .userId(userHighestBid.getUser().getId())
                                     .auctionId(auctionId)
-                                    .username(userPlacedBid.getUser().getFullName())
+                                    .username(userHighestBid.getUser().getFullName())
                                     .build())
                             .build());
         }
@@ -442,6 +446,7 @@ public class BidService implements IBidService {
                         .data(null)
                         .build());
     }
+
 
 
 
