@@ -84,4 +84,9 @@ public class SellerInformationController {
         }
     }
 
+    @GetMapping("/top5-seller")
+    public ResponseEntity<?> top5Seller() {
+        return sellerInformationService.findTop5();
+    }
+
 }
