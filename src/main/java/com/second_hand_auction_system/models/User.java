@@ -44,6 +44,8 @@ public class User extends BaseEntity implements UserDetails  {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @OneToOne(mappedBy = "user")
+    private Wallet wallet;
 
 
     @Override

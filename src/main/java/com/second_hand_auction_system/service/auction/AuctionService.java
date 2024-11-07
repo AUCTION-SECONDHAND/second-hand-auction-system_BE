@@ -6,12 +6,11 @@ import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.jwt.IJwtService;
-import com.second_hand_auction_system.utils.AuctionStatus;
-import com.second_hand_auction_system.utils.StatusWallet;
-import com.second_hand_auction_system.utils.WalletType;
+import com.second_hand_auction_system.utils.*;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +25,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import static com.second_hand_auction_system.utils.AuctionStatus.CANCELLED;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuctionService implements IAuctionService {
     private final AuctionRepository auctionRepository;
     private final ItemRepository itemRepository;
@@ -42,6 +43,7 @@ public class AuctionService implements IAuctionService {
     private final IJwtService jwtService;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
 
     @Override
     public void addAuction(@Valid AuctionDto auctionDto) throws Exception {
@@ -151,7 +153,7 @@ public class AuctionService implements IAuctionService {
     }
 
 
-    @Scheduled(fixedDelay = 3600000) // 1 giờ
+    @Scheduled(fixedDelay = 5000) // 1 giờ
     @Transactional
     public void closeExpiredAuctions() {
         List<Auction> auctions = auctionRepository.findAll();
@@ -163,11 +165,51 @@ public class AuctionService implements IAuctionService {
                             .toLocalDateTime()
                             .with(auction.getEndTime().toLocalTime()))) {
 
+                // Cập nhật trạng thái đấu giá thành CLOSED
                 auction.setStatus(AuctionStatus.CLOSED);
                 auctionRepository.save(auction);
+                log.info("THONG BAO DA KET THUC CAC PHIEN DAU GIA: " + auction.getAuctionId());
+                // Tìm tất cả các bid liên quan đến phiên đấu giá này
+                List<Bid> bids = bidRepository.findByAuction_AuctionId(auction.getAuctionId());
+
+                // Hoàn tiền cho tất cả người đặt giá
+                for (Bid bid : bids) {
+                    // Lấy ví của người dùng tham gia đấu giá thông qua Bid -> User -> Wallet
+                    Wallet userWallet = bid.getUser().getWallet();
+
+                    // Kiểm tra ví của người dùng có tồn tại không
+                    if (userWallet != null) {
+                        // Cập nhật số dư ví của người dùng
+                        userWallet.setBalance(userWallet.getBalance() + bid.getBidAmount());
+                        walletRepository.save(userWallet); // Lưu thay đổi ví của người dùng
+
+                        Transaction refundTransaction = Transaction.builder()
+                                .wallet(userWallet)
+                                .transactionStatus(TransactionStatus.COMPLETED)
+                                .description("Hoan coc nguoi dung")
+                                .commissionRate(0)
+                                .commissionAmount(0)
+                                .transactionType(TransactionType.REFUND)
+                                .recipient(userWallet.getUser().getFullName())
+                                .sender("SYSTEM")
+                                .transactionWalletCode(random())
+                                .build();
+                        transactionRepository.save(refundTransaction);
+                    } else {
+                        System.out.println("User does not have a wallet: " + bid.getUser().getEmail());
+                    }
+                }
             }
         }
     }
+
+    private long random (){
+        Random random = new Random();
+        int number = random.nextInt(900000) + 100000;
+        return Long.parseLong(String.valueOf(number));
+
+    }
+
 
 
 

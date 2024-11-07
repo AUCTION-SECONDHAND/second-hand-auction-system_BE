@@ -9,13 +9,17 @@ import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.user.*;
 import com.second_hand_auction_system.models.Token;
 import com.second_hand_auction_system.models.User;
+import com.second_hand_auction_system.models.Wallet;
 import com.second_hand_auction_system.repositories.TokenRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.repositories.WalletRepository;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.email.OtpService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.Role;
+import com.second_hand_auction_system.utils.StatusWallet;
 import com.second_hand_auction_system.utils.TokenType;
+import com.second_hand_auction_system.utils.WalletType;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,7 +55,7 @@ public class UserService implements IUserService {
     private final ModelMapper modelMapper;
     private final EmailService emailService;
     private final OtpService otpService;
-
+    private final WalletRepository walletRepository;
     @Override
     public ResponseEntity<RegisterResponse> register(RegisterRequest registerRequest) {
         try {
@@ -63,6 +67,12 @@ public class UserService implements IUserService {
                                 .build()
                 );
             }
+            Wallet newWallet = Wallet.builder()
+                    .balance(0.0)
+                    .statusWallet(StatusWallet.ACTIVE)
+                    .walletType(WalletType.CUSTOMER)
+                    .build();
+            walletRepository.save(newWallet);  // Lưu ví vào cơ sở dữ liệu
 
             User newUser = User.builder()
                     .email(registerRequest.getEmail())
@@ -72,11 +82,14 @@ public class UserService implements IUserService {
                     .fullName(registerRequest.getFullName())
                     .phoneNumber(registerRequest.getPhoneNumber())
                     .status(false)
+                    .wallet(newWallet)
                     .build();
 
             userRepository.save(newUser);
             if (newUser.getId() != null) {
-                //send mail confirm
+                newWallet.setUser(newUser);
+                walletRepository.save(newWallet);
+
                 emailService.sendOtp(newUser.getEmail(), newUser.getId());
 
             }
