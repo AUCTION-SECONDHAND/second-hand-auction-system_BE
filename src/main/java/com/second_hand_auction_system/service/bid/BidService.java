@@ -96,7 +96,7 @@ public class BidService implements IBidService {
         }
 
         // Kiểm tra loại đấu giá
-        if (Objects.equals(auction.getAuctionType().getAuctionTypeName(), "TRADITIONAL")) {
+        if (!Objects.equals(auction.getAuctionType().getAuctionTypeName(), "TRADITIONAL")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
@@ -379,16 +379,13 @@ public class BidService implements IBidService {
         if (winningBid == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-//        Bid bidResponse = modelMapper.map(bids, BidResponse.class);
         BidResponse winningBidResponse = new BidResponse(); // Create a BidResponse object
-//        winningBidResponse.setBidId(winningBid.getBidId());
         winningBidResponse.setBidAmount(winningBid.getBidAmount());
-//        winningBidResponse.setBidTime(winningBid.getBidTime());
-//        winningBidResponse.setBidStatus(winningBid.getBidStatus());
-//        winningBidResponse.setWinBid(winningBid.isWinBid());
+        winningBidResponse.setBidTime(winningBid.getBidTime());
+        winningBidResponse.setWinBid(winningBid.isWinBid());
         winningBidResponse.setUserId(winningBid.getUser().getId());
         winningBidResponse.setAuctionId(auctionId);
-//
+        winningBidResponse.setUsername(winningBid.getUser().getFullName());
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .status(HttpStatus.OK)
                 .message("Find winner")
@@ -433,7 +430,6 @@ public class BidService implements IBidService {
                     .userId(bid.getUser().getId())
                     .auctionId(bid.getAuction().getAuctionId())
                     .username(bid.getUser().getUsername())
-                    .bidChange(bidChange) // Thêm số tiền thay đổi vào phản hồi
                     .build();
 
             bidResponses.add(bidResponse);

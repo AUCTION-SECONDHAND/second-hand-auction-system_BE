@@ -6,8 +6,10 @@ import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.jwt.IJwtService;
+import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.StatusWallet;
 import com.second_hand_auction_system.utils.WalletType;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -15,10 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -146,37 +151,24 @@ public class AuctionService implements IAuctionService {
     }
 
 
-//    @Scheduled(fixedRate = 120000) // Cứ 60 giây chạy một lần
-//    public void updateAuctionStatus() {
-//        List<Auction> auctions = auctionRepository.findAll();
-//        Calendar now = Calendar.getInstance(); // Lấy thời gian hiện tại
-//
-//        for (Auction auction : auctions) {
-//            Calendar startCal = Calendar.getInstance();
-//            startCal.setTime(auction.getStartDate());
-//            startCal.set(Calendar.HOUR_OF_DAY, auction.getStartTime().getHours());
-//            startCal.set(Calendar.MINUTE, auction.getStartTime().getMinutes());
-//            startCal.set(Calendar.SECOND, auction.getStartTime().getSeconds());
-//
-//            // Thiết lập thời gian kết thúc
-//            Calendar endCal = Calendar.getInstance();
-//            endCal.setTime(auction.getEndDate());
-//            endCal.set(Calendar.HOUR_OF_DAY, auction.getEndTime().getHours());
-//            endCal.set(Calendar.MINUTE, auction.getEndTime().getMinutes());
-//            endCal.set(Calendar.SECOND, auction.getEndTime().getSeconds());
-//
-//            // Cập nhật trạng thái phiên đấu giá
-//            if (startCal.after(now)) {
-//                auction.setStatus(AuctionStatus.PENDING);
-//            } else if (endCal.before(now)) {
-//                auction.setStatus(AuctionStatus.COMPLETED);
-//            } else {
-//                auction.setStatus(AuctionStatus.CLOSED);
-//            }
-//            System.out.println("hello");
-//            auctionRepository.save(auction);
-//        }
-//    }
+    @Scheduled(fixedDelay = 3600000) // 1 giờ
+    @Transactional
+    public void closeExpiredAuctions() {
+        List<Auction> auctions = auctionRepository.findAll();
+
+        for (Auction auction : auctions) {
+            if (!auction.getStatus().equals(AuctionStatus.CLOSED) &&
+                    LocalDateTime.now().isAfter(auction.getEndDate().toInstant()
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDateTime()
+                            .with(auction.getEndTime().toLocalTime()))) {
+
+                auction.setStatus(AuctionStatus.CLOSED);
+                auctionRepository.save(auction);
+            }
+        }
+    }
+
 
 
     private AuctionResponse convertToAuctionResponse(Auction auction) {

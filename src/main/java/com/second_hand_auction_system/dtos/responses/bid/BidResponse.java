@@ -16,7 +16,6 @@ public class BidResponse {
 //    private String bidStatus;
     private boolean winBid;
     private Integer userId;
-    private double bidChange;
     private Integer auctionId;
     private String username;
 }
