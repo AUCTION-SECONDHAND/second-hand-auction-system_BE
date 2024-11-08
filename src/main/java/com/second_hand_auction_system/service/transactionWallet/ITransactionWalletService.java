@@ -1,5 +1,7 @@
 package com.second_hand_auction_system.service.transactionWallet;
 
+import com.second_hand_auction_system.utils.Role;
+import com.second_hand_auction_system.utils.TransactionType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
@@ -15,4 +17,6 @@ public interface ITransactionWalletService {
     ResponseEntity<?> getTransactionWalletsBider(int size, int page);
 
     ResponseEntity<?> updateTransaction(Integer transactionId,String vnpTransactionStatus);
+
+    ResponseEntity<?> getAllTransaction(int limit, int page, Role role, TransactionType transactionType);
 }

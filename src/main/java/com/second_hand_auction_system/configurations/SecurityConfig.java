@@ -71,7 +71,7 @@ public class SecurityConfig {
                         .requestMatchers(PUT, "/api/v1/item/**").hasAnyRole("STAFF","ADMIN")
                         .requestMatchers(GET,"/api/v1/item/**").permitAll()
                         //transaction-wallet
-                        .requestMatchers("/api/v1/transactionWallet/**").hasAnyRole("BUYER", "SELLER")
+                        .requestMatchers("/api/v1/transactionWallet/**").permitAll()
                         //register_auction_bider
                         .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
                         .requestMatchers(GET,"/api/v1/auction-register/**").permitAll()

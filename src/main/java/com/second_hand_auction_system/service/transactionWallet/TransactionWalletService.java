@@ -8,7 +8,9 @@ import com.second_hand_auction_system.repositories.TransactionRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.repositories.WalletRepository;
 import com.second_hand_auction_system.service.jwt.IJwtService;
+import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionStatus;
+import com.second_hand_auction_system.utils.TransactionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -226,6 +228,45 @@ public class TransactionWalletService implements ITransactionWalletService {
             }
         }
         return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<?> getAllTransaction(int limit, int page, Role role, TransactionType transactionType) {
+        Pageable pageable = PageRequest.of(page, limit);
+
+        // Lọc theo role và transactionType nếu có
+        Page<Transaction> transactions;
+        if (role != null  && transactionType != null  ) {
+            transactions = transactionRepository.findByWallet_User_RoleAndTransactionType(role, transactionType, pageable);
+        } else if (role != null ) {
+            transactions = transactionRepository.findByWallet_User_Role(role, pageable);
+        } else if (transactionType != null ) {
+            transactions = transactionRepository.findByTransactionType(transactionType, pageable);
+        } else {
+            transactions = transactionRepository.findAll(pageable);
+        }
+
+        List<TransactionWalletResponse> transactionWallets = transactions.getContent().stream()
+
+                .map(transaction ->
+                        TransactionWalletResponse.builder()
+                                .transactionId(transaction.getTransactionWalletId())
+                                .amount(transaction.getAmount())
+                                .transactionWalletCode(transaction.getTransactionWalletCode())
+                                .transactionType(transaction.getTransactionType())
+                                .transactionStatus(transaction.getTransactionStatus())
+                                .senderName(transaction.getSender())
+                                .recipientName(transaction.getRecipient())
+                                .transactionDate(transaction.getCreateAt())
+                                .build())
+                .collect(Collectors.toList());
+
+        // Chuẩn bị phản hồi
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("data", transactionWallets); // Sử dụng danh sách đã ánh xạ
+        responseData.put("totalPages", transactions.getTotalPages());
+        responseData.put("totalElements", transactions.getTotalElements());
+        return ResponseEntity.ok(responseData);
     }
 
 
