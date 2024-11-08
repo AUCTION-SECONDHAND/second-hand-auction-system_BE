@@ -21,4 +21,10 @@ public class SellerInformationResponse {
     private Integer totalFeedbackCount;
     private Double totalStars;
     private List<FeedbackResponse> feedbackList;
+
+    private double rating1Percentage;
+    private double rating2Percentage;
+    private double rating3Percentage;
+    private double rating4Percentage;
+    private double rating5Percentage;
 }

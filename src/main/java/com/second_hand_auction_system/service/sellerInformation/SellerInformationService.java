@@ -94,7 +94,6 @@ public class SellerInformationService implements ISellerInformationService {
         SellerInformation sellerInformation = sellerInformationRepository.findByUser_Id(item.getUser().getId())
                 .orElseThrow(() -> new NoSuchElementException("Seller information not found for user ID: " + item.getUser().getId()));
 
-        // Lấy trang đầu tiên với 10 phản hồi
         Page<FeedbackResponse> feedbackResponses = feedbackService.getFeedbackBySellerUserId(item.getUser().getId(), 0, 10);
 
         return SellerInformationConverter.convertToResponseWithFeedback(sellerInformation, feedbackResponses);
