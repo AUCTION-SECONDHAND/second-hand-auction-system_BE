@@ -6,6 +6,7 @@ import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.item.*;
+import com.second_hand_auction_system.dtos.responses.user.UserResponse;
 import com.second_hand_auction_system.exceptions.DataNotFoundException;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -144,10 +146,10 @@ public class ItemService implements IItemService {
     @Override
     public void approve(int itemId, ItemApprove approve) throws Exception {
         var item = itemRepository.findById(itemId).orElseThrow(null);
-        if(item== null){
+        if (item == null) {
             throw new Exception("Item not found");
         }
-            String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
         }
@@ -157,6 +159,8 @@ public class ItemService implements IItemService {
         if (requester == null) {
             throw new Exception("User not found");
         }
+        item.setReason(approve.getReason());
+        item.setUpdateAt(LocalDateTime.now());
         item.setUpdateBy(requester.getUsername());
         item.setItemStatus(approve.getStatus());
         if (item.getItemSpecific() != null) {
@@ -283,7 +287,7 @@ public class ItemService implements IItemService {
                     .data(null)
                     .build());
         }
-        Page<Item> items = itemRepository.findItemByUser_Id(requester.getId(),pageable);
+        Page<Item> items = itemRepository.findItemByUser_Id(requester.getId(), pageable);
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("items", items.map(auctionItemConvert::toAuctionItemResponse).getContent());
         responseData.put("totalPages", items.getTotalPages());
@@ -354,9 +358,27 @@ public class ItemService implements IItemService {
             auctionItemResponses.add(auctionItemResponse);
         }
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                        .data(auctionItemResponses)
-                        .message("Success")
-                        .status(HttpStatus.OK)
+                .data(auctionItemResponses)
+                .message("Success")
+                .status(HttpStatus.OK)
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getSellerByItemId(int itemId) {
+        User user = itemRepository.findUserByItemId(itemId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null)
+                    .build());
+        }
+        UserResponse userResponse = modelMapper.map(user, UserResponse.class);
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Find seller")
+                .data(userResponse)
                 .build());
     }
 

@@ -22,8 +22,9 @@ public class UserController {
     private final IUserService userService;
     private final EmailService emailService;
     @GetMapping("get-users")
-    public ResponseEntity<ListUserResponse> getUser(){
-        return userService.getListUser();
+    public ResponseEntity<?> getUser(@RequestParam(value = "page",defaultValue = "0") int page,
+                                                    @RequestParam(value = "limit",defaultValue = "10") int limit){
+        return userService.getListUser(page,limit);
     }
 
     @PostMapping("/send-email")

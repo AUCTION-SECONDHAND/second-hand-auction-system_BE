@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.models;
 
+import com.second_hand_auction_system.utils.NotificationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,9 @@ public class Notifications extends BaseEntity{
 
     @Column(name = "message")
     private String message;
+
+    @Enumerated(EnumType.STRING)
+    private NotificationStatus notificationStatus;
 
     @Column(name = "create_by")
     private String createBy;

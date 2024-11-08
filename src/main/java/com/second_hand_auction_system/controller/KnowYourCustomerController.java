@@ -7,6 +7,7 @@ import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,6 +17,7 @@ public class KnowYourCustomerController {
     private final KnowYourCustomerService kycService;
 
     @PostMapping()
+    @MessageMapping("/register")
     public ResponseEntity<?> registerKyc(@Valid  @RequestBody KycDto kyc) {
          return kycService.register(kyc);
     }

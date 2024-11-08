@@ -40,6 +40,8 @@ public class Item extends BaseEntity{
 
 //    @Column(name = "img_default")
 //    private String imgDefault;
+    @Column(name = "reason")
+    private String reason;
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference

@@ -10,6 +10,7 @@ import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -22,6 +23,7 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationService implements INotificationService {
     private final NotificationsRepository notificationRepository;
     private final AuctionRepository auctionRepository;
@@ -30,6 +32,18 @@ public class NotificationService implements INotificationService {
     private final AuctionRegistrationUserRepository auctionRegistrationUserRepository;
     private final IJwtService jwtService;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate simpMessagingTemplate;
+
+
+    public void sendNotification(String userId, Notifications notifications) {
+        log.info("Sending ws notification to {}", userId, notifications);
+        simpMessagingTemplate.convertAndSendToUser(
+                userId,
+                "/notifications",
+                notifications
+        );
+    }
+
     @Override
     @Transactional
     public ResponseEntity<?> closeAuction(Integer auctionId) {
@@ -119,5 +133,7 @@ public class NotificationService implements INotificationService {
                         .status(HttpStatus.OK)
                         .build());
     }
+
+
 }
 

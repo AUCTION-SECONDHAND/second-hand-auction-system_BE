@@ -11,4 +11,5 @@ import lombok.*;
 @Builder
 public class ItemApprove {
     private ItemStatus status;
+    private String reason;
 }

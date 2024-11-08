@@ -1,6 +1,5 @@
 package com.second_hand_auction_system.configurations;
 
-import com.second_hand_auction_system.utils.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,19 +33,21 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-ui.html",
             "/api/v1/auth/**",
-            "api/v1/auctions/**",
+            "/api/v1/auctions/**",
             "/api/v1/user/**",
-            "api/v1/user/forgot-password/**",
-            "api/v1/withdrawRequest/vnpay-payment/**",
+            "/api/v1/user/forgot-password/**",
+            "/api/v1/withdrawRequest/vnpay-payment/**",
+            "/api/v1/ws/**"  // Add this line to allow WebSocket access
     };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST).permitAll()
-                        //user
+                        .requestMatchers("/api/v1/ws/**").permitAll()  // Ensure WebSocket endpoint is accessible                        //user
                         .requestMatchers(GET, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(PUT,"/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
@@ -67,7 +68,7 @@ public class SecurityConfig {
                         .requestMatchers(GET,"/api/v1/walletCustomer/**").permitAll()
                         //item
                         .requestMatchers(POST, "/api/v1/item/**").hasRole("SELLER")
-                        .requestMatchers(PUT, "/api/v1/item/**").hasRole("STAFF")
+                        .requestMatchers(PUT, "/api/v1/item/**").hasAnyRole("STAFF","ADMIN")
                         .requestMatchers(GET,"/api/v1/item/**").permitAll()
                         //transaction-wallet
                         .requestMatchers("/api/v1/transactionWallet/**").hasAnyRole("BUYER", "SELLER")

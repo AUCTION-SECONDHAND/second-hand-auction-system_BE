@@ -274,5 +274,9 @@ public class ItemController {
         return itemService.getTop10ItemParticipating();
     }
 
-//    @GetMapping("/top-10-")
+    @GetMapping("/get-seller/{itemId}")
+    public ResponseEntity<?> getSeller(@PathVariable int itemId) {
+        return itemService.getSellerByItemId(itemId);
+
+    }
 }

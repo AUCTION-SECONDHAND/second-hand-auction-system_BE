@@ -25,7 +25,7 @@ public interface IUserService {
 
     void refresh(HttpServletRequest request, HttpServletResponse response) throws IOException;
 
-    ResponseEntity<ListUserResponse> getListUser();
+    ResponseEntity<?> getListUser(int page, int limit);
 
     ResponseEntity<?> isValidOtp(String email, String otp);
 

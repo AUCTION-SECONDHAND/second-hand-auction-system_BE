@@ -25,6 +25,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +42,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.io.IOException;
 import java.nio.file.attribute.UserPrincipal;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -187,10 +192,11 @@ public class UserService implements IUserService {
             }
         }
     }
-
     @Override
-    public ResponseEntity<ListUserResponse> getListUser() {
+    public ResponseEntity<?> getListUser(int page, int limit) {
         try {
+            Pageable pageable = PageRequest.of(page, limit);
+
             // Lấy token từ header Authorization
             String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                     .getRequest().getHeader("Authorization");
@@ -203,9 +209,11 @@ public class UserService implements IUserService {
                                 .message("Missing or invalid Authorization header")
                                 .build());
             }
+
             String token = authHeader.substring(7);
             String userEmail = jwtService.extractUserEmail(token);
             var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+
             if (requester == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ListUserResponse.builder()
@@ -213,6 +221,7 @@ public class UserService implements IUserService {
                                 .message("Unauthorized request - User not found")
                                 .build());
             }
+
             if (!Role.ADMIN.equals(requester.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(ListUserResponse.builder()
@@ -220,14 +229,25 @@ public class UserService implements IUserService {
                                 .message("Access denied - Admin role required")
                                 .build());
             }
-            List<User> users = userRepository.findAll();
-            List<UserResponse> userResponses = users.stream()
+
+            // Phân trang và lấy dữ liệu người dùng
+            Page<User> userPage = userRepository.findAll(pageable);
+
+            // Chuyển đổi sang danh sách UserResponse
+            List<UserResponse> userResponses = userPage.stream()
                     .map(user -> modelMapper.map(user, UserResponse.class))
                     .collect(Collectors.toList());
 
+            // Tạo phản hồi
+            Map<String, Object> response = new HashMap<>();
+            response.put("list", userResponses);
+            response.put("totalPages", userPage.getTotalPages()); // Lấy tổng số trang
+            response.put("totalElements", userPage.getTotalElements()); // Lấy tổng số phần tử
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(ListUserResponse.builder()
-                            .users(userResponses)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.OK)
+                            .data(response)
                             .message("Success")
                             .build());
 
@@ -241,6 +261,7 @@ public class UserService implements IUserService {
                             .build());
         }
     }
+
 
 
     @Override

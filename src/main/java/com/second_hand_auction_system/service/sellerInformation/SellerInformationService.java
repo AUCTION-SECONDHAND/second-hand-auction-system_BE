@@ -103,28 +103,23 @@ public class SellerInformationService implements ISellerInformationService {
     @Override
     public ResponseEntity<?> findTop5() {
         List<FeedBack> feedBack = feedbackRepository.findAll();  // Lấy danh sách tất cả các phản hồi
-
         // Kiểm tra nếu feedBack không rỗng
         if (feedBack.isEmpty()) {
             return ResponseEntity.ok(new ArrayList<>());
         }
-
         // Map để lưu trữ số lượng feedback cho mỗi seller
         Map<Integer, Long> sellerFeedbackCountMap = new HashMap<>();
-
         // Duyệt qua các feedBack và tính số lượng feedback cho mỗi seller
         for (FeedBack feedback : feedBack) {
             User seller = feedback.getItem().getUser();
             sellerFeedbackCountMap.put(seller.getId(),
                     sellerFeedbackCountMap.getOrDefault(seller.getId(), 0L) + 1);
         }
-
         // Sắp xếp danh sách sellers theo số lượng feedback giảm dần và lấy 5 seller đầu tiên
         List<Map.Entry<Integer, Long>> sortedSellerList = sellerFeedbackCountMap.entrySet().stream()
                 .sorted((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue())) // Sắp xếp giảm dần
                 .limit(5) // Lấy top 5
                 .toList();
-
         // Tạo danh sách phản hồi cho 5 seller top
         List<SellerInformationResponse> top5Sellers = new ArrayList<>();
         for (Map.Entry<Integer, Long> entry : sortedSellerList) {
@@ -138,7 +133,6 @@ public class SellerInformationService implements ISellerInformationService {
                 top5Sellers.add(response);
             }
         }
-
         // Trả về danh sách seller top 5
         return ResponseEntity.ok(top5Sellers);
     }

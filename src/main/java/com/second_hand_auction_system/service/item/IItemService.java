@@ -42,4 +42,6 @@ public interface IItemService {
 
 
     ResponseEntity<?> getTop10ItemParticipating();
+
+    ResponseEntity<?> getSellerByItemId(int itemId);
 }
