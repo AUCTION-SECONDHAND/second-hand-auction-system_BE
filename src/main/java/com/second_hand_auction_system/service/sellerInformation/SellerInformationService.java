@@ -81,8 +81,11 @@ public class SellerInformationService implements ISellerInformationService {
         SellerInformation sellerInformation = sellerInformationRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new NoSuchElementException("Seller information not found for user ID: " + userId));
 
-        return SellerInformationConverter.convertToResponse(sellerInformation);
+        Page<FeedbackResponse> feedbackResponses = feedbackService.getFeedbackBySellerUserId(userId, 0, 10);
+
+        return SellerInformationConverter.convertToResponseWithFeedback(sellerInformation, feedbackResponses);
     }
+
 
     @Override
     public SellerInformationResponse getSellerInformationByAuctionId(Integer auctionId) throws Exception {
