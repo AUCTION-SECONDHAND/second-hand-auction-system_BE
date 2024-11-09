@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông Báo Người Thắng Cuộc</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 0 auto;
+            width: 600px;
+        }
+        .email-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .email-header h1 {
+            color: #4CAF50;
+        }
+        .email-content {
+            font-size: 16px;
+            color: #333333;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #888888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="email-container">
+    <div class="email-header">
+        <h1>Chúc Mừng, Bạn Đã Thắng Cuộc Đấu Giá!</h1>
+    </div>
+    <div class="email-content">
+        <p>Kính gửi <span th:text="${userName}">Người Dùng</span>,</p>
+        <p>Chúng tôi vui mừng thông báo rằng bạn đã chiến thắng trong cuộc đấu giá <span th:text="${auctionId}">ID Phiên Đấu Giá</span>!</p>
+        <p>Chi tiết về việc bạn thắng cuộc đấu giá:</p>
+        <ul>
+            <li>Phiên đấu giá: <span th:text="${auctionId}">ID Phiên Đấu Giá</span></li>
+            <li>Số tiền đấu giá thắng: <span th:text="${winningBid}">Số Tiền Đấu Giá</span></li>
+            <li>Sản phẩm: <span th:text="${itemName}">Tên Sản Phẩm</span></li>
+        </ul>
+        <p>Để hoàn tất việc mua hàng, vui lòng thanh toán trong vòng 24 giờ. Nếu bạn không thanh toán trong thời gian quy định, giao dịch sẽ bị hủy và tiền đặt cọc sẽ bị mất.</p>
+        <p>Cảm ơn bạn đã tham gia cuộc đấu giá của chúng tôi!</p>
+    </div>
+    <div class="footer">
+        <p>Trân trọng,</p>
+        <p>Đội Ngũ Đấu Giá</p>
+    </div>
+</div>
+
+</body>
+</html>

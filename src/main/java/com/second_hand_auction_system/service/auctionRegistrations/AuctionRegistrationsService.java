@@ -14,6 +14,7 @@ import com.second_hand_auction_system.utils.TransactionStatus;
 import com.second_hand_auction_system.utils.TransactionType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +29,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuctionRegistrationsService implements IAuctionRegistrationsService {
@@ -125,16 +127,19 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .depositeAmount(depositAmount)
                     .build();
             auctionRegistrationsRepository.save(newRegistration);
-
+            log.info("Vi user: " + userWallet.getBalance());
             // Trừ tiền từ ví của người dùng và cộng vào ví đấu giá
             userWallet.setBalance(userWallet.getBalance() - depositAmount);
             walletRepository.save(userWallet);
-
+            log.info("Vi user sau khi coc: " + userWallet.getBalance());
             Wallet viCoc = walletRepository.findWalletByAuctionId(auctionExist.getWallet().getWalletId()).orElse(null);
             if (viCoc != null) {
+                log.info("Vi coc ban dau: " + viCoc.getBalance());
                 viCoc.setBalance(viCoc.getBalance() + depositAmount);
                 walletRepository.save(viCoc);
+                log.info("Vi coc: " + viCoc.getBalance());
             }
+
             AuctionRegistrationUser auctionRegistrationUser = registrationUserRepository.findByAuctionRegistration_AuctionRegistrationId(newRegistration.getAuctionRegistrationId()).orElse(null);
             if (auctionRegistrationUser != null) {
                 auctionRegistrationUser.setStatusRegistration(true);

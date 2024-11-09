@@ -6,6 +6,7 @@ import com.second_hand_auction_system.utils.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +38,12 @@ public class TransactionWalletController {
                                                  @RequestParam(value = "role", required = false) Role role,
                                                  @RequestParam(value = "transactionType", required = false) TransactionType transactionType) {
         return transactionWalletService.getAllTransaction(limit, page, role, transactionType);
+    }
+
+    @PutMapping("/upload-evidence/{transactionId}")
+    public ResponseEntity<?> uploadEvidence(@RequestBody String imageUrl,@PathVariable  Integer transactionId) {
+        return transactionWalletService.upload(imageUrl,transactionId);
+
     }
 
 

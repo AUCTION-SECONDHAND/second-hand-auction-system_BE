@@ -48,6 +48,7 @@ public class BidService implements IBidService {
     private final EmailService emailService;
     private final SimpMessagingTemplate messagingTemplate;
     private final ModelMapper modelMapper;
+
     @Override
     @Transactional
     public ResponseEntity<?> createBid(BidRequest bidRequest) throws Exception {
@@ -87,7 +88,7 @@ public class BidService implements IBidService {
         }
 
         // Kiểm tra người dùng đã đăng ký đấu giá chưa
-        boolean auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndRegistrationTrue(requester.getId());
+        boolean auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndAuctionIdAndRegistrationTrue(requester.getId(),auction.getAuctionId());
         if (!auctionRegister) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
@@ -109,26 +110,63 @@ public class BidService implements IBidService {
 
 
         // Kiểm tra trạng thái và thời gian phiên đấu giá
+        // Ensure that all date and time fields are not null
+        if (auction.getStartDate() == null || auction.getStartTime() == null ||
+                auction.getEndDate() == null || auction.getEndTime() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Auction dates and times must not be null")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+
+// Convert start date and time to LocalDateTime
         LocalDateTime auctionStartDateTime = auction.getStartDate().toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate()
                 .atTime(auction.getStartTime().toLocalTime());
 
+// Convert end date and time to LocalDateTime
         LocalDateTime auctionEndDateTime = auction.getEndDate().toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate()
                 .atTime(auction.getEndTime().toLocalTime());
 
-        if (!auction.getStatus().equals(AuctionStatus.OPEN) ||
-                LocalDateTime.now().isBefore(auctionStartDateTime) ||
-                LocalDateTime.now().isAfter(auctionEndDateTime)) {
+// Check if the auction status is OPEN
+        if (!auction.getStatus().equals(AuctionStatus.OPEN)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("Auction is not open for bidding")
+                            .message("Auction is not currently open")
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
+
+// Get current time
+        LocalDateTime now = LocalDateTime.now();
+
+// Validate auction time ranges
+        if (now.isBefore(auctionStartDateTime)) {
+            // Thời gian hiện tại sớm hơn thời gian bắt đầu
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Auction has not started yet")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+
+        if (now.isAfter(auctionEndDateTime)) {
+            // Thời gian hiện tại trễ hơn thời gian kết thúc
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Auction has already ended")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+
 
         // Lấy danh sách các bid hiện có
         List<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
@@ -179,7 +217,6 @@ public class BidService implements IBidService {
                         .status(HttpStatus.OK)
                         .build());
     }
-
 
 
     @Override
@@ -448,8 +485,6 @@ public class BidService implements IBidService {
     }
 
 
-
-
     @Override
     public ResponseEntity<?> getAllBids(Integer auctionId, int limit, int page) {
         Pageable pageable = PageRequest.of(page, limit);
@@ -544,7 +579,6 @@ public class BidService implements IBidService {
                         .build()
         );
     }
-
 
 
     public Bid findWinner(int auctionId) {

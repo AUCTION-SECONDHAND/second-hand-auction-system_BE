@@ -16,27 +16,24 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 public class TransactionWalletResponse {
-    @Positive(message = "Transaction ID must be a positive number")
     private Integer transactionId;
 
-    @NotNull(message = "Transaction type cannot be null")
     private TransactionType transactionType;
 
-    @PositiveOrZero(message = "Amount must be zero or positive")
     private long amount;
 
-    @Positive(message = "Transaction wallet code must be a positive number")
     private long transactionWalletCode;
 
-    @NotNull(message = "Transaction status cannot be null")
     private TransactionStatus transactionStatus;
 
-    @NotBlank(message = "Sender name cannot be blank")
     private String senderName;
 
-    @NotBlank(message = "Recipient name cannot be blank")
     private String recipientName;
 
-    @NotNull(message = "Transaction date cannot be null")
     private LocalDateTime transactionDate;
+
+    private String description;
+
+    private String image;
+
 }
