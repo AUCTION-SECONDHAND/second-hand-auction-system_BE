@@ -7,6 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 public interface TransactionRepository extends JpaRepository<Transaction, Integer> {
     Page<Transaction> findTransactionWalletByWallet_User_Id(Integer id, Pageable pageable);
 
@@ -15,4 +17,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     Page<Transaction> findByWallet_User_Role(Role role, Pageable pageable);
 
     Page<Transaction> findByTransactionType(TransactionType transactionType, Pageable pageable);
+
+    Optional<Transaction> findByWallet_User_Id(Integer id);
 }

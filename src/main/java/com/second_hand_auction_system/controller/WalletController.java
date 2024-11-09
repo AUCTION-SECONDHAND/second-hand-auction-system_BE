@@ -18,6 +18,8 @@ public class WalletController {
         return walletService.depositWallet(deposit);
     }
 
+//    @PostMapping("/withdraw-by-seller")
+
     @GetMapping("/get-balance")
     public ResponseEntity<ResponseObject> getBalance () {
         return walletService.getWalletCustomerBalance();

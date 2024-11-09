@@ -19,11 +19,14 @@ public interface AuctionRegistrationsRepository extends JpaRepository<AuctionReg
     Page<AuctionRegistration> findAuctionRegistrationsByUserId(@Param("userId") Integer userId, Pageable pageable);    List<AuctionRegistration> findByUsersId(int id);
     AuctionRegistration findByUsersIdAndAuction_AuctionId(Integer user_id, Integer auction_auctionId);
     //AuctionRegistration findByUsersIdAndAuction_AuctionId
-    Optional<AuctionRegistration> findByAuction_AuctionId(Integer auction_auctionId);
+    List<AuctionRegistration> findByAuction_AuctionId(Integer auction_auctionId);
     @Query("SELECT CASE WHEN COUNT(ar) > 0 THEN true ELSE false END " +
             "FROM AuctionRegistration ar JOIN ar.users u " +
-            "WHERE u.id = :userId AND ar.registration = true")
-    boolean existsAuctionRegistrationByUserIdAndRegistrationTrue(@Param("userId") Integer userId);
+            "WHERE u.id = :userId AND ar.auction.auctionId = :auctionId AND ar.registration = true")
+    boolean existsAuctionRegistrationByUserIdAndAuctionIdAndRegistrationTrue(
+            @Param("userId") Integer userId,
+            @Param("auctionId") Integer auctionId);
+
 
 
 //    AuctionRegistration findByAuction_AuctionIdAndUsersContaining(@NotNull(message = "Auction ID is required") Integer auction, User requester);

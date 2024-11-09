@@ -19,4 +19,6 @@ public interface ITransactionWalletService {
     ResponseEntity<?> updateTransaction(Integer transactionId,String vnpTransactionStatus);
 
     ResponseEntity<?> getAllTransaction(int limit, int page, Role role, TransactionType transactionType);
+
+    ResponseEntity<?> upload(String imageUrl,Integer transactionId);
 }

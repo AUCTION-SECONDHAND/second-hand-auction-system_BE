@@ -1,5 +1,7 @@
 package com.second_hand_auction_system.service.email;
 
+import com.second_hand_auction_system.models.Auction;
+import com.second_hand_auction_system.models.Bid;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.UserRepository;
 import jakarta.mail.MessagingException;
@@ -13,7 +15,11 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.ExtendedModelMap;
+import org.springframework.ui.Model;
 import org.springframework.web.multipart.MultipartFile;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.IContext;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.io.IOException;
@@ -34,6 +40,7 @@ public class EmailService {
     private final PasswordEncoder encoder;
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final int PASSWORD_LENGTH = 8;
+
     public String sendEmail(String to, String subject, String text, MultipartFile[] files) throws MessagingException {
         log.info("Sending email to " + to);
 
@@ -129,7 +136,6 @@ public class EmailService {
         int otp = random.nextInt(900000) + 100000;
         return String.valueOf(otp);
     }
-
 
 
     public String generatePassword() {
@@ -450,88 +456,88 @@ public class EmailService {
         mimeMessageHelper.setSubject("Set Password");
 
         String htmlContent = """
-            <html>
-                <head>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            margin: 0;
-                            padding: 0;
-                            background-color: #f9f9f9;
-                        }
-                        .container {
-                            max-width: 600px;
-                            margin: 0 auto;
-                            padding: 20px;
-                            background-color: #ffffff;
-                            border-radius: 10px;
-                            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                        }
-                        .header {
-                            background-color: #007bff;
-                            color: #ffffff;
-                            padding: 20px;
-                            text-align: center;
-                            border-top-left-radius: 10px;
-                            border-top-right-radius: 10px;
-                        }
-                        .header h1 {
-                            margin: 0;
-                            font-size: 24px;
-                        }
-                        .content {
-                            padding: 20px;
-                        }
-                        h1 {
-                            color: #333333;
-                            font-size: 20px;
-                        }
-                        p {
-                            font-size: 16px;
-                            color: #555555;
-                            line-height: 1.5;
-                        }
-                        .password {
-                            font-weight: bold;
-                            color: #d9534f;
-                            font-size: 18px;
-                        }
-                        .footer {
-                            background-color: #f1f1f1;
-                            padding: 10px;
-                            font-size: 12px;
-                            color: #777777;
-                            text-align: center;
-                            border-bottom-left-radius: 10px;
-                            border-bottom-right-radius: 10px;
-                            margin-top: 20px;
-                        }
-                        .footer p {
-                            margin: 5px 0;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>Password Reset Request</h1>
+                <html>
+                    <head>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                margin: 0;
+                                padding: 0;
+                                background-color: #f9f9f9;
+                            }
+                            .container {
+                                max-width: 600px;
+                                margin: 0 auto;
+                                padding: 20px;
+                                background-color: #ffffff;
+                                border-radius: 10px;
+                                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                            }
+                            .header {
+                                background-color: #007bff;
+                                color: #ffffff;
+                                padding: 20px;
+                                text-align: center;
+                                border-top-left-radius: 10px;
+                                border-top-right-radius: 10px;
+                            }
+                            .header h1 {
+                                margin: 0;
+                                font-size: 24px;
+                            }
+                            .content {
+                                padding: 20px;
+                            }
+                            h1 {
+                                color: #333333;
+                                font-size: 20px;
+                            }
+                            p {
+                                font-size: 16px;
+                                color: #555555;
+                                line-height: 1.5;
+                            }
+                            .password {
+                                font-weight: bold;
+                                color: #d9534f;
+                                font-size: 18px;
+                            }
+                            .footer {
+                                background-color: #f1f1f1;
+                                padding: 10px;
+                                font-size: 12px;
+                                color: #777777;
+                                text-align: center;
+                                border-bottom-left-radius: 10px;
+                                border-bottom-right-radius: 10px;
+                                margin-top: 20px;
+                            }
+                            .footer p {
+                                margin: 5px 0;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>Password Reset Request</h1>
+                            </div>
+                            <div class="content">
+                                <p>Dear User,</p>
+                                <p>We have received a request to reset your password. Your new password is:</p>
+                                <p class="password">%s</p>
+                                <p>Please make sure to change your password after logging in to ensure your account’s security.</p>
+                                <p>Best regards,</p>
+                                <p>Your Company Team</p>
+                            </div>
+                            <div class="footer">
+                                <p>If you didn’t request this password reset, please contact our support immediately.</p>
+                                <p>Company Name | Address | Contact</p>
+                            </div>
                         </div>
-                        <div class="content">
-                            <p>Dear User,</p>
-                            <p>We have received a request to reset your password. Your new password is:</p>
-                            <p class="password">%s</p>
-                            <p>Please make sure to change your password after logging in to ensure your account’s security.</p>
-                            <p>Best regards,</p>
-                            <p>Your Company Team</p>
-                        </div>
-                        <div class="footer">
-                            <p>If you didn’t request this password reset, please contact our support immediately.</p>
-                            <p>Company Name | Address | Contact</p>
-                        </div>
-                    </div>
-                </body>
-            </html>
-            """.formatted(password);
+                    </body>
+                </html>
+                """.formatted(password);
 
         mimeMessageHelper.setText(htmlContent, true);
         mailSender.send(mimeMessage);
@@ -540,89 +546,89 @@ public class EmailService {
     public void sendBidNotification(String email, String username, double newBidAmount, double oldBidAmount, int auctionId) throws MessagingException {
         // Tạo nội dung cho email
         String htmlContent = """
-        <html>
-            <head>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        margin: 0;
-                        padding: 0;
-                        background-color: #f9f9f9;
-                    }
-                    .container {
-                        max-width: 600px;
-                        margin: 0 auto;
-                        padding: 20px;
-                        background-color: #ffffff;
-                        border-radius: 10px;
-                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                    }
-                    .header {
-                        background-color: #007bff;
-                        color: #ffffff;
-                        padding: 20px;
-                        text-align: center;
-                        border-top-left-radius: 10px;
-                        border-top-right-radius: 10px;
-                    }
-                    .header h1 {
-                        margin: 0;
-                        font-size: 24px;
-                    }
-                    .content {
-                        padding: 20px;
-                    }
-                    h1 {
-                        color: #333333;
-                        font-size: 20px;
-                    }
-                    p {
-                        font-size: 16px;
-                        color: #555555;
-                        line-height: 1.5;
-                    }
-                    .bid-amount {
-                        font-weight: bold;
-                        color: #d9534f;
-                        font-size: 18px;
-                    }
-                    .footer {
-                        background-color: #f1f1f1;
-                        padding: 10px;
-                        font-size: 12px;
-                        color: #777777;
-                        text-align: center;
-                        border-bottom-left-radius: 10px;
-                        border-bottom-right-radius: 10px;
-                        margin-top: 20px;
-                    }
-                    .footer p {
-                        margin: 5px 0;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>Bid Notification</h1>
-                    </div>
-                    <div class="content">
-                        <p>Dear %s,</p>
-                        <p>You have successfully placed a new bid for auction ID: %d.</p>
-                        <p>Your previous bid amount: <span class="bid-amount">$%.2f</span></p>
-                        <p>Your new bid amount: <span class="bid-amount">$%.2f</span></p>
-                        <p>Thank you for participating in the auction!</p>
-                        <p>Best regards,</p>
-                        <p>Your Company Team</p>
-                    </div>
-                    <div class="footer">
-                        <p>If you have any questions, please contact our support team.</p>
-                        <p>Company Name | Address | Contact</p>
-                    </div>
-                </div>
-            </body>
-        </html>
-    """.formatted(username, auctionId, oldBidAmount, newBidAmount);
+                    <html>
+                        <head>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 0;
+                                    background-color: #f9f9f9;
+                                }
+                                .container {
+                                    max-width: 600px;
+                                    margin: 0 auto;
+                                    padding: 20px;
+                                    background-color: #ffffff;
+                                    border-radius: 10px;
+                                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                                }
+                                .header {
+                                    background-color: #007bff;
+                                    color: #ffffff;
+                                    padding: 20px;
+                                    text-align: center;
+                                    border-top-left-radius: 10px;
+                                    border-top-right-radius: 10px;
+                                }
+                                .header h1 {
+                                    margin: 0;
+                                    font-size: 24px;
+                                }
+                                .content {
+                                    padding: 20px;
+                                }
+                                h1 {
+                                    color: #333333;
+                                    font-size: 20px;
+                                }
+                                p {
+                                    font-size: 16px;
+                                    color: #555555;
+                                    line-height: 1.5;
+                                }
+                                .bid-amount {
+                                    font-weight: bold;
+                                    color: #d9534f;
+                                    font-size: 18px;
+                                }
+                                .footer {
+                                    background-color: #f1f1f1;
+                                    padding: 10px;
+                                    font-size: 12px;
+                                    color: #777777;
+                                    text-align: center;
+                                    border-bottom-left-radius: 10px;
+                                    border-bottom-right-radius: 10px;
+                                    margin-top: 20px;
+                                }
+                                .footer p {
+                                    margin: 5px 0;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <div class="header">
+                                    <h1>Bid Notification</h1>
+                                </div>
+                                <div class="content">
+                                    <p>Dear %s,</p>
+                                    <p>You have successfully placed a new bid for auction ID: %d.</p>
+                                    <p>Your previous bid amount: <span class="bid-amount">$%.2f</span></p>
+                                    <p>Your new bid amount: <span class="bid-amount">$%.2f</span></p>
+                                    <p>Thank you for participating in the auction!</p>
+                                    <p>Best regards,</p>
+                                    <p>Your Company Team</p>
+                                </div>
+                                <div class="footer">
+                                    <p>If you have any questions, please contact our support team.</p>
+                                    <p>Company Name | Address | Contact</p>
+                                </div>
+                            </div>
+                        </body>
+                    </html>
+                """.formatted(username, auctionId, oldBidAmount, newBidAmount);
 
         // Tạo và gửi email
         MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -634,5 +640,99 @@ public class EmailService {
     }
 
 
+    public void sendWinnerNotification(String email, Bid winningBid) throws MessagingException {
+        // Tạo MimeMessage
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+        // Thiết lập thông tin email
+        mimeMessageHelper.setTo(email);
+        mimeMessageHelper.setSubject("Thông Báo Bạn Đã Thắng Cuộc Đấu Giá");
+
+        // Tạo nội dung email (HTML) với các giá trị động
+        String htmlContent = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "<meta charset=\"UTF-8\">" +
+                "<title>Thông Báo Thắng Cuộc</title>" +
+                "<style>" +
+                "body { font-family: 'Arial', sans-serif; background-color: #f4f7fb; margin: 0; padding: 0; }" +
+                ".email-container { background-color: #ffffff; border-radius: 8px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); padding: 30px; margin: 20px auto; width: 600px; max-width: 100%; }" +
+                ".email-header { text-align: center; margin-bottom: 30px; }" +
+                ".email-header h1 { color: #4CAF50; font-size: 28px; margin: 0; }" +
+                ".email-content { font-size: 16px; color: #333333; line-height: 1.6; }" +
+                ".email-content p { margin-bottom: 15px; }" +
+                ".email-content ul { padding-left: 20px; margin-bottom: 20px; }" +
+                ".email-content li { font-size: 16px; margin-bottom: 10px; }" +
+                ".footer { margin-top: 30px; text-align: center; font-size: 14px; color: #888888; padding-top: 20px; border-top: 1px solid #f1f1f1; }" +
+                ".footer p { margin: 0; }" +
+                ".footer a { color: #4CAF50; text-decoration: none; font-weight: bold; }" +
+                ".btn { display: inline-block; background-color: #4CAF50; color: #ffffff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-size: 16px; font-weight: bold; margin-top: 20px; }" +
+                ".btn:hover { background-color: #45a049; }" +
+                "</style>" +
+                "</head>" +
+                "<body>" +
+                "<div class=\"email-container\">" +
+                "<div class=\"email-header\">" +
+                "<h1>Chúc Mừng! Bạn Đã Thắng Cuộc Đấu Giá!</h1>" +
+                "</div>" +
+                "<div class=\"email-content\">" +
+                "<p>Chào <strong>" + winningBid.getUser().getFullName() + "</strong>,</p>" +
+                "<p>Chúng tôi vui mừng thông báo rằng bạn đã thắng cuộc đấu giá với mã <strong>" + winningBid.getAuction().getAuctionId() + "</strong>!</p>" +
+                "<p>Thông tin chi tiết về chiến thắng của bạn:</p>" +
+                "<ul>" +
+                "<li><strong>Mã Đấu Giá:</strong> " + winningBid.getAuction().getAuctionId() + "</li>" +
+                "<li><strong>Số Tiền Đặt Cược:</strong> " + winningBid.getBidAmount() + " VNĐ</li>" +
+                "<li><strong>Sản Phẩm:</strong> " + winningBid.getAuction().getItem().getItemName() + "</li>" +
+                "</ul>" +
+                "<p>Để hoàn tất giao dịch, vui lòng thanh toán trong vòng 24 giờ. Nếu không thanh toán đúng hạn, bạn có thể mất quyền thắng cuộc.</p>" +
+                "<p><a href=\"#\" class=\"btn\">Thanh toán ngay</a></p>" +
+                "<p>Xin cảm ơn bạn đã tham gia đấu giá!</p>" +
+                "</div>" +
+                "<div class=\"footer\">" +
+                "<p>Trân trọng,</p>" +
+                "<p>Đội ngũ Đấu giá của chúng tôi</p>" +
+                "<p><a href=\"#\">Xem thông tin thêm về đấu giá của chúng tôi</a></p>" +
+                "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+
+        // Thiết lập nội dung email (HTML)
+        mimeMessageHelper.setText(htmlContent, true);
+
+        // Gửi email
+        mailSender.send(mimeMessage);
+    }
+
+
+    public void sendResultForAuction(String email, Bid winningBid) throws MessagingException {
+        // Tạo MimeMessage
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+        // Thiết lập thông tin email
+        mimeMessageHelper.setTo(email);
+        mimeMessageHelper.setSubject("Kết quả đấu giá");
+        // Tạo nội dung email cho người thua
+        String htmlContent = "<html><body>" +
+                "<div style=\"font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: center;\">" +
+                "<h2 style=\"color: #FF6347;\">Rất Tiếc! Bạn Đã Không Thắng Cuộc Đấu Giá</h2>" +
+                "<p style=\"font-size: 16px; color: #333;\">Chúng tôi rất tiếc phải thông báo rằng bạn đã không thắng cuộc đấu giá với mã <strong>" + winningBid.getAuction().getAuctionId() + "</strong>.</p>" +
+                "<p style=\"font-size: 16px; color: #333;\">Sản phẩm: <strong>" + winningBid.getAuction().getItem().getItemName() + "</strong></p>" +
+                "<p style=\"font-size: 16px; color: #333;\">Số tiền cược cao nhất là : <strong>" + winningBid.getBidAmount() + " VNĐ</strong></p>" +
+                "<p style=\"font-size: 16px; color: #333;\">Tuy nhiên, đừng lo! Tiền cọc của bạn sẽ được hoàn lại trong thời gian sớm nhất.</p>" +
+                "<p style=\"font-size: 16px; color: #333;\">Xin cảm ơn bạn đã tham gia đấu giá của chúng tôi! Hãy tham gia những phiên đấu giá tiếp theo để có cơ hội chiến thắng.</p>" +
+                "<div style=\"margin-top: 20px;\">" +
+                "<p style=\"font-size: 14px; color: #888888;\">Trân trọng, Đội ngũ Đấu giá của chúng tôi</p>" +
+                "</div>" +
+                "</div>" +
+                "</body></html>";
+        // Thiết lập nội dung email (HTML)
+        mimeMessageHelper.setText(htmlContent, true);
+
+        // Gửi email
+        mailSender.send(mimeMessage);
+    }
 
 }

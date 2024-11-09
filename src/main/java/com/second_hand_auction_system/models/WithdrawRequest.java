@@ -40,6 +40,6 @@ public class WithdrawRequest extends BaseEntity{
     private String accountNumber;
 
     @ManyToOne
-    @JoinColumn(name = "wallet_customer_id")
+    @JoinColumn(name = "wallet_id")
     private Wallet wallet;
 }
