@@ -21,9 +21,6 @@ public class FeedBack extends BaseEntity {
     @Column(name = "rating")
     private int rating;
 
-    @Column(name = "image_url")
-    private String imageUrl;
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

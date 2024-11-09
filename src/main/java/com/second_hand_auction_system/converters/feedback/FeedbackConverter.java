@@ -13,7 +13,6 @@ public class FeedbackConverter {
         FeedBack feedback = new FeedBack();
         feedback.setComment(feedbackDto.getComment());
         feedback.setRating(feedbackDto.getRating());
-        feedback.setImageUrl(feedbackDto.getImageUrl());
         feedback.setUser(user);
         feedback.setItem(item);
         return feedback;
@@ -25,11 +24,12 @@ public class FeedbackConverter {
                 .feedbackId(feedback.getFeedbackId())
                 .comment(feedback.getComment())
                 .rating(feedback.getRating())
-                .imageUrl(feedback.getImageUrl())
                 .userId(feedback.getUser().getId())
                 .username(feedback.getUser().getUsername())
                 .itemId(feedback.getItem().getItemId())
                 .itemName(feedback.getItem().getItemName())
+                .createAt(feedback.getCreateAt())
+                .updateAt(feedback.getUpdateAt())
                 .build();
     }
 }

@@ -20,4 +20,5 @@ public interface FeedbackRepository extends JpaRepository<FeedBack, Integer> {
     Page<FeedBack> findAllBySellerUserId(@Param("userId") Integer userId, Pageable pageable);
 
 
+
 }

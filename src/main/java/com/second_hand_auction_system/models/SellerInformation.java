@@ -21,7 +21,7 @@ public class SellerInformation {
     @Column(name = "address")
     private String address;
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "LONGTEXT")
     private String description;
 
     @Column(name = "avatar")

@@ -2,6 +2,8 @@ package com.second_hand_auction_system.dtos.responses.feedback;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Data
 @Getter
 @Setter
@@ -13,9 +15,10 @@ public class FeedbackResponse {
     private Integer feedbackId;
     private String comment;
     private int rating;
-    private String imageUrl;
     private Integer userId;
     private String username;
     private Integer itemId;
     private String itemName;
+    private LocalDateTime createAt;
+    private LocalDateTime updateAt;
 }

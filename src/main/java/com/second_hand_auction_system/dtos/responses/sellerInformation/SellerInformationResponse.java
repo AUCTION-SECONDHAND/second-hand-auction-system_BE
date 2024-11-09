@@ -3,6 +3,7 @@ package com.second_hand_auction_system.dtos.responses.sellerInformation;
 import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Builder
@@ -27,4 +28,7 @@ public class SellerInformationResponse {
     private double rating3Percentage;
     private double rating4Percentage;
     private double rating5Percentage;
+
+    private LocalDateTime createAt;
+
 }

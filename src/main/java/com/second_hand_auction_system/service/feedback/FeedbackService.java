@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -50,7 +51,6 @@ public class FeedbackService implements IFeedbackService {
 
         existingFeedback.setComment(feedbackDto.getComment());
         existingFeedback.setRating(feedbackDto.getRating());
-        existingFeedback.setImageUrl(feedbackDto.getImageUrl());
 
         FeedBack updatedFeedback = feedbackRepository.save(existingFeedback);
         return FeedbackConverter.convertToResponse(updatedFeedback);
@@ -89,12 +89,13 @@ public class FeedbackService implements IFeedbackService {
 
     @Override
     public Page<FeedbackResponse> getFeedbackBySellerUserId(Integer userId, int page, int size) throws Exception {
-        Pageable pageable = PageRequest.of(page, size); // Tạo đối tượng Pageable với trang và kích thước đã chỉ định
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createAt"))); // Sắp xếp theo createAt từ mới nhất đến cũ nhất
         Page<FeedBack> feedbackPage = feedbackRepository.findAllBySellerUserId(userId, pageable); // Sử dụng phương thức tìm kiếm phân trang trong repository
 
         // Chuyển đổi từ Page<FeedBack> sang Page<FeedbackResponse>
         return feedbackPage.map(FeedbackConverter::convertToResponse);
     }
+
 
 
 }
