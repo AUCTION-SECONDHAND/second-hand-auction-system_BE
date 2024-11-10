@@ -23,7 +23,7 @@ public class Item extends BaseEntity{
     @Column(name = "item_name")
     private String itemName;
 
-    @Column(name = "item_description")
+    @Column(name = "item_description", columnDefinition = "TEXT")
     private String itemDescription;
 
     @Enumerated(EnumType.STRING)

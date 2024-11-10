@@ -7,6 +7,7 @@ import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
+import com.second_hand_auction_system.dtos.responses.item.ItemResponse;
 import com.second_hand_auction_system.service.item.IItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -135,10 +136,11 @@ public class ItemController {
     }
 
     @GetMapping("product-user")
-    public ResponseEntity<?> getProductSeller(@RequestParam(value = "page",defaultValue = "0") int page,
+    public ResponseEntity<?> getProductSeller(@RequestParam(value = "page", defaultValue = "0") int page,
                                               @RequestParam(value = "limit", defaultValue = "10") int limit) throws Exception {
-        return itemService.getItemByUser(page,limit);
+        return itemService.getItemByUser(page, limit);
     }
+
     @GetMapping("product-appraisal")
     public ResponseEntity<?> getProductAppraisal(
             @RequestParam(value = "page", defaultValue = "0") int page, @RequestParam(value = "limit", defaultValue = "10") int limit
@@ -151,6 +153,30 @@ public class ItemController {
         List<AuctionItemResponse> auctionItemResponses = itemResponseList.getContent();
         ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
                 .data(auctionItemResponses)
+                .totalElements(totalOrder)
+                .totalPages(totalPages)
+                .build();
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(responseListObject)
+                        .build()
+        );
+    }
+
+    @GetMapping("pending-auction")
+    public ResponseEntity<?> getItemPendingCreateAuction(
+            @RequestParam(value = "page", defaultValue = "0") int page, @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) throws Exception {
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        //, Sort.by("id").descending()
+        Page<ItemResponse> itemResponseList = itemService.getItemPendingCreateAuction(pageRequest);
+        int totalPages = itemResponseList.getTotalPages();
+        Long totalOrder = itemResponseList.getTotalElements();
+        List<ItemResponse> itemResponses = itemResponseList.getContent();
+        ResponseListObject<List<ItemResponse>> responseListObject = ResponseListObject.<List<ItemResponse>>builder()
+                .data(itemResponses)
                 .totalElements(totalOrder)
                 .totalPages(totalPages)
                 .build();
@@ -232,9 +258,9 @@ public class ItemController {
     }
 
     @GetMapping("/auction-completed/user")
-    public ResponseEntity<?> getAuctionCompleted(@RequestParam(value = "page",defaultValue = "0")int page,
-                                                 @RequestParam(value = "limit",defaultValue = "10") int limit) throws Exception {
-        return itemService.getItemAuctionCompleted(page,limit);
+    public ResponseEntity<?> getAuctionCompleted(@RequestParam(value = "page", defaultValue = "0") int page,
+                                                 @RequestParam(value = "limit", defaultValue = "10") int limit) throws Exception {
+        return itemService.getItemAuctionCompleted(page, limit);
     }
 
 
@@ -258,19 +284,19 @@ public class ItemController {
     }
 
     @GetMapping("condition")
-    public ResponseEntity<?> getItemCondition(){
+    public ResponseEntity<?> getItemCondition() {
         return itemService.getItemByCondition();
     }
 
     @GetMapping("pending")
-    public ResponseEntity<?> getItemPending(@RequestParam(value = "page",defaultValue = "0")int page,
-                                            @RequestParam(value = "limit",defaultValue = "10") int limit){
+    public ResponseEntity<?> getItemPending(@RequestParam(value = "page", defaultValue = "0") int page,
+                                            @RequestParam(value = "limit", defaultValue = "10") int limit) {
 
-        return itemService.getItemPending(page,limit);
+        return itemService.getItemPending(page, limit);
     }
 
     @GetMapping("/top-10-most-participating-products")
-    public ResponseEntity<?> top10MostParticipatingProducts(){
+    public ResponseEntity<?> top10MostParticipatingProducts() {
         return itemService.getTop10ItemParticipating();
     }
 

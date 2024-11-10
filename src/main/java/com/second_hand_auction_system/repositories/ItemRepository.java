@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Integer> {
-    Page<Item> findAllByItemStatus(ItemStatus itemStatus, Pageable pageable);
+    Page<Item> findAllByItemStatusOrderByItemIdDesc(ItemStatus itemStatus, Pageable pageable);
 
     Page<Item> findAllByAuction_StatusAndUserId(AuctionStatus auction_status, Integer user_id, Pageable pageable);
 

@@ -1,7 +1,10 @@
 package com.second_hand_auction_system.dtos.responses.item;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.dtos.responses.BaseResponse;
+import com.second_hand_auction_system.dtos.responses.auction.ItemAuctionResponse;
+import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.FeedBack;
 import com.second_hand_auction_system.models.ItemSpecific;
@@ -10,6 +13,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -37,12 +42,26 @@ public class ItemResponse extends BaseResponse {
 
     private String updateBy;
 
-    private Integer userId;
+    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
+    private String createAt;
 
-    private FeedBack feedback;
+    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
+    private String updateAt;
 
-    private Auction auction;
+    private ItemSpecificResponse itemSpecific;
 
-    private ItemSpecific itemSpecific;
-    private Integer scId;
+    private List<ImageItemResponse> imageItemResponse;
+
+    private SubCategoryItemResponse scId;
+
+    private ItemAuctionResponse auction;
+
+//    private Integer userId;
+
+//    private FeedBack feedback;
+
+//    private Auction auction;
+
+
+//    private Integer scId;
 }

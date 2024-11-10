@@ -184,7 +184,7 @@ public class ItemService implements IItemService {
 
     @Override
     public Page<AuctionItemResponse> getProductAppraisal(PageRequest pageRequest) throws Exception {
-        Page<Item> items = itemRepository.findAllByItemStatus(ItemStatus.ACCEPTED, pageRequest);
+        Page<Item> items = itemRepository.findAllByItemStatusOrderByItemIdDesc(ItemStatus.ACCEPTED, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
@@ -308,7 +308,7 @@ public class ItemService implements IItemService {
     @Override
     public ResponseEntity<?> getItemPending(int page, int limit) {
         Pageable pageable = PageRequest.of(page, limit);
-        Page<Item> listItemPending = itemRepository.findAllByItemStatus(ItemStatus.PENDING, pageable);
+        Page<Item> listItemPending = itemRepository.findAllByItemStatusOrderByItemIdDesc(ItemStatus.PENDING, pageable);
 
         List<ItemResponse2> itemResponses = listItemPending.getContent().stream()
                 .map(item -> ItemResponse2.builder()
@@ -397,6 +397,12 @@ public class ItemService implements IItemService {
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
+
+    @Override
+    public Page<ItemResponse> getItemPendingCreateAuction(PageRequest pageRequest) throws Exception {
+        Page<Item> items = itemRepository.findAllByItemStatusOrderByItemIdDesc(ItemStatus.PENDING_AUCTION, pageRequest);
+        return items.map(auctionItemConvert::toItemResponse);
+    }
 
 
     public Integer extractUserIdFromToken(String token) throws Exception {

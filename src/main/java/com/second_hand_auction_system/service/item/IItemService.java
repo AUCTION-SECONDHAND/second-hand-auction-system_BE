@@ -4,6 +4,7 @@ import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
+import com.second_hand_auction_system.dtos.responses.item.ItemResponse;
 import com.second_hand_auction_system.models.Item;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,6 +45,9 @@ public interface IItemService {
     ResponseEntity<?> getTop10ItemParticipating();
 
     ResponseEntity<?> getSellerByItemId(int itemId);
+
+    //Page<> getItemPending(int page, int limit);
+    Page<ItemResponse> getItemPendingCreateAuction(PageRequest pageRequest) throws Exception;
 
     Page<AuctionItemResponse> getItemsByUserIdSeller(
             Long userId,
