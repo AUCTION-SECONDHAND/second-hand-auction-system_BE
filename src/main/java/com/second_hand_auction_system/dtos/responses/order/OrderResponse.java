@@ -20,7 +20,7 @@ public class OrderResponse {
     private String phoneNumber;
     private int quantity;
     private String note;
-    private ItemBriefResponseOrder item;        // Thông tin sản phẩm
+    private ItemBriefResponseOrder item;
     private AuctionOrder auctionOrder;
     private String createBy;
     private double totalPrice;
