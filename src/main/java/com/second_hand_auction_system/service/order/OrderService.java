@@ -39,10 +39,10 @@ import java.util.stream.Collectors;
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
     private final AuctionRepository auctionRepository;
-   private final BidService bidService;
+    private final BidService bidService;
 
     private final TransactionRepository transactionSystemRepository;
-
+    private final AddressRepository addressRepository;
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
@@ -99,6 +99,8 @@ public class OrderService implements IOrderService {
                     .status(HttpStatus.NOT_FOUND)
                     .build());
         }
+        Address address = addressRepository.findByUserIdAndStatusIsTrue(requester.getId()).orElse(null);
+        assert address != null;
 
         // Tạo đối tượng order
         Order orderEntity = Order.builder()
@@ -110,6 +112,7 @@ public class OrderService implements IOrderService {
                 .note(order.getNote())
                 .createBy(requester.getFullName())
                 .status(OrderStatus.PENDING)
+                .address(address.getAddress_name())
                 .item(auction.getItem())
                 .user(requester)
                 .shippingMethod("free shipping")
@@ -183,17 +186,11 @@ public class OrderService implements IOrderService {
     }
 
 
-
-
-
     private long random() {
         Random random = new Random();
         int number = random.nextInt(900000) + 100000;
         return Long.parseLong(String.valueOf(number));
     }
-
-
-
 
 
     @Override
