@@ -76,4 +76,9 @@ public class AddressController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/address-order")
+    public ResponseEntity<AddressResponse> getAllAddressOrder() {
+        return addressService.getAddressOrder();
+    }
 }

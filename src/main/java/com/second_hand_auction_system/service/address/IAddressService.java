@@ -2,6 +2,7 @@ package com.second_hand_auction_system.service.address;
 
 import com.second_hand_auction_system.dtos.request.address.AddressDto;
 import com.second_hand_auction_system.dtos.responses.address.AddressResponse;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface IAddressService {
   void deleteAddress(Integer addressId) throws Exception;
 
   AddressResponse setDefaultAddress(Integer addressId) throws Exception;
+
+  ResponseEntity<AddressResponse> getAddressOrder();
 }

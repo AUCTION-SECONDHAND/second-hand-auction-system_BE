@@ -10,6 +10,7 @@ import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -148,6 +149,26 @@ public class AddressService implements IAddressService {
         Address updatedAddress = addressRepository.save(address);
 
         return AddressConverter.convertToResponse(updatedAddress);
+    }
+
+    @Override
+    public ResponseEntity<AddressResponse> getAddressOrder() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            throw new RuntimeException("User not found");
+        }
+        Address address = addressRepository.findByUserIdAndStatusIsTrue(requester.getId()).orElse(null);
+        if (address == null) {
+            throw new RuntimeException("Address not found with ID: " + requester.getId());
+        }
+
+        return ResponseEntity.ok(AddressConverter.convertToResponse(address));
     }
 
 
