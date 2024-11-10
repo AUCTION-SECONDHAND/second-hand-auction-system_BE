@@ -41,6 +41,9 @@ public class Order extends BaseEntity {
     @Column(name = "note")
     private String note;
 
+    @Column(name = "address")
+    private String address;
+
     @Column(name = "create_by")
     private String createBy;
 

@@ -207,6 +207,7 @@ public class AuctionService implements IAuctionService {
                                         .transactionType(TransactionType.REFUND)
                                         .recipient(userWallet.getUser().getFullName())
                                         .sender("SYSTEM")
+                                        .amount((long) +depositAmount)
                                         .transactionWalletCode(random())
                                         .build();
                                 transactionRepository.save(refundTransaction);

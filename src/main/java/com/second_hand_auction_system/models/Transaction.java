@@ -31,6 +31,7 @@ public class Transaction extends BaseEntity {
 
     @Column(name = "description")
     private String description;
+
     @OneToOne
     @JoinColumn(name = "order_id")
     private Order order;

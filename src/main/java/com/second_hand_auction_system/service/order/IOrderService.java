@@ -5,7 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 
 public interface IOrderService {
-    ResponseEntity<?> create(OrderDTO order, HttpServletRequest request);
+    ResponseEntity<?> create(OrderDTO order);
 
     ResponseEntity<?> getOrders(Integer page,Integer pageSize,String sortBy);
 

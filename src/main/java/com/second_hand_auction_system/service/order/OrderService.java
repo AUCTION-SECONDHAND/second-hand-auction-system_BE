@@ -15,6 +15,7 @@ import com.second_hand_auction_system.utils.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,37 +30,28 @@ import vn.payos.PayOS;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
     private final AuctionRepository auctionRepository;
-    private final ItemRepository itemRepository;
     private final BidService bidService;
-    private final ModelMapper modelMapper;
-    private final VNPAYService vnpayService;
-//    private final TransactionSystemRepository transactionSystemRepository;
-    private final PayOS payOS;
+
+    private final TransactionRepository transactionSystemRepository;
+    private final AddressRepository addressRepository;
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
-//    private final WalletSystemRepository walletSystemRepository;
-//    private final TransactionWalletRepository transactionWalletRepository;
+
 
     @Override
-    @Transactional
-    public ResponseEntity<?> create(OrderDTO order, HttpServletRequest request) {
-        Item item = itemRepository.findByAuction_AuctionId(order.getAuction());
-        if (item == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                    .data(null)
-                    .message("Item not found")
-                    .status(HttpStatus.NOT_FOUND)
-                    .build());
-        }
-        var auction = auctionRepository.findById(order.getAuction()).orElse(null);
+    public ResponseEntity<?> create(OrderDTO order) {
+        // Kiểm tra xem phiên đấu giá có tồn tại hay không
+        var auction = auctionRepository.findById(order.getAuctionId()).orElse(null);
         if (auction == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .data(null)
@@ -67,34 +59,38 @@ public class OrderService implements IOrderService {
                     .status(HttpStatus.NOT_FOUND)
                     .build());
         }
-        if (!(auction.getStatus().equals(AuctionStatus.COMPLETED) || auction.getStatus().equals(AuctionStatus.CLOSED))) {
+
+        // Kiểm tra trạng thái đấu giá
+        if (!auction.getStatus().equals(AuctionStatus.CLOSED)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                     .data(null)
                     .message("Auction is not completed")
                     .status(HttpStatus.BAD_REQUEST)
                     .build());
         }
+
+        // Kiểm tra thông tin người yêu cầu từ header Authorization
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
-
-        // Kiểm tra nếu Authorization header không tồn tại hoặc không hợp lệ
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ListUserResponse.builder()
-                            .users(null)
-                            .message("Missing or invalid Authorization header")
-                            .build());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                    .data(null)
+                    .message("Missing or invalid Authorization header")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build());
         }
         String token = authHeader.substring(7);
         String userEmail = jwtService.extractUserEmail(token);
         var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
         if (requester == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ListUserResponse.builder()
-                            .users(null)
-                            .message("Unauthorized request - User not found")
-                            .build());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .data(null)
+                    .message("Unauthorized request - User not found")
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .build());
         }
+
+        // Tìm người thắng đấu giá
         Bid winningBid = bidService.findWinner(auction.getAuctionId());
         if (winningBid == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
@@ -103,200 +99,98 @@ public class OrderService implements IOrderService {
                     .status(HttpStatus.NOT_FOUND)
                     .build());
         }
+        Address address = addressRepository.findByUserIdAndStatusIsTrue(requester.getId()).orElse(null);
+        assert address != null;
+
+        // Tạo đối tượng order
         Order orderEntity = Order.builder()
-                .totalAmount(winningBid.getBidAmount())
+                .totalAmount(winningBid.getBidAmount()) // Cập nhật giá trị ban đầu
                 .email(order.getEmail())
                 .quantity(order.getQuantity())
                 .phoneNumber(order.getPhoneNumber())
                 .paymentMethod(order.getPaymentMethod())
                 .note(order.getNote())
-                .createBy(order.getCreateBy())
+                .createBy(requester.getFullName())
                 .status(OrderStatus.PENDING)
-                .item(item)
+                .address(address.getAddress_name())
+                .item(auction.getItem())
                 .user(requester)
                 .shippingMethod("free shipping")
                 .auction(auction)
                 .build();
-        orderRepository.save(orderEntity);
-        if (order.getPaymentMethod().equals(PaymentMethod.VN_PAYMENT)) {
-            String baseUrl = order.getReturnSuccess();
-            ResponseEntity<?> vnpayResponse = vnpayService.paymentOrder(winningBid.getBidAmount(), orderEntity.getOrderId(), baseUrl);
-            return ResponseEntity.status(HttpStatus.CREATED).body(ResponseObject.builder()
-                    .data(vnpayResponse)
+
+        // Xử lý ví nếu paymentMethod là WALLET_PAYMENT
+        if (order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)) {
+            Wallet customerWallet = walletRepository.findWalletByUserId(requester.getId()).orElse(null);
+
+            if (customerWallet == null || customerWallet.getBalance() < orderEntity.getTotalAmount()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .message("Wallet doesn't have enough balance")
+                        .data(null));
+            }
+
+            log.info("Wallet balance before deduction: " + customerWallet.getBalance());
+
+            // Tính toán hoa hồng và số tiền thực nhận cho admin
+            double orderAmount = orderEntity.getTotalAmount();
+            double commissionRate = 0.05;
+            double commissionAmount = orderAmount * commissionRate;
+            double netAmountForAdmin = orderAmount - commissionAmount;
+
+            // Trừ số tiền từ ví customer
+            customerWallet.setBalance(customerWallet.getBalance() - orderAmount);
+            walletRepository.save(customerWallet);
+            log.info("Wallet balance after deduction: " + customerWallet.getBalance());
+
+            // Cập nhật orderEntity
+            orderEntity.setTotalAmount(orderAmount + commissionAmount); // Cập nhật tổng tiền bao gồm hoa hồng
+            orderRepository.save(orderEntity);
+
+            // Cộng tiền vào ví admin
+            Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
+            if (adminWallet != null) {
+                log.info("Admin wallet balance before: " + adminWallet.getBalance());
+                adminWallet.setBalance(adminWallet.getBalance() + netAmountForAdmin);
+                walletRepository.save(adminWallet);
+                log.info("Admin wallet balance after: " + adminWallet.getBalance());
+            }
+
+            // Tạo giao dịch ghi nhận giao dịch và hoa hồng
+            Transaction transactionWallet = new Transaction();
+            transactionWallet.setAmount((long) (orderAmount + netAmountForAdmin));
+            transactionWallet.setWallet(customerWallet);
+            transactionWallet.setTransactionStatus(TransactionStatus.PENDING);
+            transactionWallet.setTransactionType(TransactionType.TRANSFER);
+            transactionWallet.setCommissionAmount((int) commissionAmount);
+            transactionWallet.setCommissionRate(commissionRate);
+            transactionWallet.setOrder(orderEntity);
+            transactionWallet.setRecipient(adminWallet.getUser().getFullName());
+            transactionWallet.setSender(requester.getFullName());
+            transactionWallet.setDescription(order.getNote());
+            transactionWallet.setTransactionWalletCode(random());
+            transactionSystemRepository.save(transactionWallet);
+
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                    .data("Success")
                     .message("Order created successfully")
-                    .status(HttpStatus.CREATED)
+                    .status(HttpStatus.OK)
                     .build());
         }
-//        if (order.getPaymentMethod().equals(PaymentMethod.PAY_OS)) {
-//            String successUrl = "https://your-success-url.com"; // Replace with your actual success URL
-//            String cancelUrl = "https://www.facebook.com/minhskn"; // Replace with your actual cancel URL
-//            order.setFailureUrl(cancelUrl);
-//            order.setReturnSuccess(successUrl);
-//            String currentTime = String.valueOf(new Date().getTime());
-//            long depositCode = Long.parseLong(currentTime.substring(currentTime.length() - 6));
-//            TransactionType transactionType = TransactionType.builder()
-//                    .order(orderEntity)
-//                    .transactionType(TransactionType.TRANSFER)
-////                    .transactionSystemCode(paymentData.getOrderCode().toString())
-//                    .user(orderEntity.getItem().getUser())
-//                    .description(order.getNote())
-//                    .amount(winningBid.getBidAmount())
-//                    .status(TransactionStatus.PENDING)
-//                    .transactionTime(currentTime)
-//                    .build();
-//            transactionSystemRepository.save(transactionType);
-//            return createOrderByPayOS(order);
-//        }
-        if (order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)) {
-//            return paymentByWallet(requester.getId(), (int) orderEntity.getTotalAmount());
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseObject.builder()
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
                 .data(null)
-                .message("Order created successfully")
-                .status(HttpStatus.CREATED)
+                .message("Create order failed")
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .build());
     }
 
-//    private ResponseEntity<?> paymentByWallet(Integer userId, int amount) {
-//        Wallet wallet = walletCustomerRepository.findWalletCustomerByUser_Id(userId).orElse(null);
-//        if (wallet == null || wallet.getBalance() < amount) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-//                    .status(HttpStatus.BAD_REQUEST)
-//                    .message("Wallet don't have enough balance")
-//                    .data(null));
-//        }
-//        var user = userRepository.findById(userId).orElse(null);
-//        if (user == null) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-//                    .status(HttpStatus.NOT_FOUND)
-//                    .message("User not found")
-//                    .data(null));
-//        }
-//        WalletType walletType = walletSystemRepository.findFirstByOrderByWalletAdminIdAsc().orElse(null);
-//        TransactionWallet transactionWallet = new TransactionWallet();
-//        transactionWallet.setAmount((long) (wallet.getBalance() - amount));
-//        transactionWallet.setWallet(wallet);
-//        transactionWallet.setTransactionStatus(TransactionStatus.PENDING);
-//        transactionWallet.setTransactionType(com.second_hand_auction_system.utils.TransactionType.TRANSFER);
-//        transactionWallet.setCommissionAmount((int) (0.05 * amount));
-//        transactionWallet.setCommissionRate(0.05);
-//        transactionWallet.setWalletType(walletType);
-//        transactionWalletRepository.save(transactionWallet);
-//        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder().data(null).message("Create transactionWallet successfully").status(HttpStatus.OK));
-//    }
 
-//    public ResponseEntity<?> createOrderByPayOS(OrderDTO order) {
-//        ObjectMapper mapper = new ObjectMapper();
-//        ObjectNode response = mapper.createObjectNode();
-//
-//        try {
-//            String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
-//                    .getRequest().getHeader("Authorization");
-//            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                        .body(ResponseObject.builder()
-//                                .status(HttpStatus.UNAUTHORIZED)
-//                                .message("Missing or invalid Authorization header")
-//                                .build());
-//            }
-//
-//            String token = authHeader.substring(7);
-//            String userEmail = jwtService.extractUserEmail(token);
-//            User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
-//
-//            if (requester == null) {
-//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                        .body(ResponseObject.builder()
-//                                .status(HttpStatus.UNAUTHORIZED)
-//                                .message("Unauthorized request - User not found")
-//                                .build());
-//            }
-//
-//            if (requester.getRole() == Role.BUYER || requester.getRole() == Role.SELLER) {
-//                Item item = itemRepository.findByAuction_AuctionId(order.getAuction());
-//                if (item == null) {
-//                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-//                            .data(null)
-//                            .message("Item not found")
-//                            .status(HttpStatus.NOT_FOUND)
-//                            .build());
-//                }
-//                var auction = auctionRepository.findById(order.getAuction()).orElse(null);
-//                if (auction == null) {
-//                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-//                            .data(null)
-//                            .message("Auction not found")
-//                            .status(HttpStatus.NOT_FOUND)
-//                            .build());
-//                }
-//                if (!auction.getStatus().equals(AuctionStatus.COMPLETED)) {
-//                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-//                            .data(null)
-//                            .message("Auction is not completed")
-//                            .status(HttpStatus.BAD_REQUEST)
-//                            .build());
-//                }
-//
-//                Bid winningBid = bidService.findWinner(auction.getAuctionId());
-//                if (winningBid == null) {
-//                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-//                            .data(null)
-//                            .message("No winning bid found for this auction")
-//                            .status(HttpStatus.NOT_FOUND)
-//                            .build());
-//                }
-//                Bid winner = bidService.findWinner(auction.getAuctionId());
-//
-//                double balance = winner.getBidAmount(); // Get the amount to be paid from OrderDTO
-//                String description = order.getNote();
-//                String successUrl = order.getReturnSuccess(); // Get success URL from OrderDTO
-//                String cancelUrl = order.getFailureUrl();
-//
-//                String currentTime = String.valueOf(new Date().getTime());
-//                long depositCode = Long.parseLong(currentTime.substring(currentTime.length() - 6));
-//
-//                ItemData itemData = ItemData.builder()
-//                        .name("Thanh toán đơn hàng #" + item.getItemName())
-//                        .price((int) balance)
-//                        .quantity(1)
-//                        .build();
-//
-//                PaymentData paymentData = PaymentData.builder()
-//                        .orderCode(depositCode)
-//                        .description(description)
-//                        .amount((int) balance)
-//                        .item(itemData)
-//                        .returnUrl(successUrl)
-//                        .cancelUrl(cancelUrl)
-//                        .build();
-////                Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
-////                SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-////                String vnp_CreateDate = formatter.format(cld.getTime());
-//                CheckoutResponseData paymentLinkData = payOS.createPaymentLink(paymentData);
-//                var transactionSystem = transactionSystemRepository.findTransactionSystemByUser_Id(requester.getId()).orElse(null);
-//                assert transactionSystem != null;
-//                transactionSystem.setVirtualAccountName(requester.getFullName());
-//                transactionSystem.setTransactionSystemCode(paymentLinkData.getOrderCode().toString());
-//                transactionSystemRepository.save(transactionSystem);
-//                response.put("error", 0);
-//                response.put("message", "Payment link created successfully");
-//                response.set("data", mapper.valueToTree(paymentLinkData));
-//                return ResponseEntity.ok(new ResponseObject("Payment link created", HttpStatus.OK, paymentLinkData));
-//
-//            } else {
-//                response.put("error", 1);
-//                response.put("message", "Unauthorized role for deposit");
-//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-//                        .body(new ResponseObject("Unauthorized role", HttpStatus.FORBIDDEN, null));
-//            }
-//        } catch (Exception e) {
-//            response.put("error", -1);
-//            response.put("message", "An error occurred: " + e.getMessage());
-//            response.set("data", null);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(new ResponseObject("An error occurred", HttpStatus.INTERNAL_SERVER_ERROR, null));
-//        }
-//    }
+    private long random() {
+        Random random = new Random();
+        int number = random.nextInt(900000) + 100000;
+        return Long.parseLong(String.valueOf(number));
+    }
 
 
     @Override
