@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -81,6 +82,7 @@ public class AuctionService implements IAuctionService {
         auction.setCreateBy(itemExist.getCreateBy());
         auction.setApproveBy(requester.getFullName());
         auction.setItem(itemExist);
+        auction.setStatus(AuctionStatus.OPEN);
         auction.setAuctionType(auctionType);
         Wallet wallet = Wallet.builder()
                 .balance(0)
@@ -90,6 +92,8 @@ public class AuctionService implements IAuctionService {
                 .build();
         walletRepository.save(wallet);
         auction.setWallet(wallet);
+        itemExist.setItemStatus(ItemStatus.ACCEPTED);
+        itemRepository.save(itemExist);
         auctionRepository.save(auction);
 
     }

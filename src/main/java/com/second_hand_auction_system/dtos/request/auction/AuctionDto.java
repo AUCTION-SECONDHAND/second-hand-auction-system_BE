@@ -60,15 +60,15 @@ public class AuctionDto {
     @Size(max = 300, message = "Comment should not exceed 300 characters")
     private String comment;
 
-    @JsonProperty("status")
-    @NotNull(message = "Status is required")
-    private AuctionStatus status;
+//    @JsonProperty("status")
+//    @NotNull(message = "Status is required")
+//    private AuctionStatus status;
 
 //    @JsonProperty("approved_by")
 //    private String approveBy;
 
-    @JsonProperty("approved_at")
-    private Date approveAt;
+//    @JsonProperty("approved_at")
+//    private Date approveAt;
 
 //    @JsonProperty("created_by")
 //    private String createBy;

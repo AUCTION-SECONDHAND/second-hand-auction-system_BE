@@ -107,7 +107,7 @@ public class OrderService implements IOrderService {
                 .totalAmount(winningBid.getBidAmount()) // Cập nhật giá trị ban đầu
                 .fullName(order.getFullName())
                 .email(order.getEmail())
-                .quantity(order.getQuantity())
+
                 .phoneNumber(order.getPhoneNumber())
                 .paymentMethod(order.getPaymentMethod())
                 .note(order.getNote())
@@ -215,7 +215,6 @@ public class OrderService implements IOrderService {
                     response.setPaymentMethod(order.getPaymentMethod()); // Nếu PaymentMethod là enum
                     response.setEmail(order.getEmail());
                     response.setPhoneNumber(order.getPhoneNumber());
-                    response.setQuantity(order.getQuantity());
                     response.setNote(order.getNote());
                     Item item = order.getItem(); // Giả sử order.getItem() trả về Item
                     if (item != null) {
@@ -286,7 +285,6 @@ public class OrderService implements IOrderService {
                     response.setPaymentMethod(order.getPaymentMethod()); // Assuming PaymentMethod is enum
                     response.setEmail(order.getEmail());
                     response.setPhoneNumber(order.getPhoneNumber());
-                    response.setQuantity(order.getQuantity());
                     response.setNote(order.getNote());
                     Item item = order.getItem(); // Giả sử order.getItem() trả về Item
                     if (item != null) {
