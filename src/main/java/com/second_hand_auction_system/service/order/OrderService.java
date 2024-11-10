@@ -49,7 +49,7 @@ public class OrderService implements IOrderService {
 
 
     @Override
-    public ResponseEntity<?> create(OrderDTO order) {
+    public ResponseEntity<?> create( OrderDTO order) {
         // Kiểm tra xem phiên đấu giá có tồn tại hay không
         var auction = auctionRepository.findById(order.getAuctionId()).orElse(null);
         if (auction == null) {
@@ -105,6 +105,7 @@ public class OrderService implements IOrderService {
         // Tạo đối tượng order
         Order orderEntity = Order.builder()
                 .totalAmount(winningBid.getBidAmount()) // Cập nhật giá trị ban đầu
+                .fullName(order.getFullName())
                 .email(order.getEmail())
                 .quantity(order.getQuantity())
                 .phoneNumber(order.getPhoneNumber())
@@ -160,11 +161,12 @@ public class OrderService implements IOrderService {
             Transaction transactionWallet = new Transaction();
             transactionWallet.setAmount((long) (orderAmount + netAmountForAdmin));
             transactionWallet.setWallet(customerWallet);
-            transactionWallet.setTransactionStatus(TransactionStatus.PENDING);
+            transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
             transactionWallet.setTransactionType(TransactionType.TRANSFER);
             transactionWallet.setCommissionAmount((int) commissionAmount);
             transactionWallet.setCommissionRate(commissionRate);
             transactionWallet.setOrder(orderEntity);
+            assert adminWallet != null;
             transactionWallet.setRecipient(adminWallet.getUser().getFullName());
             transactionWallet.setSender(requester.getFullName());
             transactionWallet.setDescription(order.getNote());

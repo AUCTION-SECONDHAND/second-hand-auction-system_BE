@@ -3,11 +3,13 @@ package com.second_hand_auction_system.service.auction;
 import com.second_hand_auction_system.dtos.request.auction.AuctionDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
+import com.second_hand_auction_system.dtos.responses.auction.ResponseAuction;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.*;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -153,6 +155,32 @@ public class AuctionService implements IAuctionService {
                 .build());
     }
 
+    @Override
+    public ResponseEntity<?> getAuctionById(Integer auctionId) {
+        var auction = auctionRepository.findById(auctionId).orElse(null);
+        Double maxBid = auctionRepository.findMaxBidByAuctionId(auctionId);
+        if(auction!=null){
+            ResponseAuction responseAuction = ResponseAuction.builder()
+                    .itemName(auction.getItem().getItemName())
+                    .title(auction.getItem().getBrandName())
+                    .amount(Double.valueOf(String.valueOf(maxBid)))
+                    .seller(auction.getCreateBy())
+                    .thumbnail(auction.getItem().getThumbnail())
+                    .description(auction.getDescription())
+                    .build();
+            return ResponseEntity.ok(ResponseObject.builder()
+            .status(HttpStatus.OK)
+                    .message("Auction found")
+                    .data(responseAuction)
+                    .build());
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                .status(HttpStatus.NOT_FOUND)
+                .message("Auction not found")
+                .data(null)
+                .build());
+    }
+
 
     @Scheduled(fixedDelay = 300000)
     @Transactional
@@ -216,6 +244,7 @@ public class AuctionService implements IAuctionService {
                                 losersEmails.add(bid.getUser().getEmail());
                             } else {
                                 // Giữ lại cọc của người thắng
+
                                 log.info("Giữ lại cọc cho người thắng: " + bid.getUser().getEmail());
                                 emailService.sendWinnerNotification(bid.getUser().getEmail(), winningBid);
                             }

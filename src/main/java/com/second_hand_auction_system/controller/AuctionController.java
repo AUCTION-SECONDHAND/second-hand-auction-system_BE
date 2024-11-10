@@ -95,5 +95,10 @@ public class AuctionController {
         return auctionService.getAll();
     }
 
+    @GetMapping("/{auctionId}")
+    public ResponseEntity<?> getAuctionById(@PathVariable Integer auctionId) {
+        return auctionService.getAuctionById(auctionId);
+    }
+
 
 }

@@ -12,4 +12,6 @@ public interface IAuctionService {
 //    ResponseEntity<List<AuctionDto>> getAllAuctions(int page, int size);
 
     ResponseEntity<?> getAll();
+
+    ResponseEntity<?> getAuctionById(Integer auctionId);
 }

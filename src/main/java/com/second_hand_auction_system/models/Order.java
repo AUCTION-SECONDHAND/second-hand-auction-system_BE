@@ -23,6 +23,9 @@ public class Order extends BaseEntity {
     @Column(name = "email")
     private String email;
 
+    @Column(name = "full_name")
+    private String fullName;
+
     @Column(name = "quantity")
     private int quantity;
 

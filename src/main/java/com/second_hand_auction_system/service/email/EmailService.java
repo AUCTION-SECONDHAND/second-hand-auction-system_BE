@@ -7,6 +7,7 @@ import com.second_hand_auction_system.repositories.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -640,7 +641,7 @@ public class EmailService {
     }
 
 
-    public void sendWinnerNotification(String email, Bid winningBid) throws MessagingException {
+    public void sendWinnerNotification(String email, Bid winningBid) throws MessagingException, IOException {
         // Tạo MimeMessage
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
@@ -686,24 +687,30 @@ public class EmailService {
                 "<li><strong>Sản Phẩm:</strong> " + winningBid.getAuction().getItem().getItemName() + "</li>" +
                 "</ul>" +
                 "<p>Để hoàn tất giao dịch, vui lòng thanh toán trong vòng 24 giờ. Nếu không thanh toán đúng hạn, bạn có thể mất quyền thắng cuộc.</p>" +
-                "<p><a href=\"#\" class=\"btn\">Thanh toán ngay</a></p>" +
-                "<p>Xin cảm ơn bạn đã tham gia đấu giá!</p>" +
+                "<p><a href=\"http://localhost:5173/CreateOrder/" + winningBid.getAuction().getAuctionId() + "\" class=\"btn\">Thanh toán ngay</a></p>"+
                 "</div>" +
                 "<div class=\"footer\">" +
                 "<p>Trân trọng,</p>" +
                 "<p>Đội ngũ Đấu giá của chúng tôi</p>" +
-                "<p><a href=\"#\">Xem thông tin thêm về đấu giá của chúng tôi</a></p>" +
+                "<p><a href=\"http://localhost:5173/CreateOrder\">Xem thông tin thêm về đấu giá của chúng tôi</a></p>" +
                 "</div>" +
                 "</div>" +
                 "</body>" +
                 "</html>";
+
+// Thiết lập nội dung email (HTML)
+        mimeMessageHelper.setText(htmlContent, true);
+
 
         // Thiết lập nội dung email (HTML)
         mimeMessageHelper.setText(htmlContent, true);
 
         // Gửi email
         mailSender.send(mimeMessage);
+
+
     }
+
 
 
     public void sendResultForAuction(String email, Bid winningBid) throws MessagingException {
