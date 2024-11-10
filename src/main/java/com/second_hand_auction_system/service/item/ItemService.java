@@ -382,6 +382,22 @@ public class ItemService implements IItemService {
                 .build());
     }
 
+    @Override
+    public Page<AuctionItemResponse> getItemsByUserIdSeller(
+            Long userId,
+            String itemName,
+            Double minPrice,
+            Double maxPrice,
+            PageRequest pageRequest,
+            List<Integer> subCategoryIds
+    ) throws Exception {
+        Page<Item> items = itemRepository.searchItemsByUserId(
+                userId, itemName, minPrice, maxPrice, subCategoryIds, pageRequest
+        );
+        return items.map(auctionItemConvert::toAuctionItemResponse);
+    }
+
+
 
     public Integer extractUserIdFromToken(String token) throws Exception {
         String userEmail = jwtService.extractUserEmail(token); // Extract email from token

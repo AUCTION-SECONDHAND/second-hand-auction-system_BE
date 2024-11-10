@@ -279,4 +279,40 @@ public class ItemController {
         return itemService.getSellerByItemId(itemId);
 
     }
+
+    @GetMapping("/by-seller")
+    public ResponseEntity<?> getItemsByUserIdSeller(
+            @RequestParam(value = "userId") Long userId,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "minPrice", required = false) Double minPrice,
+            @RequestParam(value = "maxPrice", required = false) Double maxPrice,
+            @RequestParam(value = "scIds", required = false) String scIds,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) throws Exception {
+        List<Integer> parsedScIds = parseIds(scIds);
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        Page<AuctionItemResponse> itemResponseList = itemService.getItemsByUserIdSeller(
+                userId, keyword, minPrice, maxPrice, pageRequest, parsedScIds
+        );
+
+        int totalPages = itemResponseList.getTotalPages();
+        Long totalOrder = itemResponseList.getTotalElements();
+        List<AuctionItemResponse> auctionItemResponses = itemResponseList.getContent();
+
+        ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
+                .data(auctionItemResponses)
+                .totalElements(totalOrder)
+                .totalPages(totalPages)
+                .build();
+
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(responseListObject)
+                        .build()
+        );
+    }
+
 }

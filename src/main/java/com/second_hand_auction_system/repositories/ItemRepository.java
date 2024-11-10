@@ -53,4 +53,23 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
     @Query("SELECT i.user FROM Item i WHERE i.itemId = :itemId")
     Optional<User> findUserByItemId(@Param("itemId") Integer itemId);
 
+
+    @Query("SELECT i FROM Item i " +
+            "JOIN i.auction a " +
+            "JOIN i.subCategory sc " +
+            "WHERE i.user.id = :userId " +
+            "AND (:itemName IS NULL OR :itemName = '' OR i.itemName LIKE %:itemName%) " +
+            "AND (:minPrice IS NULL OR a.startPrice >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR a.startPrice <= :maxPrice) " +
+            "AND (:subCategoryIds IS NULL OR sc.subCategoryId IN :subCategoryIds)")
+    Page<Item> searchItemsByUserId(
+            @Param("userId") Long userId, // userId parameter
+            @Param("itemName") String itemName,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            @Param("subCategoryIds") List<Integer> subCategoryIds,
+            Pageable pageable
+    );
+
+
 }

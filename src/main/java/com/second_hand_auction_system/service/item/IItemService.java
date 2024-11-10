@@ -44,4 +44,14 @@ public interface IItemService {
     ResponseEntity<?> getTop10ItemParticipating();
 
     ResponseEntity<?> getSellerByItemId(int itemId);
+
+    Page<AuctionItemResponse> getItemsByUserIdSeller(
+            Long userId,
+            String keyword,
+            Double minPrice,
+            Double maxPrice,
+            PageRequest pageRequest,
+            List<Integer> subCategoryIds
+    ) throws Exception;
+
 }
