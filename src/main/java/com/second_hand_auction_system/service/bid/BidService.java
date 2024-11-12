@@ -5,6 +5,7 @@ import com.second_hand_auction_system.dtos.request.bid.BidDto;
 import com.second_hand_auction_system.dtos.request.bid.BidRequest;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
+import com.second_hand_auction_system.dtos.responses.bid.BidDetailResponse;
 import com.second_hand_auction_system.dtos.responses.bid.BidInformation;
 import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.models.Auction;
@@ -88,7 +89,7 @@ public class BidService implements IBidService {
         }
 
         // Kiểm tra người dùng đã đăng ký đấu giá chưa
-        boolean auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndAuctionIdAndRegistrationTrue(requester.getId(),auction.getAuctionId());
+        boolean auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndAuctionIdAndRegistrationTrue(requester.getId(), auction.getAuctionId());
         if (!auctionRegister) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
@@ -578,6 +579,53 @@ public class BidService implements IBidService {
                         .message("Auction and bid information retrieved successfully")
                         .build()
         );
+    }
+
+    @Override
+    public ResponseEntity<?> getBidDetail(Integer auctionId) {
+        // Tìm kiếm thông tin của auction
+        Auction auction = auctionRepository.findById(auctionId).orElse(null);
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("Auction not found")
+                    .data(null)
+                    .build());
+        }
+
+        // Lấy bid có giá cao nhất (nếu có)
+        Page<Bid> highBid = bidRepository.findAllByAuction_AuctionIdOrderByBidAmountDesc(auctionId, PageRequest.of(0, 1));
+        Bid highest = highBid.hasContent() ? highBid.getContent().get(0) : null;
+
+        // Đếm số người tham gia
+        int participantCount = bidRepository.countDistinctUsersByAuctionId(auctionId);
+
+        // Đếm số bid đã được đặt
+        long bidCount = bidRepository.countBidsByAuctionId(auctionId);
+
+        // Kiểm tra nếu không có bid nào
+        Double priceCurrent = (highest != null) ? highest.getBidAmount() : 0.0;
+
+        // Tạo response
+        BidDetailResponse bidDetailResponse = BidDetailResponse.builder()
+                .numberOfBid((int) bidCount)
+                .numberOfBider(participantCount)
+                .itemDescription(auction.getItem().getItemDescription())
+                .itemId(auction.getItem().getItemId())
+                .itemName(auction.getItem().getItemName())
+                .thumbnail(auction.getItem().getThumbnail())
+                .startTime(auction.getStartTime())
+                .endTime(auction.getEndTime())
+                .priceCurrent(priceCurrent)
+                .startDate(auction.getStartDate())
+                .endDate(auction.getEndDate())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Auction detail")
+                .data(bidDetailResponse)
+                .build());
     }
 
 
