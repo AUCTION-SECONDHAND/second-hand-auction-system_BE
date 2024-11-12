@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -37,14 +38,14 @@ public class SecurityConfig {
             "/api/v1/user/**",
             "/api/v1/user/forgot-password/**",
             "/api/v1/withdrawRequest/vnpay-payment/**",
-            "/api/v1/ws/**"  // Add this line to allow WebSocket access
+            "/ws/**",
     };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-
+                .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST).permitAll()
                         .requestMatchers("/api/v1/ws/**").permitAll()  // Ensure WebSocket endpoint is accessible                        //user
@@ -97,7 +98,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF", "SELLER")
                         //order
                         .requestMatchers(POST,"/api/v1/orders/**").hasAnyRole("SELLER", "BUYER")
-                        .requestMatchers(GET,"/api/v1/orders/**").permitAll()
+                        .requestMatchers(GET,"/api/v1/orders/user").hasAnyRole("SELLER", "BUYER")
+                        .requestMatchers(GET,"/api/v1/orders/**").hasRole("ADMIN")
                         //transactionType
                         .requestMatchers("/api/v1/transactionSystem/**").permitAll()
                         //notification

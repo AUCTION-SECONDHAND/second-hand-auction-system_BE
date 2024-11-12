@@ -687,12 +687,12 @@ public class EmailService {
                 "<li><strong>Sản Phẩm:</strong> " + winningBid.getAuction().getItem().getItemName() + "</li>" +
                 "</ul>" +
                 "<p>Để hoàn tất giao dịch, vui lòng thanh toán trong vòng 24 giờ. Nếu không thanh toán đúng hạn, bạn có thể mất quyền thắng cuộc.</p>" +
-                "<p><a href=\"http://localhost:5173/CreateOrder/" + winningBid.getAuction().getAuctionId() + "\" class=\"btn\">Thanh toán ngay</a></p>"+
+                "<p><a href=\"http://localhost:5173/Order/" + winningBid.getAuction().getAuctionId() + "\" class=\"btn\">Thanh toán ngay</a></p>"+
                 "</div>" +
                 "<div class=\"footer\">" +
                 "<p>Trân trọng,</p>" +
                 "<p>Đội ngũ Đấu giá của chúng tôi</p>" +
-                "<p><a href=\"http://localhost:5173/CreateOrder\">Xem thông tin thêm về đấu giá của chúng tôi</a></p>" +
+                "<p><a href=\"http://localhost:5173/Order\">Xem thông tin thêm về đấu giá của chúng tôi</a></p>" +
                 "</div>" +
                 "</div>" +
                 "</body>" +

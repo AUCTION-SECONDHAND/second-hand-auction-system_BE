@@ -28,20 +28,25 @@ public class WithdrawRequestController {
 
     @PostMapping("")
     public ResponseEntity<?> withdraw(@RequestBody WithdrawRequestDTO withdrawRequest) {
-        return  withdrawRequestService.requestWithdraw(withdrawRequest);
+        return withdrawRequestService.requestWithdraw(withdrawRequest);
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAllWithdraw(@RequestParam(value = "page", defaultValue = "0") int page,
+                                              @RequestParam(value = "limit", defaultValue = "10") int limit) throws Exception {
+        return  withdrawRequestService.getAll(page, limit);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> approveRequest(@PathVariable("id") Integer id, @RequestBody WithdrawApprove withdrawApprove, HttpServletRequest request) {
-        return withdrawRequestService.approve(id,withdrawApprove,request);
+        return withdrawRequestService.approve(id, withdrawApprove, request);
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<?> submitOrder(@RequestParam("amount") int orderTotal,@RequestParam("withdrawInfo") int withdraw, HttpServletRequest request) {
+    public ResponseEntity<?> submitOrder(@RequestParam("amount") int orderTotal, @RequestParam("withdrawInfo") int withdraw, HttpServletRequest request) {
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
         return vnpayService.createOrder(orderTotal, withdraw, baseUrl);
     }
-
 
 
     @GetMapping("/results")
@@ -63,7 +68,7 @@ public class WithdrawRequestController {
                         "vnpPayDate|{}|vnpTmnCode|{}|vnpTransactionNo|{}|vnpTransactionStatus|{}|vnpTxnRef|{}|vnpSecureHash|{}",
                 vnpAmount, vnpBankCode, vnpBankTranNo, vnpCardType, vnpOrderInfo, vnpPayDate, vnpPayDate, vnpTmnCode,
                 vnpTransactionNo, vnpTransactionStatus, vnpTxnRef, vnpSecureHash);
-        return transactionWalletService.updateTransaction(transactionId,vnpTransactionStatus );
+        return transactionWalletService.updateTransaction(transactionId, vnpTransactionStatus);
 
     }
 }

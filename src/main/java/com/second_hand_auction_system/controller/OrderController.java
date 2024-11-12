@@ -2,6 +2,7 @@ package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.service.order.IOrderService;
+import com.second_hand_auction_system.utils.OrderStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,12 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<?> getAllOrders(@RequestParam(required = false) Integer page,
                                           @RequestParam(required = false) Integer size,
-                                          @RequestParam(required = false) String sortBy) {
+                                          @RequestParam(required = false) String sortBy,
+                                          @RequestParam(required = false) OrderStatus status) {
         if (sortBy == null || sortBy.isEmpty()) {
             sortBy = "createAt";
         }
-        return orderService.getOrders(page, size, sortBy);
+        return orderService.getOrders(page, size, sortBy,status);
     }
 
     @GetMapping("/user")

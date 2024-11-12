@@ -81,6 +81,7 @@ public class AuctionService implements IAuctionService {
         Auction auction = modelMapper.map(auctionDto, Auction.class);
         auction.setCreateBy(itemExist.getCreateBy());
         auction.setApproveBy(requester.getFullName());
+        auction.setApproveAt(new Date());
         auction.setItem(itemExist);
         auction.setStatus(AuctionStatus.OPEN);
         auction.setAuctionType(auctionType);
@@ -186,7 +187,7 @@ public class AuctionService implements IAuctionService {
     }
 
 
-    @Scheduled(fixedDelay = 300000)
+    @Scheduled(fixedDelay = 60000)
     @Transactional
     public void closeExpiredAuctions() {
         List<Auction> auctions = auctionRepository.findAll();

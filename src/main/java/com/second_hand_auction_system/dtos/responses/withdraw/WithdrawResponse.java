@@ -1,7 +1,7 @@
 package com.second_hand_auction_system.dtos.responses.withdraw;
 
+import com.second_hand_auction_system.utils.PaymentMethod;
 import com.second_hand_auction_system.utils.RequestStatus;
-import com.second_hand_auction_system.utils.TransactionType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -20,7 +20,9 @@ public class WithdrawResponse {
     private String note;
     private String bankAccount;
     private LocalDateTime processAt;
-    private TransactionType transactionType;
+    private PaymentMethod paymentMethod;
     private String accountNumber;
-    private Integer walletCustomer;
+    private Integer walletCustomerId;
+    private String sellerName;
+    private String avtar;
 }

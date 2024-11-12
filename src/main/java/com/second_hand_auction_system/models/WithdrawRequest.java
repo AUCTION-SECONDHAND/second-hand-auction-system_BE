@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.models;
 
+import com.second_hand_auction_system.utils.PaymentMethod;
 import com.second_hand_auction_system.utils.RequestStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,8 +28,8 @@ public class WithdrawRequest extends BaseEntity{
     @Column(name = "note")
     private String note;
 
-    @Column(name = "image")
-    private String image;
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod;
 
     @Column(name = "process_at")
     private LocalDateTime processAt;

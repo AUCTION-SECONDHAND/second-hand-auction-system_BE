@@ -9,4 +9,6 @@ public interface IWithdrawRequestService {
     ResponseEntity<?> requestWithdraw(WithdrawRequestDTO withdrawRequest);
 
     ResponseEntity<?> approve(Integer id, WithdrawApprove withdrawApprove, HttpServletRequest request);
+
+    ResponseEntity<?> getAll(int page, int limit);
 }

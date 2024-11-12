@@ -12,6 +12,7 @@ import com.second_hand_auction_system.repositories.WalletRepository;
 import com.second_hand_auction_system.repositories.WithdrawRequestRepository;
 import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.jwt.JwtService;
+import com.second_hand_auction_system.utils.PaymentMethod;
 import com.second_hand_auction_system.utils.RequestStatus;
 import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionType;
@@ -19,13 +20,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -72,7 +79,8 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         WithdrawRequest withdrawRequest1 = WithdrawRequest.builder()
                 .requestAmount(withdrawRequest.getRequestAmount())
                 .requestStatus(RequestStatus.PENDING)
-                .processAt(withdrawRequest.getProcessAt())
+                .processAt(LocalDateTime.now())
+                .paymentMethod(PaymentMethod.WALLET_PAYMENT)
                 .note(withdrawRequest.getNote())
                 .bankAccount(withdrawRequest.getBankAccount())
                 .accountNumber(withdrawRequest.getBankNumber())
@@ -87,10 +95,10 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 .requestStatus(withdrawRequest1.getRequestStatus())
                 .note(withdrawRequest1.getNote())
                 .processAt(withdrawRequest1.getProcessAt())
-                .transactionType(TransactionType.WITHDRAWAL)
+                .paymentMethod(withdrawRequest1.getPaymentMethod())
                 .accountNumber(withdrawRequest1.getAccountNumber())
                 .bankAccount(withdrawRequest1.getBankAccount())
-                .walletCustomer(wallet.getWalletId())
+                .walletCustomerId(wallet.getWalletId())
                 .build();
 
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
@@ -113,8 +121,8 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                     .processAt(withdrawRequest.getProcessAt())
                     .bankAccount(withdrawRequest.getBankAccount())
                     .accountNumber(withdrawRequest.getBankAccount())
-                    .transactionType(TransactionType.WITHDRAWAL)
-                    .walletCustomer(withdrawRequest.getWithdrawRequestId())
+                    .paymentMethod(withdrawRequest.getPaymentMethod())
+                    .walletCustomerId(withdrawRequest.getWallet().getWalletId())
                     .build();
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .status(HttpStatus.OK)
@@ -125,6 +133,37 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                 .status(HttpStatus.NOT_FOUND)
                 .message("Withdrawal request not found")
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getAll(int page, int limit) {
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Order.desc("processAt")));
+        Page<WithdrawRequest> withdrawRequestPage = withdrawRequestRepository.findAll(pageable);
+        List<WithdrawResponse> withdrawResponses = withdrawRequestPage.stream()
+
+                .map(withdrawRequest -> WithdrawResponse.builder()
+                        .requestAmount(withdrawRequest.getRequestAmount())
+                        .requestStatus(withdrawRequest.getRequestStatus())
+                        .note(withdrawRequest.getNote())
+                        .bankAccount(withdrawRequest.getBankAccount())
+                        .processAt(withdrawRequest.getProcessAt())
+                        .paymentMethod(withdrawRequest.getPaymentMethod())
+                        .accountNumber(withdrawRequest.getAccountNumber())
+                        .walletCustomerId(withdrawRequest.getWallet().getWalletId())
+                        .sellerName(withdrawRequest.getWallet().getUser().getFullName())
+                        .avtar(withdrawRequest.getWallet().getUser().getAvatar())
+                        .build())
+                .toList();
+        Map<String,Object> map = new HashMap<>();
+        map.put("data",withdrawResponses);
+        map.put("totalPages",withdrawRequestPage.getTotalPages());
+        map.put("totalElements",withdrawRequestPage.getTotalElements());
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(map)
+                .message("All requests successful")
                 .build());
     }
 

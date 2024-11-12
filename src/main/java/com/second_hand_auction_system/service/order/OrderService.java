@@ -28,9 +28,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import vn.payos.PayOS;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,7 +47,7 @@ public class OrderService implements IOrderService {
 
 
     @Override
-    public ResponseEntity<?> create( OrderDTO order) {
+    public ResponseEntity<?> create(OrderDTO order) {
         // Kiểm tra xem phiên đấu giá có tồn tại hay không
         var auction = auctionRepository.findById(order.getAuctionId()).orElse(null);
         if (auction == null) {
@@ -196,7 +194,7 @@ public class OrderService implements IOrderService {
 
 
     @Override
-    public ResponseEntity<?> getOrders(Integer page, Integer size, String sortBy) {
+    public ResponseEntity<?> getOrders(Integer page, Integer size, String sortBy, OrderStatus status) {
         if (page == null) {
             page = 0;
         }
@@ -205,7 +203,13 @@ public class OrderService implements IOrderService {
         }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
-        Page<Order> orders = orderRepository.findAll(pageable);
+        Page<Order> orders;
+        if (status != null) {
+            orders = orderRepository.findByStatus(status, pageable);
+        }
+        else{
+            orders = orderRepository.findAll(pageable);
+        }
 
         List<OrderResponse> orderResponses = orders.stream()
                 .map(order -> {
@@ -241,9 +245,12 @@ public class OrderService implements IOrderService {
                     return response;
                 })
                 .collect(Collectors.toList());
-
+        Map<String,Object> response = new HashMap<>();
+        response.put("orders", orderResponses);
+        response.put("totalPage", orders.getTotalPages());
+        response.put("totalElements", orders.getTotalElements());
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                .data(orderResponses)
+                .data(response)
                 .message("Orders found")
                 .status(HttpStatus.OK)
                 .build());
@@ -251,7 +258,7 @@ public class OrderService implements IOrderService {
 
     @Override
     public ResponseEntity<?> getOrderByUser(int size, int page) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createAt"));
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
 
