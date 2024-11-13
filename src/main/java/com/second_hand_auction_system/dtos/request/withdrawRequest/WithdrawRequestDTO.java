@@ -25,6 +25,9 @@ public class WithdrawRequestDTO {
     @NotNull(message = "Bank account is required")
     private String bankAccount;
 
+    @NotNull(message = "Bank account is required")
+    private String bankName;
+
     // Assuming bank number is optional but you might want to validate it
     @Size(min = 10, max = 20, message = "Bank number should be between 10 to 20 digits")
     private String bankNumber;

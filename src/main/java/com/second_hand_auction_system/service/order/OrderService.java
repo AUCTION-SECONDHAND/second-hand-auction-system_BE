@@ -3,6 +3,7 @@ package com.second_hand_auction_system.service.order;
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
+import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
 import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
@@ -170,7 +171,8 @@ public class OrderService implements IOrderService {
             transactionWallet.setDescription(order.getNote());
             transactionWallet.setTransactionWalletCode(random());
             transactionSystemRepository.save(transactionWallet);
-
+            auction.setStatus(AuctionStatus.COMPLETED);
+            auctionRepository.save(auction);
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .data("Success")
                     .message("Order created successfully")
