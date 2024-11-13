@@ -17,8 +17,15 @@ public class FeedbackResponse {
     private int rating;
     private Integer userId;
     private String username;
+
+    private String replyComment;
+    private boolean replied;
+    private Integer order;
+
     private Integer itemId;
     private String itemName;
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
+
+
 }

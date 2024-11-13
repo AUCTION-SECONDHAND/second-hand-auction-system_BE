@@ -20,4 +20,7 @@ public interface IFeedbackService {
     List<FeedbackResponse> getAllFeedbacksByUserId(Integer userId) throws Exception;
 
     Page<FeedbackResponse> getFeedbackBySellerUserId(Integer userId, int page, int size) throws Exception;
+
+    FeedbackResponse checkFeedbackExistsByOrderId(Integer orderId) throws Exception;
+
 }

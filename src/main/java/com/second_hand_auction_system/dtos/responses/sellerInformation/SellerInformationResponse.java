@@ -29,6 +29,6 @@ public class SellerInformationResponse {
     private double rating4Percentage;
     private double rating5Percentage;
 
-    private LocalDateTime createAt;
+    private LocalDateTime sellerCreateAt;
 
 }

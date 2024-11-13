@@ -85,7 +85,7 @@ public class SellerInformationConverter {
                 .rating3Percentage(ratingPercentages[2])
                 .rating4Percentage(ratingPercentages[3])
                 .rating5Percentage(ratingPercentages[4])
-                .createAt(sellerInformation.getUser().getCreateAt())
+                .sellerCreateAt(sellerInformation.getUser().getCreateAt())
                 .build();
     }
 

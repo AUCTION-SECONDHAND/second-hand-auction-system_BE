@@ -5,18 +5,28 @@ import com.second_hand_auction_system.dtos.request.feedback.FeedbackDto;
 import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.models.FeedBack;
 import com.second_hand_auction_system.models.Item;
+import com.second_hand_auction_system.models.Order;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.FeedbackRepository;
 import com.second_hand_auction_system.repositories.ItemRepository;
+import com.second_hand_auction_system.repositories.OrderRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.service.email.EmailService;
+import com.second_hand_auction_system.service.jwt.IJwtService;
+import com.second_hand_auction_system.utils.OrderStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,18 +41,53 @@ public class FeedbackService implements IFeedbackService {
     @Autowired
     private ItemRepository itemRepository;
 
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private IJwtService jwtService;
+
+    @Autowired
+    private EmailService emailService;
+
     @Override
     public FeedbackResponse createFeedback(FeedbackDto feedbackDto) throws Exception {
-        User user = userRepository.findById(feedbackDto.getUserId())
-                .orElseThrow(() -> new Exception("User not found"));
+
         Item item = itemRepository.findById(feedbackDto.getItemId())
                 .orElseThrow(() -> new Exception("Item not found"));
 
-        FeedBack feedback = FeedbackConverter.convertToEntity(feedbackDto, user, item);
+        Order order = orderRepository.findById(feedbackDto.getOrderId())
+                .orElseThrow(() -> new Exception("Order not found"));
+
+        //lay userId tu token
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            throw new Exception("User not found");
+        }
+
+        if (order.getStatus() == null || order.getStatus() != OrderStatus.CONFIRMED) {
+            throw new Exception("Feedback can only be created for orders with CONFIRMED status.");
+        }
+
+        User user = new User();
+        user.setId(requester.getId());
+
+        FeedBack feedback = FeedbackConverter.convertToEntity(feedbackDto, user, item, order);
+        feedback.setReplied(false);
+        feedback.setReplyComment(null);
+
         FeedBack savedFeedback = feedbackRepository.save(feedback);
 
         return FeedbackConverter.convertToResponse(savedFeedback);
     }
+
+
 
     @Override
     public FeedbackResponse updateFeedback(Integer feedbackId, FeedbackDto feedbackDto) throws Exception {
@@ -95,6 +140,22 @@ public class FeedbackService implements IFeedbackService {
         // Chuyển đổi từ Page<FeedBack> sang Page<FeedbackResponse>
         return feedbackPage.map(FeedbackConverter::convertToResponse);
     }
+
+    @Override
+    public FeedbackResponse checkFeedbackExistsByOrderId(Integer orderId) throws Exception {
+        FeedBack feedback = feedbackRepository.findByOrder_OrderId(orderId);
+
+        if (feedback == null) {
+            // Trả về một FeedbackResponse có thông báo lỗi
+            return FeedbackResponse.builder()
+                    .comment("Chưa tồn tại feedback cho đơn hàng này")
+                    .build();
+        }
+
+        // Nếu tồn tại, trả về FeedbackResponse đầy đủ
+        return FeedbackConverter.convertToResponse(feedback);
+    }
+
 
 
 

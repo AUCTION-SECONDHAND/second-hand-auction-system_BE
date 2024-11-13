@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FeedbackRepository extends JpaRepository<FeedBack, Integer> {
@@ -20,5 +21,6 @@ public interface FeedbackRepository extends JpaRepository<FeedBack, Integer> {
     Page<FeedBack> findAllBySellerUserId(@Param("userId") Integer userId, Pageable pageable);
 
 
+    FeedBack findByOrder_OrderId(Integer orderId);
 
 }

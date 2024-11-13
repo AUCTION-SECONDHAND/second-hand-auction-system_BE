@@ -5,10 +5,13 @@ import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.service.feedback.IFeedbackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("${api.prefix}/feedback")
@@ -66,6 +69,21 @@ public class FeedbackController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+
+    @GetMapping("/check-feedback/{orderId}")
+    public ResponseEntity<?> checkFeedback(@PathVariable Integer orderId) throws Exception {
+        FeedbackResponse feedbackResponse = feedbackService.checkFeedbackExistsByOrderId(orderId);
+
+        if (feedbackResponse == null || feedbackResponse.getComment().equals("Chưa tồn tại feedback cho đơn hàng này")) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Feedback chưa tồn tại cho đơn hàng này");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        return ResponseEntity.ok(feedbackResponse);
+    }
+
 
 
 }

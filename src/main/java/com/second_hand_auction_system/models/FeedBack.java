@@ -15,7 +15,7 @@ public class FeedBack extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer feedbackId;
 
-    @Column(name = "comment")
+    @Column(name = "comment", columnDefinition = "TEXT")
     private String comment;
 
     @Column(name = "rating")
@@ -28,5 +28,15 @@ public class FeedBack extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "item_id")
     private Item item;
+
+    @OneToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
+
+    @Column(name = "reply_comment", columnDefinition = "TEXT")
+    private String replyComment;
+
+    @Column(name = "replied")
+    private boolean replied;
 
 }
