@@ -14,7 +14,5 @@ public interface IMainCategoryService {
     List<MainCategoryResponse> getMainCategory() throws Exception;
     MainCategoryResponse getMainCategoryTest(int id) throws Exception;
     List<CategoryVsSubCategoryResponse> getMainCategoryVsSubCategory() throws Exception;
-
-
     ResponseEntity<?> getMainCategorys();
 }

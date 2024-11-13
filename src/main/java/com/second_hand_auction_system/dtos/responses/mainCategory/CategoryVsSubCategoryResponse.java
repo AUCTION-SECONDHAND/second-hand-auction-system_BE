@@ -14,5 +14,6 @@ import java.util.List;
 public class CategoryVsSubCategoryResponse {
     private int categoryId;
     private String categoryName;
+    private String categoryImage;
     private List<SubCategoryResponse> subCategory;
 }

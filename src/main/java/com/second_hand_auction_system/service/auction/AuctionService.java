@@ -193,7 +193,7 @@ public class AuctionService implements IAuctionService {
         List<Auction> auctions = auctionRepository.findAll();
 
         for (Auction auction : auctions) {
-            if (!auction.getStatus().equals(AuctionStatus.CLOSED) &&
+            if (auction.getStatus() != null && !auction.getStatus().equals(AuctionStatus.CLOSED) &&
                     LocalDateTime.now().isAfter(auction.getEndDate().toInstant()
                             .atZone(ZoneId.systemDefault())
                             .toLocalDateTime()

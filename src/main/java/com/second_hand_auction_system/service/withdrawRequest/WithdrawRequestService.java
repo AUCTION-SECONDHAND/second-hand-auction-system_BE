@@ -85,6 +85,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 .bankAccount(withdrawRequest.getBankAccount())
                 .accountNumber(withdrawRequest.getBankNumber())
                 .wallet(wallet)
+                .bankName(withdrawRequest.getBankName())
                 .build();
 
         withdrawRequestRepository.save(withdrawRequest1);
@@ -99,6 +100,9 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 .accountNumber(withdrawRequest1.getAccountNumber())
                 .bankAccount(withdrawRequest1.getBankAccount())
                 .walletCustomerId(wallet.getWalletId())
+                .sellerName(requester.getFullName())
+                .avtar(requester.getAvatar())
+                .bankName(withdrawRequest1.getBankName())
                 .build();
 
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
