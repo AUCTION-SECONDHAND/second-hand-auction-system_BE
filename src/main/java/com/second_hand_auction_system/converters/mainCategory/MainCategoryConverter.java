@@ -24,6 +24,7 @@ public class MainCategoryConverter {
         return CategoryVsSubCategoryResponse.builder()
                 .categoryId(mainCategory.getMainCategoryId())
                 .categoryName(mainCategory.getCategoryName())
+                .categoryImage(mainCategory.getIconUrl())
                 .subCategory(subCategoryResponses)
                 .build();
     }

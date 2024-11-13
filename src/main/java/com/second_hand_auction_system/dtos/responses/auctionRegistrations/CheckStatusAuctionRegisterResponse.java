@@ -12,9 +12,6 @@ import lombok.*;
 @Builder
 public class CheckStatusAuctionRegisterResponse {
     private Integer userId;
-
     private Integer auctionId;
     private Boolean statusRegistration;
-
-
 }

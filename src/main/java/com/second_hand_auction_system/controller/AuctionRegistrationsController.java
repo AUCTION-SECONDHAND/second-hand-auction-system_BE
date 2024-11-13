@@ -125,16 +125,25 @@ public class AuctionRegistrationsController {
     @GetMapping("/check-registration/{auctionId}")
     public ResponseEntity<?> getCheckRegisterByAuctionId(@PathVariable Integer auctionId) throws Exception {
 
-        CheckStatusAuctionRegisterResponse checkStatusAuctionRegisterResponse = auctionRegistrationsService.getRegistrationsByUserIdAnhAuctionId(auctionId);
-        return ResponseEntity.ok(
-                ResponseObject.builder()
-                        .status(HttpStatus.OK)
-                        .message("Success")
-                        .data(checkStatusAuctionRegisterResponse)
-                        .build()
-        );
+        try {
+            CheckStatusAuctionRegisterResponse checkStatusAuctionRegisterResponse = auctionRegistrationsService.getRegistrationsByUserIdAnhAuctionId(auctionId);
+            return ResponseEntity.ok(
+                    ResponseObject.builder()
+                            .status(HttpStatus.OK)
+                            .message("Success")
+                            .data(checkStatusAuctionRegisterResponse)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.ok(
+                    ResponseObject.builder()
+                            .status(HttpStatus.OK)
+                            .message("Error")
+                            .data(e.getMessage())
+                            .build()
+            );
+        }
     }
-
 
 
 //    @GetMapping("/checkUser/{auctionId}")
