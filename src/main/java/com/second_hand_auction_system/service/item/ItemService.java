@@ -210,7 +210,10 @@ public class ItemService implements IItemService {
         String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization").substring(7);
         Integer userId = extractUserIdFromToken(token);
-        Page<Item> items = itemRepository.findAllByAuction_StatusAndUserId(AuctionStatus.PENDING, userId, pageRequest);
+        if(userId == null) {
+            throw new Exception("User not found");
+        }
+        Page<Item> items = itemRepository.findAllByAuction_Status(AuctionStatus.CLOSED, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
@@ -240,7 +243,7 @@ public class ItemService implements IItemService {
                     .build());
         }
 
-        Page<Item> items = itemRepository.findAllByUserIdAndAuctionStatus(requester.getId(), AuctionStatus.COMPLETED, pageable);
+        Page<Item> items = itemRepository.findAllByUserIdAndAuctionStatus(requester.getId(), AuctionStatus.CLOSED, pageable);
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("items", items.map(auctionItemConvert::toAuctionItemResponse).getContent());
         responseData.put("totalPages", items.getTotalPages());

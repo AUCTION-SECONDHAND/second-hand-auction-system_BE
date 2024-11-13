@@ -37,6 +37,9 @@ public class WithdrawRequest extends BaseEntity{
     @Column(name = "bank_account")
     private String bankAccount;
 
+    @Column(name = "bank_name")
+    private String bankName;
+
     @Column(name = "account_number")
     private String accountNumber;
 

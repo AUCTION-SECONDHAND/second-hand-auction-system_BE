@@ -24,5 +24,6 @@ public class WithdrawResponse {
     private String accountNumber;
     private Integer walletCustomerId;
     private String sellerName;
+    private String bankName;
     private String avtar;
 }
