@@ -21,4 +21,6 @@ public interface KnowYourCustomerRepository extends JpaRepository<KnowYourCustom
     Optional<User> findUserByKycId(@Param("kycId") Integer kycId);
 
     Optional<KnowYourCustomer> findByUserIdAndKycStatus(Integer id, KycStatus kycStatus);
+
+    Optional<KnowYourCustomer> findByUserId(Integer userId);
 }

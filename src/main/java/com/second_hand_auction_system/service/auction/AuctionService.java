@@ -4,12 +4,12 @@ import com.second_hand_auction_system.dtos.request.auction.AuctionDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
 import com.second_hand_auction_system.dtos.responses.auction.ResponseAuction;
+import com.second_hand_auction_system.dtos.responses.item.ItemSpecificResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.*;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -172,6 +172,17 @@ public class AuctionService implements IAuctionService {
                     .seller(auction.getCreateBy())
                     .thumbnail(auction.getItem().getThumbnail())
                     .description(auction.getDescription())
+                    .itemSpecific(ItemSpecificResponse.builder()
+                            .color(auction.getItem().getItemSpecific().getColor())
+                            .type(auction.getItem().getItemSpecific().getType())
+                            .dimension(auction.getItem().getItemSpecific().getDimension())
+                            .itemSpecId(auction.getItem().getItemSpecific().getItemSpecificId())
+                            .manufactureDate(auction.getItem().getItemSpecific().getManufactureDate())
+                            .material(auction.getItem().getItemSpecific().getMaterial())
+                            .original(auction.getItem().getItemSpecific().getOriginal())
+                            .weight(auction.getItem().getItemSpecific().getWeight())
+                            .percent(auction.getItem().getItemSpecific().getPercent())
+                            .build())
                     .build();
             return ResponseEntity.ok(ResponseObject.builder()
             .status(HttpStatus.OK)

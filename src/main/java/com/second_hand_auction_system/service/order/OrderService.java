@@ -89,6 +89,16 @@ public class OrderService implements IOrderService {
                     .build());
         }
 
+        // Kiểm tra nếu người dùng đã đặt đơn hàng cho phiên đấu giá này
+        var existingOrder = orderRepository.existsByAuction_AuctionIdAndUserId(order.getAuctionId(), requester.getId());
+        if (existingOrder) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                    .data(null)
+                    .message("Đơn hàng đã tồn tại")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build());
+        }
+
         // Tìm người thắng đấu giá
         Bid winningBid = bidService.findWinner(auction.getAuctionId());
         if (winningBid == null) {
@@ -106,7 +116,6 @@ public class OrderService implements IOrderService {
                 .totalAmount(winningBid.getBidAmount()) // Cập nhật giá trị ban đầu
                 .fullName(order.getFullName())
                 .email(order.getEmail())
-
                 .phoneNumber(order.getPhoneNumber())
                 .paymentMethod(order.getPaymentMethod())
                 .note(order.getNote())

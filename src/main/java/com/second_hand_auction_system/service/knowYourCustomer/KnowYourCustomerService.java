@@ -119,7 +119,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .fullName(kyc.getFullName())
                 .kycStatus(KycStatus.PENDING)
                 .gender(kyc.getGender())
-                .sumbited(new Date())
+                .submitted(new Date())
                 .phoneNumber(kyc.getPhoneNumber())
                 .user(requester)
                 .verifiedBy(requester.getFullName())
@@ -141,7 +141,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .frontDocumentUrl(knowYourCustomer.getFrontDocumentUrl())
                 .backDocumentUrl(knowYourCustomer.getBackDocumentUrl())
                 .kycStatus(knowYourCustomer.getKycStatus())
-                .submited(knowYourCustomer.getSumbited())
+                .submited(knowYourCustomer.getSubmitted())
                 .userId(requester.getId()) // Gán userId
                 .verified_by(knowYourCustomer.getVerifiedBy())
                 .reason(null)
@@ -258,7 +258,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                     .frontDocumentUrl(kyc.getFrontDocumentUrl())
                     .backDocumentUrl(kyc.getBackDocumentUrl())
                     .kycStatus(kyc.getKycStatus())
-                    .submited(kyc.getSumbited())
+                    .submited(kyc.getSubmitted())
                     .phoneNumber(kyc.getPhoneNumber())
                     .fullName(kyc.getFullName())
                     .address(addressResponse)
@@ -297,7 +297,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                         .frontDocumentUrl(kyc.getFrontDocumentUrl())
                         .backDocumentUrl(kyc.getBackDocumentUrl())
                         .kycStatus(kyc.getKycStatus())
-                        .submited(kyc.getSumbited())
+                        .submited(kyc.getSubmitted())
                         .userId(kyc.getUser() != null ? kyc.getUser().getId() : null)
                         .build())
                 .collect(Collectors.toList());
@@ -310,6 +310,80 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         response.put("message", "Fetched Kycs");
         return ResponseEntity.ok(response);
     }
+
+    @Override
+    public ResponseEntity<?> updateKyc(KycDto kycDto) {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
+        // Kiểm tra header Authorization
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseObject.builder()
+                            .data(null)
+                            .message("Missing or invalid Authorization header")
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .build());
+        }
+
+        // Trích xuất email từ token
+        String token = authHeader.substring(7);
+        String email;
+        try {
+            email = jwtService.extractUserEmail(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Token is invalid or expired")
+                            .data(null)
+                            .build()
+            );
+        }
+
+        // Kiểm tra người dùng
+        User requester = userRepository.findByEmailAndStatusIsTrue(email).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Unauthorized request - User not found")
+                            .data(null)
+                            .build());
+        }
+
+        var kyc = knowYourCustomerRepository.findByUserId(requester.getId()).orElse(null);
+        if (kyc == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.NOT_FOUND)
+                            .message("Kyc not found")
+                            .data(null)
+                            .build()
+            );
+        }
+
+        // Cập nhật thông tin KYC
+        kyc.setAge(kycDto.getAge());
+        kyc.setFullName(kycDto.getFullName());
+        kyc.setGender(kycDto.getGender());
+        kyc.setCccdNumber(kycDto.getCccdNumber());
+        kyc.setFrontDocumentUrl(kycDto.getFrontDocumentUrl());
+        kyc.setBackDocumentUrl(kycDto.getBackDocumentUrl());
+        kyc.setDateOfBirth(kycDto.getDob());
+        kyc.setEmail(kycDto.getEmail());
+        kyc.setPhoneNumber(kycDto.getPhoneNumber());
+        knowYourCustomerRepository.save(kyc);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Update success")
+                        .data(kyc) // Trả lại kyc đã được cập nhật
+                        .build()
+        );
+    }
+
 
 
 }

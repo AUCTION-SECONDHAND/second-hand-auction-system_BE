@@ -22,17 +22,22 @@ public class KnowYourCustomerController {
     }
 
     @PutMapping("/{kycId}")
-    public ResponseEntity<?> updateKyc(@Valid @RequestBody ApproveKyc kycDto, @PathVariable int kycId) throws MessagingException {
+    public ResponseEntity<?> approve(@Valid @RequestBody ApproveKyc kycDto, @PathVariable int kycId) throws MessagingException {
         return kycService.approveKyc(kycDto,kycId);
     }
 
+    @PutMapping("/update-profileKyc")
+    public ResponseEntity<?> updateKyc (@Valid @RequestBody KycDto kycDto) throws MessagingException {
+        return kycService.updateKyc(kycDto);
+    }
+
     @GetMapping("/{kycId}")
-    public ResponseEntity<?> getKycs(@PathVariable int kycId) {
+    public ResponseEntity<?> getKyc(@PathVariable int kycId) {
         return kycService.getKycById(kycId);
     }
 
     @GetMapping()
-    public ResponseEntity<?> getAllKycs(
+    public ResponseEntity<?> getAllKyc(
                                         @RequestParam(value = "page",defaultValue = "0") Integer page,
                                         @RequestParam(value = "limit",defaultValue = "10") Integer size) {
         return kycService.getKycs(page,size);

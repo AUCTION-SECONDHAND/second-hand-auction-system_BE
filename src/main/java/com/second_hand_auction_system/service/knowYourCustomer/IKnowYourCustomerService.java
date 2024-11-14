@@ -14,4 +14,6 @@ public interface IKnowYourCustomerService {
     ResponseEntity<?> getKycById(int kycId);
 
     ResponseEntity<?> getKycs( int page, int size);
+
+    ResponseEntity<?> updateKyc(@Valid KycDto kycDto);
 }

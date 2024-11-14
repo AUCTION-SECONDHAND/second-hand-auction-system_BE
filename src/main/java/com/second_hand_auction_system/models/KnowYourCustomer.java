@@ -54,8 +54,8 @@ public class KnowYourCustomer extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private KycStatus kycStatus;
 
-    @Column(name = "submited")
-    private Date sumbited;
+    @Column(name = "submitted")
+    private Date submitted;
 
     @Column(name = "verified_by")
     private String verifiedBy;

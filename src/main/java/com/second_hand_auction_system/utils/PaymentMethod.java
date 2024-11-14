@@ -4,28 +4,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum PaymentMethod {
-    VN_PAYMENT("VN_PAYMENT"),
-    WALLET_PAYMENT("WALLET_PAYMENT"),
-    BANK_TRANSFER("BANK_TRANSFER");
+    VN_PAYMENT,
+    WALLET_PAYMENT,
+    BANK_TRANSFER;
 
-    private final String value;
 
-    PaymentMethod(String value) {
-        this.value = value;
-    }
 
-    @JsonValue
-    public String getValue() {
-        return value;
-    }
 
-    @JsonCreator
-    public static PaymentMethod fromString(String value) {
-        for (PaymentMethod method : PaymentMethod.values()) {
-            if (method.value.equals(value)) {
-                return method;
-            }
-        }
-        throw new IllegalArgumentException("Unknown value: " + value);
-    }
+
+
+
 }
