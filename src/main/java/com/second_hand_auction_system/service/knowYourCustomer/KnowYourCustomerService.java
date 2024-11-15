@@ -352,12 +352,13 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .build());
         }
 
+        // Tìm KYC của người dùng
         var kyc = knowYourCustomerRepository.findByUserId(requester.getId()).orElse(null);
         if (kyc == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     ResponseObject.builder()
                             .status(HttpStatus.NOT_FOUND)
-                            .message("Kyc not found")
+                            .message("KYC not found")
                             .data(null)
                             .build()
             );
@@ -373,17 +374,106 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         kyc.setDateOfBirth(kycDto.getDob());
         kyc.setEmail(kycDto.getEmail());
         kyc.setPhoneNumber(kycDto.getPhoneNumber());
-        knowYourCustomerRepository.save(kyc);
 
+        // Lưu thông tin KYC đã cập nhật
+        knowYourCustomerRepository.save(kyc);
+        KycResponse kycResponse = KycResponse.builder()
+                .kycId(kyc.getKycId())
+                .kycStatus(kyc.getKycStatus())
+                .submited(kyc.getSubmitted())
+                .userId(kyc.getUser().getId())
+                .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null)
+                .age(kyc.getAge())
+                .fullName(kyc.getFullName())
+                .phoneNumber(kyc.getPhoneNumber())
+                .email(kyc.getUser() != null ? kyc.getUser().getEmail() : null)
+                .gender(kyc.getGender())
+                .cccdNumber(kyc.getCccdNumber())
+                .frontDocumentUrl(kyc.getFrontDocumentUrl())
+                .backDocumentUrl(kyc.getBackDocumentUrl())
+                .build();
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
                         .message("Update success")
-                        .data(kyc) // Trả lại kyc đã được cập nhật
+                        .data(kycResponse) // Trả lại KYC đã được cập nhật
                         .build()
         );
     }
 
+
+
+
+    @Override
+    public ResponseEntity<?> getKycUserById() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
+        // Kiểm tra header Authorization
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseObject.builder()
+                            .data(null)
+                            .message("Missing or invalid Authorization header")
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .build());
+        }
+
+        // Trích xuất email từ token
+        String token = authHeader.substring(7);
+        String email;
+        try {
+            email = jwtService.extractUserEmail(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Token is invalid or expired")
+                            .data(null)
+                            .build()
+            );
+        }
+
+        // Kiểm tra người dùng
+        User requester = userRepository.findByEmailAndStatusIsTrue(email).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .message("Unauthorized request - User not found")
+                            .data(null)
+                            .build());
+        }
+        var kyc = knowYourCustomerRepository.findByUserId(requester.getId()).orElse(null);
+        if (kyc == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .message("Kyc not found")
+                    .data(null)
+                    .status(HttpStatus.NOT_FOUND)
+                    .build());
+        }
+        KycResponse kycResponse =KycResponse.builder()
+                .kycId(kyc.getKycId())
+                .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null)
+                .age(kyc.getAge())
+                .fullName(kyc.getFullName())
+                .phoneNumber(kyc.getPhoneNumber())
+                .email(kyc.getUser() != null ? kyc.getUser().getEmail() : null)
+                .gender(kyc.getGender())
+                .cccdNumber(kyc.getCccdNumber())
+                .frontDocumentUrl(kyc.getFrontDocumentUrl())
+                .backDocumentUrl(kyc.getBackDocumentUrl())
+                .kycStatus(kyc.getKycStatus())
+                .submited(kyc.getSubmitted())
+                .userId(requester.getId())
+                .build();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(kycResponse)
+                        .message("")
+                        .status(HttpStatus.OK)
+                        .build());
+    }
 
 
 }

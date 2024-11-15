@@ -36,6 +36,11 @@ public class KnowYourCustomerController {
         return kycService.getKycById(kycId);
     }
 
+    @GetMapping("user")
+    public ResponseEntity<?> getUserKyc() {
+        return kycService.getKycUserById();
+    }
+
     @GetMapping()
     public ResponseEntity<?> getAllKyc(
                                         @RequestParam(value = "page",defaultValue = "0") Integer page,

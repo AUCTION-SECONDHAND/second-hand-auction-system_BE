@@ -172,7 +172,7 @@ public class AuctionService implements IAuctionService {
                     .seller(auction.getCreateBy())
                     .thumbnail(auction.getItem().getThumbnail())
                     .description(auction.getDescription())
-                    .itemSpecific(ItemSpecificResponse.builder()
+                    .itemSpecific( ItemSpecificResponse.builder()
                             .color(auction.getItem().getItemSpecific().getColor())
                             .type(auction.getItem().getItemSpecific().getType())
                             .dimension(auction.getItem().getItemSpecific().getDimension())

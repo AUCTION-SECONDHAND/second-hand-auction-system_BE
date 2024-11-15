@@ -180,8 +180,11 @@ public class OrderService implements IOrderService {
             transactionWallet.setDescription(order.getNote());
             transactionWallet.setTransactionWalletCode(random());
             transactionSystemRepository.save(transactionWallet);
+
+            // Cập nhật trạng thái phiên đấu giá sau khi thanh toán thành công
             auction.setStatus(AuctionStatus.COMPLETED);
             auctionRepository.save(auction);
+
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .data("Success")
                     .message("Order created successfully")
@@ -195,6 +198,7 @@ public class OrderService implements IOrderService {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .build());
     }
+
 
 
     private long random() {
