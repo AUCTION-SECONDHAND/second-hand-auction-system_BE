@@ -71,7 +71,7 @@ public class FeedbackService implements IFeedbackService {
             throw new Exception("User not found");
         }
 
-        if (order.getStatus() == null || order.getStatus() != OrderStatus.CONFIRMED) {
+        if (order.getStatus() == null || order.getStatus() != OrderStatus.delivered) {
             throw new Exception("Feedback can only be created for orders with CONFIRMED status.");
         }
 

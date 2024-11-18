@@ -119,7 +119,7 @@ public class OrderService implements IOrderService {
                 .paymentMethod(order.getPaymentMethod())
                 .note(order.getNote())
                 .createBy(requester.getFullName())
-                .status(OrderStatus.PENDING)
+                .status(OrderStatus.ready_to_pick)
                 .address(address.getAddress_name())
                 .item(auction.getItem())
                 .user(requester)
@@ -419,7 +419,7 @@ public class OrderService implements IOrderService {
                     .data(null)
                     .build());
         }
-        Page<Order> orders = orderRepository.findAllByAuction_Item_User_Id(requester.getId(),pageable);
+        Page<Order> orders = orderRepository.findAllByAuction_Item_User_Id(requester.getId(), pageable);
         List<OrderResponse> orderResponses = orders.stream()
                 .map(order -> {
                     OrderResponse response = new OrderResponse();
@@ -463,6 +463,14 @@ public class OrderService implements IOrderService {
                 .message("Orders found")
                 .status(HttpStatus.OK)
                 .build());
+    }
+
+    @Override
+    public void updateStatusOrder(int orderId, OrderStatus status) {
+        Order orderExisted = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        orderExisted.setStatus(status);
+        orderRepository.save(orderExisted);
     }
 
 

@@ -15,4 +15,6 @@ public interface IOrderService {
     ResponseEntity<?> getStatistic();
 
     ResponseEntity<?> getOrderBySeller(int size, int page);
+
+    void updateStatusOrder(int orderId, OrderStatus status);
 }

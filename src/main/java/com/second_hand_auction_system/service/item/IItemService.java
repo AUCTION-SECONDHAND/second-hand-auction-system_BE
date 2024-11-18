@@ -6,8 +6,10 @@ import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemResponse;
 import com.second_hand_auction_system.models.Item;
+import com.second_hand_auction_system.models.MainCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -58,4 +60,5 @@ public interface IItemService {
             List<Integer> subCategoryIds
     ) throws Exception;
 
+    Page<AuctionItemResponse> getSimilarItem(Integer mainCategoryId, PageRequest pageRequest) throws Exception;
 }

@@ -124,7 +124,6 @@ public class AuctionRegistrationsController {
 
     @GetMapping("/check-registration/{auctionId}")
     public ResponseEntity<?> getCheckRegisterByAuctionId(@PathVariable Integer auctionId) throws Exception {
-
         try {
             CheckStatusAuctionRegisterResponse checkStatusAuctionRegisterResponse = auctionRegistrationsService.getRegistrationsByUserIdAnhAuctionId(auctionId);
             return ResponseEntity.ok(

@@ -1,6 +1,8 @@
 package com.second_hand_auction_system.repositories;
 
 import com.second_hand_auction_system.models.Item;
+import com.second_hand_auction_system.models.MainCategory;
+import com.second_hand_auction_system.models.SubCategory;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.ItemStatus;
@@ -15,9 +17,14 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Integer> {
+
     Page<Item> findAllByItemStatusOrderByItemIdDesc(ItemStatus itemStatus, Pageable pageable);
 
     Page<Item> findAllByAuction_Status(AuctionStatus auction_status, Pageable pageable);
+
+    //Page<Item> findAllBySubCategory_MainCategory_mainCategoryId (Integer mainCategoryId, Pageable pageable);
+
+    Page<Item> findAllBySubCategory_SubCategoryId (Integer mainCategoryId, Pageable pageable);
 
     //Page<Item> findAllByAuction_Status
     @Query("SELECT i FROM Item i " +

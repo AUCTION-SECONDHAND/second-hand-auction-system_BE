@@ -135,6 +135,7 @@ public class ItemController {
         );
     }
 
+
     @GetMapping("product-user")
     public ResponseEntity<?> getProductSeller(@RequestParam(value = "page", defaultValue = "0") int page,
                                               @RequestParam(value = "limit", defaultValue = "10") int limit) throws Exception {
@@ -143,7 +144,8 @@ public class ItemController {
 
     @GetMapping("product-appraisal")
     public ResponseEntity<?> getProductAppraisal(
-            @RequestParam(value = "page", defaultValue = "0") int page, @RequestParam(value = "limit", defaultValue = "10") int limit
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
     ) throws Exception {
         PageRequest pageRequest = PageRequest.of(page, limit);
         //, Sort.by("id").descending()
@@ -153,6 +155,31 @@ public class ItemController {
         List<AuctionItemResponse> auctionItemResponses = itemResponseList.getContent();
         ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
                 .data(auctionItemResponses)
+                .totalElements(totalOrder)
+                .totalPages(totalPages)
+                .build();
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(responseListObject)
+                        .build()
+        );
+    }
+
+    @GetMapping("similar-item")
+    public ResponseEntity<?> getSimilarItem(
+            @RequestParam int mainCategoryId,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit
+    ) throws Exception {
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        Page<AuctionItemResponse> itemResponseList = itemService.getSimilarItem(mainCategoryId, pageRequest);
+        int totalPages = itemResponseList.getTotalPages();
+        Long totalOrder = itemResponseList.getTotalElements();
+        List<AuctionItemResponse> itemResponses = itemResponseList.getContent();
+        ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
+                .data(itemResponses)
                 .totalElements(totalOrder)
                 .totalPages(totalPages)
                 .build();

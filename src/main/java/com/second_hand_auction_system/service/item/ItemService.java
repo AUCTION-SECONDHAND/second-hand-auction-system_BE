@@ -210,7 +210,7 @@ public class ItemService implements IItemService {
         String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization").substring(7);
         Integer userId = extractUserIdFromToken(token);
-        if(userId == null) {
+        if (userId == null) {
             throw new Exception("User not found");
         }
         Page<Item> items = itemRepository.findAllByAuction_Status(AuctionStatus.CLOSED, pageRequest);
@@ -397,6 +397,12 @@ public class ItemService implements IItemService {
         Page<Item> items = itemRepository.searchItemsByUserId(
                 userId, itemName, minPrice, maxPrice, subCategoryIds, pageRequest
         );
+        return items.map(auctionItemConvert::toAuctionItemResponse);
+    }
+
+    @Override
+    public Page<AuctionItemResponse> getSimilarItem(Integer mainCategoryId, PageRequest pageRequest) throws Exception {
+        Page<Item> items = itemRepository.findAllBySubCategory_SubCategoryId(mainCategoryId, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 

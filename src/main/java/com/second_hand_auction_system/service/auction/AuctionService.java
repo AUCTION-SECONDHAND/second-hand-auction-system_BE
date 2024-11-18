@@ -168,7 +168,7 @@ public class AuctionService implements IAuctionService {
             ResponseAuction responseAuction = ResponseAuction.builder()
                     .itemName(auction.getItem().getItemName())
                     .title(auction.getItem().getBrandName())
-                    .amount(Double.valueOf(String.valueOf(maxBid)))
+                    .amount(maxBid)
                     .seller(auction.getCreateBy())
                     .thumbnail(auction.getItem().getThumbnail())
                     .description(auction.getDescription())
