@@ -1,23 +1,20 @@
 package com.second_hand_auction_system.service.order;
 
+import com.second_hand_auction_system.converters.feedback.FeedbackConverter;
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
-import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
+import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
 import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
-import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.bid.BidService;
 import com.second_hand_auction_system.service.jwt.JwtService;
 import com.second_hand_auction_system.utils.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +42,7 @@ public class OrderService implements IOrderService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
+    private final FeedbackRepository feedbackRepository;
 
 
     @Override
@@ -324,6 +322,15 @@ public class OrderService implements IOrderService {
                                 .status(auction.getStatus())
                                 .build());
                     }
+
+                    // Lấy Feedback
+                    FeedBack feedback = feedbackRepository.findByOrder_OrderId(order.getOrderId());
+                    if (feedback != null) {
+                        response.setFeedback(FeedbackConverter.convertToResponse(feedback));
+                    } else {
+                        response.setFeedback(null);
+                    }
+
                     response.setCreateBy(order.getCreateBy());
                     response.setTotalPrice(order.getTotalAmount());
                     response.setShippingType(order.getShippingMethod());

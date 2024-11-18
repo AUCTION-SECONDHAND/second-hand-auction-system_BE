@@ -2,6 +2,7 @@ package com.second_hand_auction_system.dtos.responses.order;
 
 import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
+import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder;
 import com.second_hand_auction_system.utils.OrderStatus;
 import com.second_hand_auction_system.utils.PaymentMethod;
@@ -26,5 +27,5 @@ public class OrderResponse {
     private double totalPrice;
     private String shippingType;
 
-
+    private FeedbackResponse feedback;
 }

@@ -23,4 +23,7 @@ public interface IFeedbackService {
 
     FeedbackResponse checkFeedbackExistsByOrderId(Integer orderId) throws Exception;
 
+    FeedbackResponse updateReplyComment(Integer feedbackId, String replyComment) throws Exception;
+
+
 }

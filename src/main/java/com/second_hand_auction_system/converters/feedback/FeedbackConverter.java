@@ -40,5 +40,22 @@ public class FeedbackConverter {
                 .build();
     }
 
+    public static FeedbackResponse convertUpdatedToResponse(FeedBack feedback) {
+        return FeedbackResponse.builder()
+                .feedbackId(feedback.getFeedbackId())
+                .comment(feedback.getComment())
+                .rating(feedback.getRating())
+                .userId(feedback.getUser().getId())
+                .username(feedback.getUser().getUsername())
+                .itemId(feedback.getItem().getItemId())
+                .itemName(feedback.getItem().getItemName())
+                .order(feedback.getOrder() != null ? feedback.getOrder().getOrderId() : null)
+                .replyComment(feedback.getReplyComment())
+                .replied(feedback.isReplied())
+                .createAt(feedback.getCreateAt())
+                .updateAt(feedback.getUpdateAt())
+                .build();
+    }
+
 
 }
