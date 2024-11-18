@@ -156,6 +156,34 @@ public class FeedbackService implements IFeedbackService {
         return FeedbackConverter.convertToResponse(feedback);
     }
 
+    @Override
+    public FeedbackResponse updateReplyComment(Integer feedbackId, String replyComment) throws Exception {
+        FeedBack feedback = feedbackRepository.findById(feedbackId)
+                .orElseThrow(() -> {
+                    System.out.println("Không tìm thấy feedback với ID: " + feedbackId); // Debug
+                    return new Exception("Feedback không tồn tại");
+                });
+
+        // Kiểm tra nếu feedback đã có phản hồi
+        if (feedback.isReplied()) {
+            System.out.println("Feedback đã có phản hồi rồi, không thể cập nhật"); // Debug
+            throw new Exception("Không thể cập nhật phản hồi, đã có phản hồi");
+        }
+
+        // Cập nhật phản hồi và đặt replied thành true
+        feedback.setReplyComment(replyComment);
+        feedback.setReplied(true);
+
+        // Lưu feedback đã cập nhật
+        FeedBack updatedFeedback = feedbackRepository.save(feedback);
+
+        // Debug thêm thông tin về feedback đã lưu
+        System.out.println("Feedback đã được cập nhật: " + updatedFeedback.getReplyComment());
+
+        return FeedbackConverter.convertUpdatedToResponse(updatedFeedback);
+    }
+
+
 
 
 

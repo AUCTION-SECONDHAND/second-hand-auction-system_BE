@@ -84,6 +84,13 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackResponse);
     }
 
+    @PutMapping("/{feedbackId}/reply")
+    public ResponseEntity<FeedbackResponse> updateReplyComment(@PathVariable Integer feedbackId,
+                                                               @RequestBody String replyComment) throws Exception {
+        FeedbackResponse feedbackResponse = feedbackService.updateReplyComment(feedbackId, replyComment);
+        return ResponseEntity.ok(feedbackResponse);
+    }
+
 
 
 }
