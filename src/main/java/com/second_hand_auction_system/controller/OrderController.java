@@ -36,4 +36,14 @@ public class OrderController {
         return orderService.getOrderByUser(size,page);
     }
 
+    @GetMapping("/revenue")
+    public ResponseEntity<?> getStatistics() {
+        return orderService.getStatistic();
+    }
+
+    @GetMapping("/seller")
+    public ResponseEntity<?> getSellerOrders(@RequestParam(value = "size",defaultValue = "10") int size,
+                                             @RequestParam(value = "page",defaultValue = "0") int page) {
+        return orderService.getOrderBySeller(size,page);
+    }
 }

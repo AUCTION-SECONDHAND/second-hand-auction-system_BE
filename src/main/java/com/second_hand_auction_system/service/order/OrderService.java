@@ -6,6 +6,7 @@ import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
+import com.second_hand_auction_system.dtos.responses.transaction.TransactionResponse;
 import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
@@ -200,7 +201,6 @@ public class OrderService implements IOrderService {
     }
 
 
-
     private long random() {
         Random random = new Random();
         int number = random.nextInt(900000) + 100000;
@@ -221,8 +221,7 @@ public class OrderService implements IOrderService {
         Page<Order> orders;
         if (status != null) {
             orders = orderRepository.findByStatus(status, pageable);
-        }
-        else{
+        } else {
             orders = orderRepository.findAll(pageable);
         }
 
@@ -260,7 +259,7 @@ public class OrderService implements IOrderService {
                     return response;
                 })
                 .collect(Collectors.toList());
-        Map<String,Object> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("orders", orderResponses);
         response.put("totalPage", orders.getTotalPages());
         response.put("totalElements", orders.getTotalElements());
@@ -341,6 +340,122 @@ public class OrderService implements IOrderService {
                         .message("List of orders found")
                         .data(orderResponses)  // Pass the processed list
                         .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getStatistic() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .data(null)
+                    .message("Missing or invalid Authorization header")
+                    .build());
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .data(null)
+                    .message("User not found")
+                    .build());
+        }
+        Wallet walletAdmin = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
+        if (walletAdmin == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .data(null)
+                    .message("WalletAdmin not found")
+                    .build());
+        }
+        float balanceAdmin = (float) walletAdmin.getBalance();
+        long totalTransaction = transactionSystemRepository.count();
+        int totalUser = (int) userRepository.count();
+        int totalAuction = (int) auctionRepository.count();
+        int totalOrder = (int) orderRepository.count();
+        TransactionResponse transactionResponse = TransactionResponse.builder()
+                .balance(balanceAdmin)
+                .totalTransaction(totalTransaction)
+                .totalUser(totalUser)
+                .totalAuction(totalAuction)
+                .totalRevenue(totalOrder * 0.05)
+                .build();
+
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(transactionResponse)
+                .message("Revenue data")
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getOrderBySeller(int size, int page) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createAt"));
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .message("Missing or invalid Authorization header")
+                    .data(null)
+                    .build());
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null)
+                    .build());
+        }
+        Page<Order> orders = orderRepository.findAllByAuction_Item_User_Id(requester.getId(),pageable);
+        List<OrderResponse> orderResponses = orders.stream()
+                .map(order -> {
+                    OrderResponse response = new OrderResponse();
+                    response.setOrderId(order.getOrderId());
+                    response.setOrderStatus(order.getStatus()); // Nếu OrderStatus là enum
+                    response.setPaymentMethod(order.getPaymentMethod()); // Nếu PaymentMethod là enum
+                    response.setEmail(order.getEmail());
+                    response.setPhoneNumber(order.getPhoneNumber());
+                    response.setNote(order.getNote());
+                    Item item = order.getItem(); // Giả sử order.getItem() trả về Item
+                    if (item != null) {
+                        response.setItem(ItemBriefResponseOrder.builder()
+                                .itemId(item.getItemId())
+                                .itemName(item.getItemName())
+                                .thumbnail(item.getThumbnail())
+                                .sellerName(item.getUser() != null ? item.getCreateBy() : null)
+                                .build());
+                    }
+                    Auction auction = order.getAuction();
+                    if (auction != null) {
+                        response.setAuctionOrder(AuctionOrder.builder()
+                                .auctionId(auction.getAuctionId())
+                                .termConditions(auction.getTermConditions())
+                                .auctionTypeName(auction.getAuctionType().getAuctionTypeName())
+                                .priceStep(auction.getPriceStep())
+                                .status(auction.getStatus())
+                                .build());
+                    }
+                    response.setCreateBy(order.getCreateBy());
+                    response.setTotalPrice(order.getTotalAmount());
+                    response.setShippingType(order.getShippingMethod());
+                    return response;
+                })
+                .collect(Collectors.toList());
+        Map<String, Object> response = new HashMap<>();
+        response.put("orders", orderResponses);
+        response.put("totalPage", orders.getTotalPages());
+        response.put("totalElements", orders.getTotalElements());
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .data(response)
+                .message("Orders found")
+                .status(HttpStatus.OK)
+                .build());
     }
 
 

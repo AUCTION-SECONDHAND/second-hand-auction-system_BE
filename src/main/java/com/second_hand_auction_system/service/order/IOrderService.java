@@ -11,4 +11,8 @@ public interface IOrderService {
     ResponseEntity<?> getOrders(Integer page, Integer pageSize, String sortBy, OrderStatus status);
 
     ResponseEntity<?> getOrderByUser(int size, int page);
+
+    ResponseEntity<?> getStatistic();
+
+    ResponseEntity<?> getOrderBySeller(int size, int page);
 }
