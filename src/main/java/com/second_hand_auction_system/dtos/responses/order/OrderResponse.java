@@ -26,6 +26,5 @@ public class OrderResponse {
     private String createBy;
     private double totalPrice;
     private String shippingType;
-
     private FeedbackResponse feedback;
 }

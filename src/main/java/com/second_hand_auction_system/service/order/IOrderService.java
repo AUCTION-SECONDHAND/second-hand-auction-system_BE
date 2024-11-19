@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.service.order;
 
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
+import com.second_hand_auction_system.dtos.responses.order.OrderDetailResponse;
 import com.second_hand_auction_system.utils.OrderStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -17,4 +18,6 @@ public interface IOrderService {
     ResponseEntity<?> getOrderBySeller(int size, int page);
 
     void updateStatusOrder(int orderId, OrderStatus status);
+
+    OrderDetailResponse getOrderDetail(int orderId);
 }

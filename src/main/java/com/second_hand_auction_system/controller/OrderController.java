@@ -2,6 +2,7 @@ package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.order.OrderDetailResponse;
 import com.second_hand_auction_system.service.auction.AuctionService;
 import com.second_hand_auction_system.service.order.IOrderService;
 import com.second_hand_auction_system.utils.OrderStatus;
@@ -62,5 +63,17 @@ public class OrderController {
     public ResponseEntity<?> getSellerOrders(@RequestParam(value = "size", defaultValue = "10") int size,
                                              @RequestParam(value = "page", defaultValue = "0") int page) {
         return orderService.getOrderBySeller(size, page);
+    }
+
+    @GetMapping("/detail/{orderId}")
+    public ResponseEntity<?> getOrderDetails(@PathVariable int orderId) {
+        OrderDetailResponse orderDetailResponse = orderService.getOrderDetail(orderId);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(orderDetailResponse)
+                        .build()
+        );
     }
 }

@@ -6,6 +6,7 @@ import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
 import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder;
+import com.second_hand_auction_system.dtos.responses.order.OrderDetailResponse;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
 import com.second_hand_auction_system.dtos.responses.transaction.TransactionResponse;
 import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
@@ -44,6 +45,7 @@ public class OrderService implements IOrderService {
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
     private final FeedbackRepository feedbackRepository;
+    private final com.second_hand_auction_system.converters.order.orderConverter orderConverter;
 
 
     @Override
@@ -471,6 +473,13 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         orderExisted.setStatus(status);
         orderRepository.save(orderExisted);
+    }
+
+    @Override
+    public OrderDetailResponse getOrderDetail(int orderId) {
+        Order orderExisted = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        return orderConverter.toOrderDetailResponse(orderExisted);
     }
 
 
