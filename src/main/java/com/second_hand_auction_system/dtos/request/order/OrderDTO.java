@@ -40,5 +40,6 @@ public class OrderDTO {
     @NotNull(message = "Auction ID is required")
     private Integer auctionId;
 
+    private String orderCode;
 
 }

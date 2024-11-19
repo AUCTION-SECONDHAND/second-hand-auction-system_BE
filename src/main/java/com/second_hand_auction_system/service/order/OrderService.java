@@ -6,6 +6,7 @@ import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
 import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder;
+import com.second_hand_auction_system.dtos.responses.order.GHNResponse;
 import com.second_hand_auction_system.dtos.responses.order.OrderDetailResponse;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
 import com.second_hand_auction_system.dtos.responses.transaction.TransactionResponse;
@@ -13,6 +14,7 @@ import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.bid.BidService;
+import com.second_hand_auction_system.service.ghn.GHNService;
 import com.second_hand_auction_system.service.jwt.JwtService;
 import com.second_hand_auction_system.utils.*;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +25,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import vn.payos.PayOS;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,8 +50,8 @@ public class OrderService implements IOrderService {
     private final WalletRepository walletRepository;
     private final FeedbackRepository feedbackRepository;
     private final com.second_hand_auction_system.converters.order.orderConverter orderConverter;
-
-
+    private final GHNService ghnService;
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     @Override
     public ResponseEntity<?> create(OrderDTO order) {
         // Kiểm tra xem phiên đấu giá có tồn tại hay không
@@ -127,6 +131,7 @@ public class OrderService implements IOrderService {
                 .user(requester)
                 .shippingMethod("free shipping")
                 .auction(auction)
+                .orderCode(order.getOrderCode())
                 .build();
 
         // Xử lý ví nếu paymentMethod là WALLET_PAYMENT
@@ -468,11 +473,27 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public void updateStatusOrder(int orderId, OrderStatus status) {
-        Order orderExisted = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-        orderExisted.setStatus(status);
-        orderRepository.save(orderExisted);
+    @Scheduled(fixedRate = 600000)
+    public void updateOrderStatuses() {
+        // Retrieve all orders that are pending status updates
+        List<Order> ordersToUpdate = orderRepository.findAll(); // Or some other filter condition
+
+        for (Order order : ordersToUpdate) {
+            try {
+                // Get the GHN status using the order code
+                GHNResponse ghnResponse = ghnService.getOrderDetails(order.getOrderCode());
+
+                if (ghnResponse != null && ghnResponse.getCode() == 200) {
+                    // Update order status based on GHN response
+                    String ghnStatus = ghnResponse.getData().getStatus();
+                    order.setStatus(OrderStatus.valueOf(ghnStatus.toLowerCase())); // Adjust status based on your enum
+                    orderRepository.save(order);
+                    System.out.println("Updated order " + order.getOrderId() + " with status " + ghnStatus);
+                }
+            } catch (Exception e) {
+                System.err.println("Error updating order " + order.getOrderId() + ": " + e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -481,6 +502,5 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         return orderConverter.toOrderDetailResponse(orderExisted);
     }
-
 
 }
