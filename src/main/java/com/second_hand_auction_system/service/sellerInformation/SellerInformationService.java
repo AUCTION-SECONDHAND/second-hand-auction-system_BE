@@ -13,12 +13,15 @@ import com.second_hand_auction_system.repositories.ItemRepository;
 import com.second_hand_auction_system.repositories.SellerInformationRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.service.feedback.IFeedbackService;
+import com.second_hand_auction_system.service.jwt.IJwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,6 +35,7 @@ public class SellerInformationService implements ISellerInformationService {
     private final ItemRepository itemRepository;
     private final IFeedbackService feedbackService;
     private final FeedbackRepository feedbackRepository;
+    private final IJwtService jwtService;
 
     @Override
     public SellerInformationResponse createSellerInformation(SellerInformationDto sellerInformationDto, Integer userId) throws Exception {
@@ -45,20 +49,56 @@ public class SellerInformationService implements ISellerInformationService {
     }
 
     @Override
-    public SellerInformationResponse updateSellerInformation(Integer sellerId, SellerInformationDto sellerInformationDto) throws Exception {
-        SellerInformation existingSellerInfo = sellerInformationRepository.findById(sellerId)
-                .orElseThrow(() -> new NoSuchElementException("Seller information not found with ID: " + sellerId));
+    public SellerInformationResponse updateSellerInformation(SellerInformationDto sellerInformationDto) throws Exception {
+        // Extract the Authorization header
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
 
-        existingSellerInfo.setStoreName(sellerInformationDto.getStoreName());
-        existingSellerInfo.setAddress(sellerInformationDto.getAddress());
-        existingSellerInfo.setDescription(sellerInformationDto.getDescription());
-        existingSellerInfo.setAvatar(sellerInformationDto.getAvatar());
-        existingSellerInfo.setBackgroundImage(sellerInformationDto.getBackgroundImage());
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Unauthorized: Missing or invalid Authorization header");
+        }
 
+        // Extract the JWT token and user email
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+
+        // Find the authenticated user
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail)
+                .orElseThrow(() -> new Exception("User not found or inactive"));
+
+        // Retrieve the seller information associated with the user
+        SellerInformation existingSellerInfo = sellerInformationRepository.findByUser_Id(requester.getId())
+                .orElseThrow(() -> new NoSuchElementException("Seller information not found for user ID: " + requester.getId()));
+
+        // Update fields only if they are not null or empty
+        if (sellerInformationDto.getStoreName() != null && !sellerInformationDto.getStoreName().trim().isEmpty()) {
+            existingSellerInfo.setStoreName(sellerInformationDto.getStoreName());
+        }
+
+        if (sellerInformationDto.getAddress() != null && !sellerInformationDto.getAddress().trim().isEmpty()) {
+            existingSellerInfo.setAddress(sellerInformationDto.getAddress());
+        }
+
+        if (sellerInformationDto.getDescription() != null && !sellerInformationDto.getDescription().trim().isEmpty()) {
+            existingSellerInfo.setDescription(sellerInformationDto.getDescription());
+        }
+
+        if (sellerInformationDto.getAvatar() != null && !sellerInformationDto.getAvatar().trim().isEmpty()) {
+            existingSellerInfo.setAvatar(sellerInformationDto.getAvatar());
+        }
+
+        if (sellerInformationDto.getBackgroundImage() != null && !sellerInformationDto.getBackgroundImage().trim().isEmpty()) {
+            existingSellerInfo.setBackgroundImage(sellerInformationDto.getBackgroundImage());
+        }
+
+        // Save the updated seller information
         SellerInformation updatedSellerInfo = sellerInformationRepository.save(existingSellerInfo);
 
+        // Convert the updated entity to a response DTO and return it
         return SellerInformationConverter.convertToResponse(updatedSellerInfo);
     }
+
+
 
     @Override
     public SellerInformationResponse getSellerInformationById(Integer sellerId) throws Exception {
@@ -138,6 +178,39 @@ public class SellerInformationService implements ISellerInformationService {
         // Trả về danh sách seller top 5
         return ResponseEntity.ok(top5Sellers);
     }
+
+    @Override
+    public SellerInformationResponse getSellerInformationByToken() throws Exception {
+        // Extract the token from the request header
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Unauthorized");
+        }
+
+        // Extract the token without the "Bearer " prefix
+        String token = authHeader.substring(7);
+
+        // Extract the user email from the token
+        String userEmail = jwtService.extractUserEmail(token);
+
+        // Find the user by email and ensure the user is active
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            throw new Exception("User not found");
+        }
+
+        // Retrieve the seller information associated with the user
+        SellerInformation sellerInformation = sellerInformationRepository.findByUser_Id(requester.getId())
+                .orElseThrow(() -> new Exception("Seller information not found"));
+
+        // Convert the seller information entity to response DTO
+        SellerInformationResponse response = SellerInformationConverter.convertToResponse(sellerInformation);
+
+        return response;
+    }
+
 
 }
 

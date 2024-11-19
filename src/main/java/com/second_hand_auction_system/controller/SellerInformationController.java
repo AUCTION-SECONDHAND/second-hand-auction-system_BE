@@ -26,12 +26,12 @@ public class SellerInformationController {
         }
     }
 
-    @PutMapping("/{sellerId}")
+    @PutMapping()
     public ResponseEntity<SellerInformationResponse> updateSellerInformation(
-            @PathVariable Integer sellerId,
+
             @RequestBody SellerInformationDto sellerInformationDto) {
         try {
-            SellerInformationResponse response = sellerInformationService.updateSellerInformation(sellerId, sellerInformationDto);
+            SellerInformationResponse response = sellerInformationService.updateSellerInformation(sellerInformationDto);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
@@ -89,4 +89,14 @@ public class SellerInformationController {
         return sellerInformationService.findTop5();
     }
 
+
+    @GetMapping("")
+    public ResponseEntity<SellerInformationResponse> getSellerInformationByToken() {
+        try {
+            SellerInformationResponse response = sellerInformationService.getSellerInformationByToken();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
 }

@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 public interface ISellerInformationService {
     SellerInformationResponse createSellerInformation(SellerInformationDto sellerInformationDto, Integer userId) throws Exception;
 
-    SellerInformationResponse updateSellerInformation(Integer sellerId, SellerInformationDto sellerInformationDto) throws Exception;
+    SellerInformationResponse updateSellerInformation( SellerInformationDto sellerInformationDto) throws Exception;
 
     SellerInformationResponse getSellerInformationById(Integer sellerId) throws Exception;
 
@@ -18,4 +18,7 @@ public interface ISellerInformationService {
     SellerInformationResponse getSellerInformationByAuctionId(Integer auctionId) throws Exception;
 
     ResponseEntity<?> findTop5();
+
+    SellerInformationResponse getSellerInformationByToken() throws Exception;
+
 }

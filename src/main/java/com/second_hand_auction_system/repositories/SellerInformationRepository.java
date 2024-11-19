@@ -20,4 +20,6 @@ public interface SellerInformationRepository extends JpaRepository<SellerInforma
             "ORDER BY COUNT(f) DESC")
     Page<SellerInformation> findTop5SellersWithMostFeedback(Pageable pageable);
 
+    @Query("SELECT si.sellerId FROM SellerInformation si WHERE si.user.id = :userId")
+    Optional<Integer> findSellerIdByUserId(Integer userId);
 }
