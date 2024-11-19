@@ -99,6 +99,7 @@ public class UserService implements IUserService {
                 emailService.sendOtp(newUser.getEmail(), newUser.getId());
 
             }
+
             return ResponseEntity.ok(RegisterResponse.builder()
                     .status(HttpStatus.OK.value())
                     .message("User registered successfully")

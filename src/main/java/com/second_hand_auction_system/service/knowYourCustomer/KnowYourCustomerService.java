@@ -5,12 +5,11 @@ import com.second_hand_auction_system.dtos.request.kyc.KycDto;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.address.AddressResponse;
 import com.second_hand_auction_system.dtos.responses.kyc.KycResponse;
+import com.second_hand_auction_system.models.Address;
 import com.second_hand_auction_system.models.KnowYourCustomer;
+import com.second_hand_auction_system.models.SellerInformation;
 import com.second_hand_auction_system.models.User;
-import com.second_hand_auction_system.repositories.AddressRepository;
-import com.second_hand_auction_system.repositories.KnowYourCustomerRepository;
-import com.second_hand_auction_system.repositories.UserRepository;
-import com.second_hand_auction_system.repositories.WithdrawRequestRepository;
+import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.service.notification.NotificationService;
@@ -49,6 +48,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     private final WithdrawRequestRepository withdrawRequestRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final SellerInformationRepository sellerInformationRepository;
 
     @Override
     @Transactional
@@ -211,14 +211,22 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                     .message("User not found")
                     .build());
         }
-
+        Address address = addressRepository.findByUserIdAndStatusIsTrue(user.getId()).orElse(null);
+        assert  address != null;
         if (knowYourCustomer.getKycStatus().equals(KycStatus.APPROVED)) {
-            user.setRole(Role.SELLER);  // Update the user's role to SELLER
+            user.setRole(Role.SELLER);
+            SellerInformation sellerInformation = SellerInformation.builder()
+                    .sellerId(requester.getId())
+                    .avatar(requester.getAvatar())
+                    .address(address.getAddress_name())
+                    .storeName(requester.getFullName())
+                    .user(requester)
+                    .build();
+            sellerInformationRepository.save(sellerInformation);
         } else if (knowYourCustomer.getKycStatus().equals(KycStatus.PENDING) ||
                 knowYourCustomer.getKycStatus().equals(KycStatus.REJECTED)) {
             user.setRole(Role.BUYER);  // Update the user's role to BUYER
         }
-
         userRepository.save(user);
 
 

@@ -6,6 +6,7 @@ import com.second_hand_auction_system.dtos.request.user.RegisterRequest;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.user.AuthenticationResponse;
 import com.second_hand_auction_system.dtos.responses.user.RegisterResponse;
+import com.second_hand_auction_system.dtos.responses.user.UserResponse;
 import com.second_hand_auction_system.service.user.IUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,11 +14,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 
 @RestController
@@ -28,11 +31,31 @@ public class AuthenticationController {
 
     private final IUserService userService;
     private final LogoutHandler logoutHandler;
+    private final SimpMessagingTemplate messagingTemplate;
+
 
     @PostMapping()
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        return userService.register(registerRequest);
+        // Thực hiện đăng ký người dùng
+        ResponseEntity<RegisterResponse> response = userService.register(registerRequest);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            // Lấy danh sách người dùng cập nhật
+            List<UserResponse> updatedUsers = (List<UserResponse>) userService.getListUser(0, 10);
+
+            // Gửi thông tin người dùng mới qua WebSocket
+            messagingTemplate.convertAndSend("/topic/users", updatedUsers);
+        }
+
+        RegisterResponse registerResponse = response.getBody();
+        return ResponseEntity.ok(RegisterResponse.builder()
+                        .data(null)
+                        .message("User registered successfully")
+                        .status(HttpStatus.CREATED.value())
+                .build()
+        );
     }
+
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyOtp(@Valid @RequestParam String email, @RequestParam String otp) {

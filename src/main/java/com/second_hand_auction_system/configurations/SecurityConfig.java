@@ -14,6 +14,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 import static org.springframework.http.HttpMethod.*;
 
@@ -38,8 +43,10 @@ public class SecurityConfig {
             "/api/v1/user/**",
             "/api/v1/user/forgot-password/**",
             "/api/v1/withdrawRequest/vnpay-payment/**",
-            "/ws/**",
+            "/socket/**",
     };
+
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -48,7 +55,6 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST).permitAll()
-                        .requestMatchers("/api/v1/ws/**").permitAll()  // Ensure WebSocket endpoint is accessible                        //user
                         .requestMatchers(GET, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(PUT,"/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
