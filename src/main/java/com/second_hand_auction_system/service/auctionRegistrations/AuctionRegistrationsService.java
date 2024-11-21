@@ -147,8 +147,8 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 auctionRegistrationUser.setUpdateAt(LocalDateTime.now());
                 registrationUserRepository.save(auctionRegistrationUser);
             }
-            double commissionRate = 0.05;
-            double commissionAmount = depositAmount * commissionRate;
+//            double commissionRate = 0.05;
+//            double commissionAmount = depositAmount * commissionRate;
             //Transaction của ví cọc
             Transaction transactionWallet = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
@@ -156,8 +156,8 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .transactionStatus(TransactionStatus.COMPLETED)
                     .recipient("SYSTEM")
                     .sender(requester.getFullName())
-                    .commissionAmount((int) commissionAmount)
-                    .commissionRate(commissionRate)
+                    .commissionAmount(0)
+                    .commissionRate(0)
                     .transactionWalletCode(generateTransactionCode())
                     .build();
             transactionRepository.save(transactionWallet);
@@ -168,8 +168,8 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .transactionStatus(TransactionStatus.COMPLETED)
                     .recipient("SYSTEM")
                     .sender(requester.getFullName())
-                    .commissionAmount((int) commissionAmount)
-                    .commissionRate(commissionRate)
+                    .commissionAmount(0)
+                    .commissionRate(0)
                     .wallet(userWallet)
                     .transactionWalletCode(generateTransactionCode())
                     .build();

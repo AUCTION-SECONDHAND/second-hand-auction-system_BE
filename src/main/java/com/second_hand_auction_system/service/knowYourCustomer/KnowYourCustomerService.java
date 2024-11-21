@@ -478,7 +478,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()
                         .data(kycResponse)
-                        .message("")
+                        .message("User found")
                         .status(HttpStatus.OK)
                         .build());
     }

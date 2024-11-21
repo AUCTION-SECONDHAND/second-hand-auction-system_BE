@@ -213,7 +213,7 @@ public class ItemService implements IItemService {
         if (userId == null) {
             throw new Exception("User not found");
         }
-        Page<Item> items = itemRepository.findAllByAuction_Status(AuctionStatus.CLOSED, pageRequest);
+        Page<Item> items = itemRepository.findWinningItemsByUserIdAndAuctionStatus(userId, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 

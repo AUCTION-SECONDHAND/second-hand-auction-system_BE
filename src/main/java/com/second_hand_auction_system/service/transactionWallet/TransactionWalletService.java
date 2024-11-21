@@ -205,7 +205,13 @@ public class TransactionWalletService implements ITransactionWalletService {
         }
         var transactionType = transactionRepository.findById(transactionId).orElseThrow(null);
         var wallet = walletRepository.findByUserId(user.getId()).orElse(null);
-
+        if(transactionType != null){
+            transactionType.getTransactionStatus().equals(TransactionStatus.COMPLETED);
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder().status(HttpStatus.CONFLICT)
+                    .message("Transaction wallet already completed")
+                    .data(null)
+                    .build());
+        }
         APiResponse response = new APiResponse();
         if (vnpTransactionStatus.equals("00")) {
             response.setCode("200");
