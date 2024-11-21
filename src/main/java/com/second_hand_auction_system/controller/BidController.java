@@ -3,11 +3,13 @@ package com.second_hand_auction_system.controller;
 import com.second_hand_auction_system.dtos.request.bid.BidDto;
 import com.second_hand_auction_system.dtos.request.bid.BidRequest;
 import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
+import com.second_hand_auction_system.service.bid.BidService;
 import com.second_hand_auction_system.service.bid.IBidService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -20,6 +22,8 @@ public class BidController {
 
     private final IBidService bidService;
 
+    private final BidService bidServices;
+
 
     @PostMapping
     public ResponseEntity<?> createBid(@RequestBody BidRequest bidRequest) throws Exception {
@@ -28,7 +32,7 @@ public class BidController {
 
     @PutMapping("/{bidId}")
     public ResponseEntity<?> updateBid(@PathVariable Integer bidId, @RequestBody BidRequest bidDto) throws Exception {
-        return  bidService.updateBid(bidId, bidDto);
+        return bidService.updateBid(bidId, bidDto);
     }
 
     // Xóa một Bid
@@ -61,9 +65,9 @@ public class BidController {
 
     @GetMapping("/history-bid/{auctionId}")
     public ResponseEntity<?> getAllBids(@PathVariable Integer auctionId,
-                                                        @RequestParam(value = "limit", defaultValue = "10") int limit,
-                                                        @RequestParam(value = "page", defaultValue = "0") int page) throws Exception {
-        return bidService.getAllBids(auctionId,limit, page);
+                                        @RequestParam(value = "limit", defaultValue = "10") int limit,
+                                        @RequestParam(value = "page", defaultValue = "0") int page) throws Exception {
+        return bidService.getAllBids(auctionId, limit, page);
     }
 
     @GetMapping("information-bid/{auctionId}")
@@ -83,4 +87,14 @@ public class BidController {
 
 
 
+    @GetMapping("/stream-bids")
+    public SseEmitter streamBids() {
+        SseEmitter emitter = new SseEmitter(0L); // Không timeout
+        // Đăng ký emitter vào danh sách lưu trữ (để gửi dữ liệu tới tất cả client khi có cập nhật)
+        bidServices.addEmitter(emitter);
+        emitter.onCompletion(() -> bidServices.removeEmitter(emitter));
+        emitter.onTimeout(() -> bidServices.removeEmitter(emitter));
+        emitter.onError((e) -> bidServices.removeEmitter(emitter));
+        return emitter;
+    }
 }

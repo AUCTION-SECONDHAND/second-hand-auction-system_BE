@@ -23,6 +23,7 @@ import com.second_hand_auction_system.utils.Registration;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -49,6 +51,16 @@ public class BidService implements IBidService {
     private final EmailService emailService;
     private final SimpMessagingTemplate messagingTemplate;
     private final ModelMapper modelMapper;
+    private final List<SseEmitter> emitters = Collections.synchronizedList(new ArrayList<>());
+    private final ApplicationEventPublisher applicationEventPublisher;
+
+    public void addEmitter(SseEmitter emitter) {
+        emitters.add(emitter);
+    }
+
+    public void removeEmitter(SseEmitter emitter) {
+        emitters.remove(emitter);
+    }
 
     @Override
     @Transactional
@@ -202,15 +214,22 @@ public class BidService implements IBidService {
                 .build();
 
         bidRepository.save(newBid);
+        BidResponse bidResponse = BidResponse.builder()
+                .bidAmount(newBid.getBidAmount())
+                .bidTime(newBid.getBidTime())
+                .winBid(newBid.isWinBid())
+                .userId(newBid.getUser().getId())
+                .auctionId(newBid.getAuction().getAuctionId())
+                .username(newBid.getUser().getFullName())
+                .build();
 
+        sendBidUpdate(bidResponse);
         // Cập nhật tất cả các bid khác trong phiên đấu giá này thành `winBid = false`
         existingBids.forEach(b -> {
             b.setWinBid(false);
             bidRepository.save(b);
         });
-
-        messagingTemplate.convertAndSend("/topic/bids", bidRequest);
-
+        //messagingTemplate.convertAndSend("/topic/bids", bidRequest);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseObject.builder()
                         .data(null)
@@ -665,5 +684,20 @@ public class BidService implements IBidService {
         return winningBid;
     }
 
+    public void sendBidUpdate(BidResponse bidResponse) {
+        List<SseEmitter> deadEmitters = new ArrayList<>();
+        emitters.forEach(emitter -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("bidUpdate")
+                        .data(bidResponse)
+                        .reconnectTime(3000));
+            } catch (Exception e) {
+                deadEmitters.add(emitter); // Lưu emitter lỗi để loại bỏ
+            }
+        });
 
+        // Loại bỏ các emitter không còn hoạt động
+        emitters.removeAll(deadEmitters);
+    }
 }
