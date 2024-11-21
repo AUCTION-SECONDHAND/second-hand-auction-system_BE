@@ -33,7 +33,6 @@ public class SecurityConfig {
     private final LoginGoogleSuccess loginGoogleSuccess;
     private final LoginGoogleFailure loginGoogleFailure;
     private final LogoutHandler logoutHandler;
-
     private static final String[] WHITE_LIST = {
             "/swagger-ui/**",
             "/v3/api-docs/**",
@@ -43,6 +42,7 @@ public class SecurityConfig {
             "/api/v1/user/**",
             "/api/v1/user/forgot-password/**",
             "/api/v1/withdrawRequest/vnpay-payment/**",
+            "/api/v1/bids/highest-bid/**",
             "/socket/**",
     };
 
@@ -133,4 +133,9 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
+
+
+
 }

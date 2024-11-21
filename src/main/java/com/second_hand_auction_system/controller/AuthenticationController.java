@@ -31,29 +31,11 @@ public class AuthenticationController {
 
     private final IUserService userService;
     private final LogoutHandler logoutHandler;
-    private final SimpMessagingTemplate messagingTemplate;
 
 
     @PostMapping()
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        // Thực hiện đăng ký người dùng
-        ResponseEntity<RegisterResponse> response = userService.register(registerRequest);
-
-        if (response.getStatusCode().is2xxSuccessful()) {
-            // Lấy danh sách người dùng cập nhật
-            List<UserResponse> updatedUsers = (List<UserResponse>) userService.getListUser(0, 10);
-
-            // Gửi thông tin người dùng mới qua WebSocket
-            messagingTemplate.convertAndSend("/topic/users", updatedUsers);
-        }
-
-        RegisterResponse registerResponse = response.getBody();
-        return ResponseEntity.ok(RegisterResponse.builder()
-                        .data(null)
-                        .message("User registered successfully")
-                        .status(HttpStatus.CREATED.value())
-                .build()
-        );
+       return userService.register(registerRequest);
     }
 
 

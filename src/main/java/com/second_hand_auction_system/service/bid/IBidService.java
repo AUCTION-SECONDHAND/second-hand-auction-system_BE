@@ -27,4 +27,6 @@ public interface IBidService {
     ResponseEntity<?> getInformationBid(Integer auctionId);
 
     ResponseEntity<?> getBidDetail(Integer auctionId);
+
+    ResponseEntity<?> getHighestBid(Integer auctionId);
 }

@@ -8,8 +8,10 @@ import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.user.IUserService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,14 +20,18 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/api/v1/user")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
     private final IUserService userService;
     private final EmailService emailService;
+    private final SimpMessagingTemplate messagingTemplate;
     @GetMapping("get-users")
     public ResponseEntity<?> getUser(@RequestParam(value = "page",defaultValue = "0") int page,
                                                     @RequestParam(value = "limit",defaultValue = "10") int limit){
         return userService.getListUser(page,limit);
     }
+
+
 
     @PostMapping("/send-email")
     public String sendEmail(

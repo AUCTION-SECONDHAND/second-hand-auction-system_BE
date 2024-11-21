@@ -4,13 +4,11 @@ import com.second_hand_auction_system.converters.feedback.FeedbackConverter;
 import com.second_hand_auction_system.dtos.request.order.OrderDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.auction.AuctionOrder;
-import com.second_hand_auction_system.dtos.responses.feedback.FeedbackResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder;
 import com.second_hand_auction_system.dtos.responses.order.GHNResponse;
 import com.second_hand_auction_system.dtos.responses.order.OrderDetailResponse;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
 import com.second_hand_auction_system.dtos.responses.transaction.TransactionResponse;
-import com.second_hand_auction_system.dtos.responses.user.ListUserResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.bid.BidService;
@@ -29,9 +27,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import vn.payos.PayOS;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,7 +47,6 @@ public class OrderService implements IOrderService {
     private final FeedbackRepository feedbackRepository;
     private final com.second_hand_auction_system.converters.order.orderConverter orderConverter;
     private final GHNService ghnService;
-    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     @Override
     public ResponseEntity<?> create(OrderDTO order) {
         // Kiểm tra xem phiên đấu giá có tồn tại hay không

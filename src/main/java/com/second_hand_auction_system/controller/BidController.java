@@ -76,5 +76,11 @@ public class BidController {
         return bidService.getBidDetail(auctionId);
     }
 
+    @GetMapping("/highest-bid/{auctionId}")
+    public ResponseEntity<?> getHighestBid(@RequestParam Integer auctionId) throws Exception {
+       return bidService.getHighestBid(auctionId);
+    }
+
+
 
 }

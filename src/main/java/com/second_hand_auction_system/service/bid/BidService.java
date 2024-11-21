@@ -628,6 +628,24 @@ public class BidService implements IBidService {
                 .build());
     }
 
+    @Override
+    public ResponseEntity<?> getHighestBid(Integer auctionId) {
+        var acution = bidRepository.findByAuction_AuctionId(auctionId);
+        if(acution == null){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder().status(HttpStatus.NOT_FOUND)
+                    .data(null)
+                    .message("Auction not found")
+                    .build());
+        }
+        Page<Bid> highBid = bidRepository.findAllByAuction_AuctionIdOrderByBidAmountDesc(auctionId, PageRequest.of(0, 1));
+        Bid highest = highBid.hasContent() ? highBid.getContent().get(0) : null;
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder().status(HttpStatus.OK)
+                .data(highest.getBidAmount())
+                .message("Highest bid is " + highest.getBidAmount())
+                .build());
+    }
+
 
     public Bid findWinner(int auctionId) {
         Auction auction = auctionRepository.findById(auctionId)
