@@ -81,7 +81,6 @@ public void updateSubCategory(int scId, SubCategoryDto subCategory) throws Excep
             .stream()
             .map(sc -> modelMapper.map(sc, SubCategoryResponse.class))
             .toList();
-
     // Phát sự kiện
     applicationEventPublisher.publishEvent(new SubCategoryUpdatedEvent(updatedSubCategories));
 }

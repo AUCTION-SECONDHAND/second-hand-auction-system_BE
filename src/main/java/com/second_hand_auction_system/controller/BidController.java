@@ -81,11 +81,9 @@ public class BidController {
     }
 
     @GetMapping("/highest-bid/{auctionId}")
-    public ResponseEntity<?> getHighestBid(@RequestParam Integer auctionId) throws Exception {
+    public ResponseEntity<?> getHighestBid(@PathVariable Integer auctionId) throws Exception {
        return bidService.getHighestBid(auctionId);
     }
-
-
 
     @GetMapping("/stream-bids")
     public SseEmitter streamBids() {

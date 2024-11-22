@@ -1,6 +1,8 @@
 package com.second_hand_auction_system.service.notification;
 
+import com.second_hand_auction_system.converters.notification.NotificationConverter;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.notification.NotificationResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Bid;
 import com.second_hand_auction_system.models.Notifications;
@@ -8,6 +10,7 @@ import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.AuctionStatus;
+import com.second_hand_auction_system.utils.NotificationStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +36,7 @@ public class NotificationService implements INotificationService {
     private final IJwtService jwtService;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate simpMessagingTemplate;
-
+    private final NotificationConverter notificationConverter;
 
     public void sendNotification(String userId, Notifications notifications) {
         log.info("Sending ws notification to {}", userId, notifications);
@@ -122,7 +125,7 @@ public class NotificationService implements INotificationService {
         Notifications notifications;
         notifications = Notifications.builder()
                 .message("THong bao ket qua")
-                .users(userList)
+                //.users(userList)
                 .createBy(user.getFullName())
                 .build();
         notificationRepository.save(notifications);
@@ -132,6 +135,29 @@ public class NotificationService implements INotificationService {
                         .message("Auction closed, winner is " + winningBid.getUser().getEmail())
                         .status(HttpStatus.OK)
                         .build());
+    }
+
+    @Override
+    public void createBidNotification(Integer userId, String title, String message) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Notifications notifications = Notifications.builder()
+                .title(title)
+                .message(message)
+                .user(user)
+                .status(true)
+                .notificationStatus(NotificationStatus.SUCCESS)
+                .build();
+        notificationRepository.save(notifications);
+    }
+
+    @Override
+    public List<NotificationResponse> getNotifications() throws Exception {
+        List<Notifications> notifications = notificationRepository.findAllByOrderByCreateAtDesc();
+        List<NotificationResponse> notificationResponses = notifications.stream()
+                .map(notificationConverter::toNotificationResponse)
+                .toList();
+        return notificationResponses;
     }
 
 

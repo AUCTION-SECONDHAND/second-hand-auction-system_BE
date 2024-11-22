@@ -13,10 +13,13 @@ import java.util.List;
 @Setter
 @Builder
 @Table(name = "notifications")
-public class Notifications extends BaseEntity{
+public class Notifications extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer notificationId;
+
+    @Column(name = "title")
+    private String title;
 
     @Column(name = "message")
     private String message;
@@ -27,9 +30,14 @@ public class Notifications extends BaseEntity{
     @Column(name = "create_by")
     private String createBy;
 
-    @ManyToMany
-    @JoinTable(name = "user_notification",
-               joinColumns = @JoinColumn(name = "user_id"),
-                inverseJoinColumns = @JoinColumn(name = "notification_id"))
-    private List<User> users;
+    //    @ManyToMany
+//    @JoinTable(name = "user_notification",
+//               joinColumns = @JoinColumn(name = "user_id"),
+//                inverseJoinColumns = @JoinColumn(name = "notification_id"))
+//    private List<User> users;
+    @ManyToOne
+    @JoinColumn(name = "user_notification")
+    private User user;
+
+    private Boolean status;
 }

@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.service.bid;
 
 import com.second_hand_auction_system.converters.bid.BidConverter;
+import com.second_hand_auction_system.converters.notification.NotificationConverter;
 import com.second_hand_auction_system.dtos.request.bid.BidDto;
 import com.second_hand_auction_system.dtos.request.bid.BidRequest;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
@@ -8,16 +9,13 @@ import com.second_hand_auction_system.dtos.responses.auction.AuctionResponse;
 import com.second_hand_auction_system.dtos.responses.bid.BidDetailResponse;
 import com.second_hand_auction_system.dtos.responses.bid.BidInformation;
 import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
-import com.second_hand_auction_system.models.Auction;
-import com.second_hand_auction_system.models.AuctionRegistration;
-import com.second_hand_auction_system.models.Bid;
-import com.second_hand_auction_system.models.User;
-import com.second_hand_auction_system.repositories.AuctionRegistrationsRepository;
-import com.second_hand_auction_system.repositories.AuctionRepository;
-import com.second_hand_auction_system.repositories.BidRepository;
-import com.second_hand_auction_system.repositories.UserRepository;
+import com.second_hand_auction_system.dtos.responses.notification.NotificationResponse;
+import com.second_hand_auction_system.models.*;
+import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
+import com.second_hand_auction_system.service.notification.INotificationService;
+import com.second_hand_auction_system.sse.NotificationEvent;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import com.second_hand_auction_system.utils.Registration;
 import jakarta.transaction.Transactional;
@@ -53,6 +51,9 @@ public class BidService implements IBidService {
     private final ModelMapper modelMapper;
     private final List<SseEmitter> emitters = Collections.synchronizedList(new ArrayList<>());
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final INotificationService notificationService;
+    private final NotificationsRepository notificationsRepository;
+    private final NotificationConverter notificationConverter;
 
     public void addEmitter(SseEmitter emitter) {
         emitters.add(emitter);
@@ -229,6 +230,16 @@ public class BidService implements IBidService {
             b.setWinBid(false);
             bidRepository.save(b);
         });
+        String message = "Bạn đang đặt với giá " + newBid.getBidAmount();
+        String title = "Đặt giá thành công ";
+        notificationService.createBidNotification(requester.getId(), title, message);
+
+        List<Notifications> notifications = notificationsRepository.findAllByOrderByCreateAtDesc();
+        List<NotificationResponse> notificationResponses = notifications.stream()
+                .map(notificationConverter::toNotificationResponse)
+                .toList();
+        applicationEventPublisher.publishEvent(new NotificationEvent(notificationResponses));
+
         //messagingTemplate.convertAndSend("/topic/bids", bidRequest);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseObject.builder()
@@ -315,7 +326,7 @@ public class BidService implements IBidService {
                     .username(requester.getUsername())
                     .build();
             emailService.sendBidNotification(email, requester.getFullName(), bidDto.getBidAmount(), existingBid.getBidAmount(), auction.getAuctionId());
-            // 10. Return success response
+                    // 10. Return success response
             return ResponseEntity.ok(ResponseObject.builder()
                     .data(bidResponse)
                     .message("Bid updated successfully")
@@ -650,7 +661,7 @@ public class BidService implements IBidService {
     @Override
     public ResponseEntity<?> getHighestBid(Integer auctionId) {
         var acution = bidRepository.findByAuction_AuctionId(auctionId);
-        if(acution == null){
+        if (acution == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder().status(HttpStatus.NOT_FOUND)
                     .data(null)
                     .message("Auction not found")
