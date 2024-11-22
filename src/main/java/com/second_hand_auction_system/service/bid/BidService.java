@@ -234,7 +234,7 @@ public class BidService implements IBidService {
         String title = "Đặt giá thành công ";
         notificationService.createBidNotification(requester.getId(), title, message);
 
-        List<Notifications> notifications = notificationsRepository.findAllByOrderByCreateAtDesc();
+        List<Notifications> notifications = notificationsRepository.findByUser_IdOrderByCreateAtDesc(requester.getId());
         List<NotificationResponse> notificationResponses = notifications.stream()
                 .map(notificationConverter::toNotificationResponse)
                 .toList();

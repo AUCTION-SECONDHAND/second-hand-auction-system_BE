@@ -153,13 +153,24 @@ public class NotificationService implements INotificationService {
 
     @Override
     public List<NotificationResponse> getNotifications() throws Exception {
-        List<Notifications> notifications = notificationRepository.findAllByOrderByCreateAtDesc();
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization").substring(7);
+        Integer userId = extractUserIdFromToken(token);
+        if (userId == null) {
+            throw new Exception("User not found");
+        }
+        List<Notifications> notifications = notificationRepository.findByUser_IdOrderByCreateAtDesc(userId);
         List<NotificationResponse> notificationResponses = notifications.stream()
                 .map(notificationConverter::toNotificationResponse)
                 .toList();
         return notificationResponses;
     }
 
-
+    public Integer extractUserIdFromToken(String token) throws Exception {
+        String userEmail = jwtService.extractUserEmail(token); // Extract email from token
+        User user = userRepository.findByEmail(userEmail) // Find user by email
+                .orElseThrow(() -> new Exception("User not found!!!"));
+        return user.getId();
+    }
 }
 
