@@ -2,6 +2,7 @@ package com.second_hand_auction_system.dtos.responses.item;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.dtos.responses.auction.ItemAuctionResponse;
+import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResponse;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.models.ImageItem;
 import com.second_hand_auction_system.utils.AuctionStatus;
@@ -34,6 +35,8 @@ public class ItemDetailResponse {
     private ItemAuctionResponse auction;
 
     private SubCategoryItemResponse scId;
+
+    private AuctionTypeResponse auctionType;
 
     private ItemSpecificResponse itemSpecific;
 

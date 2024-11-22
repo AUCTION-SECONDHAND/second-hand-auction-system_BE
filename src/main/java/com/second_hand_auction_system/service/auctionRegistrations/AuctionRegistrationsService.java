@@ -77,7 +77,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .data(null)
-                    .message("Wallet not balance is insufficient")
+                    .message("Số dư ví của bạn không đủ")
                     .build());
         }
 
@@ -87,7 +87,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .status(HttpStatus.NOT_FOUND)
                     .data(null)
-                    .message("Auction not found")
+                    .message("Phiên đấu giá không tìm thấy")
                     .build());
         }
 
@@ -184,7 +184,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                 .status(HttpStatus.BAD_REQUEST)
                 .data(null)
-                .message("Auction is closed")
+                .message("Phien dau gia da ket thuc")
                 .build());
     }
 

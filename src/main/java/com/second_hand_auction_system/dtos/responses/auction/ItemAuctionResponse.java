@@ -2,6 +2,7 @@ package com.second_hand_auction_system.dtos.responses.auction;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.second_hand_auction_system.models.AuctionType;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import jakarta.persistence.Column;
 import lombok.*;
@@ -46,6 +47,10 @@ public class ItemAuctionResponse {
 
     @Column(name = "status")
     private AuctionStatus status;
+
+
+    @JsonProperty("buy_now_price")
+    private Double buyNowPrice;
 
     @Column(name = "create_at")
     @JsonProperty("create_at")

@@ -2,6 +2,7 @@ package com.second_hand_auction_system.dtos.responses.item;
 
 import com.second_hand_auction_system.dtos.responses.BaseResponse;
 import com.second_hand_auction_system.dtos.responses.auction.ItemAuctionResponse;
+import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResponse;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.utils.ItemStatus;
 import lombok.*;
@@ -25,4 +26,6 @@ public class AuctionItemResponse extends BaseResponse {
     private ItemAuctionResponse auction;
 
     private SubCategoryItemResponse scId;
+
+    private AuctionTypeResponse auctionTypeId;
 }

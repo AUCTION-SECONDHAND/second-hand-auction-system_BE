@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.dtos.responses.BaseResponse;
 import com.second_hand_auction_system.dtos.responses.auction.ItemAuctionResponse;
+import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResponse;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.FeedBack;
@@ -55,6 +56,8 @@ public class ItemResponse extends BaseResponse {
     private SubCategoryItemResponse scId;
 
     private ItemAuctionResponse auction;
+
+    private AuctionTypeResponse auctionTypeResponse;
 
 //    private Integer userId;
 

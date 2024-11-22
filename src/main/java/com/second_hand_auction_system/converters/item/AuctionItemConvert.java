@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.converters.item;
 
 import com.second_hand_auction_system.dtos.responses.auction.ItemAuctionResponse;
+import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResponse;
 import com.second_hand_auction_system.dtos.responses.item.*;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.models.*;
@@ -31,6 +32,8 @@ public class AuctionItemConvert {
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
+                    .buyNowPrice(auction.getBuyNowPrice())
+
                     .build();
         }
 
@@ -44,6 +47,15 @@ public class AuctionItemConvert {
                     .build();
         }
 
+        AuctionTypeResponse auctionTypeResponse = null;
+        if (item.getAuctionType() != null) {
+            AuctionType auctionType = item.getAuctionType();
+            auctionTypeResponse = AuctionTypeResponse.builder()
+                    .auctionTypeId(auctionType.getAuctionTypeId())
+                    .auctionTypeName(auctionType.getAuctionTypeName())
+                    .build();
+        }
+
         // Trả về AuctionItemResponse đã được ánh xạ
         return AuctionItemResponse.builder()
                 .itemId(item.getItemId())
@@ -53,6 +65,7 @@ public class AuctionItemConvert {
                 .itemStatus(item.getItemStatus())
                 .auction(auctionResponse)
                 .scId(subCategoryResponse)
+                .auctionTypeId(auctionTypeResponse)
                 .build();
     }
 
@@ -79,6 +92,16 @@ public class AuctionItemConvert {
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
+                    .buyNowPrice(auction.getBuyNowPrice())
+                    .build();
+        }
+
+        AuctionTypeResponse auctionTypeResponse = null;
+        if (item.getAuctionType() != null) {
+            AuctionType auctionType = item.getAuctionType();
+            auctionTypeResponse = AuctionTypeResponse.builder()
+                    .auctionTypeId(auctionType.getAuctionTypeId())
+                    .auctionTypeName(auctionType.getAuctionTypeName())
                     .build();
         }
 
@@ -119,6 +142,7 @@ public class AuctionItemConvert {
                 .scId(subCategoryResponse)
                 .itemSpecific(itemSpecificResponse)
                 .images(imageResponses)
+                .auctionType(auctionTypeResponse)
                 .build();
     }
 
@@ -138,6 +162,15 @@ public class AuctionItemConvert {
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
+                    .build();
+        }
+
+        AuctionTypeResponse auctionTypeResponse = null;
+        if (item.getAuctionType() != null) {
+            AuctionType auctionType = item.getAuctionType();
+            auctionTypeResponse = AuctionTypeResponse.builder()
+                    .auctionTypeId(auctionType.getAuctionTypeId())
+                    .auctionTypeName(auctionType.getAuctionTypeName())
                     .build();
         }
 
@@ -181,6 +214,7 @@ public class AuctionItemConvert {
                 .itemDescription(item.getItemDescription())
                 .itemStatus(item.getItemStatus())
                 .auction(auctionResponse)
+                .auctionTypeResponse(auctionTypeResponse)
                 .itemSpecific(itemSpecificResponse)
                 .scId(subCategoryResponse)
                 .imageItemResponse(imageResponses)
