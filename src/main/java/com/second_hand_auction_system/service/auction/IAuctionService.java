@@ -14,4 +14,7 @@ public interface IAuctionService {
     ResponseEntity<?> getAll();
 
     ResponseEntity<?> getAuctionById(Integer auctionId);
+
+
+    long countAuctionsCreatedToday();
 }

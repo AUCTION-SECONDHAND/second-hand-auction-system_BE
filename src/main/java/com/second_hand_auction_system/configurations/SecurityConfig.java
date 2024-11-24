@@ -39,10 +39,11 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/api/v1/auth/**",
             "/api/v1/auctions/**",
-            "/api/v1/user/**",
+            "/api/v1/users/**",
             "/api/v1/user/forgot-password/**",
             "/api/v1/withdrawRequest/vnpay-payment/**",
             "/api/v1/bids/highest-bid/**",
+            "/api/v1/bids/**",
             "/socket/**",
     };
 
@@ -55,7 +56,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST).permitAll()
-                        .requestMatchers(GET, "/api/v1/user/**").hasRole("ADMIN")
+                        .requestMatchers(GET, "/api/v1/user/comparison").hasRole("ADMIN")
                         .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
                         .requestMatchers(PUT,"/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
                         .requestMatchers(PATCH,"/api/v1/user/**").hasAnyRole("SELLER","BUYER")
@@ -94,8 +95,8 @@ public class SecurityConfig {
                         //auction
                         .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
                         .requestMatchers(POST,"api/v1/auction/**").hasRole("STAFF")
-                        .requestMatchers("/api/v1/address/**").permitAll()
-                        .requestMatchers("/api/v1/bids/**").permitAll()
+
+
                         //withdraw
                         .requestMatchers(POST,"/api/v1/withdrawRequest/**").hasRole("SELLER")
                         .requestMatchers(PUT,"/api/v1/withdrawRequest/**").hasRole("STAFF")

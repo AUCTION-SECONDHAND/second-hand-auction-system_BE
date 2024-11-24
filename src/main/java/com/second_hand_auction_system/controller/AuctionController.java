@@ -15,7 +15,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -98,6 +100,12 @@ public class AuctionController {
     @GetMapping("/{auctionId}")
     public ResponseEntity<?> getAuctionById(@PathVariable Integer auctionId) {
         return auctionService.getAuctionById(auctionId);
+    }
+
+    @GetMapping("/count-today")
+    public ResponseEntity<Long> countAuctionsCreatedToday() {
+        long count = auctionService.countAuctionsCreatedToday();
+        return ResponseEntity.ok(count);
     }
 
 

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Map;
 
 @Service
 public interface IUserService {
@@ -40,4 +41,8 @@ public interface IUserService {
     ResponseEntity<?> forgotPassword(String email) throws MessagingException;
 
     ResponseEntity<?> changePassword(ChangePassWordDTO request, Principal connectedUser);
+
+    Map<String, Object> getUserComparison();
+
+    ResponseEntity<?> countSellerByWeek();
 }

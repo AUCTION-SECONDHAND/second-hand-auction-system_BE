@@ -4,6 +4,7 @@ import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Time;
@@ -19,5 +20,9 @@ public interface AuctionRepository extends JpaRepository<Auction, Integer> {
     @Query("SELECT MAX(b.bidAmount) FROM Bid b WHERE b.auction.auctionId = :auctionId")
     Double findMaxBidByAuctionId(Integer auctionId);
 
-    List<Auction> findAllByEndDateBeforeOrEndDateEqualsAndEndTimeBeforeAndStatus(Date currentDate, Date currentDate1, Time currentTime, AuctionStatus auctionStatus);
+
+
+
+    @Query("SELECT COUNT(a) FROM Auction a WHERE DATE(a.startDate) = CURRENT_DATE")
+    long countAuctionsCreatedToday();
 }

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -71,6 +72,17 @@ public class UserController {
     @PatchMapping("/changePassword")
     public ResponseEntity<?> changePassword(@RequestBody ChangePassWordDTO request, Principal connectedUser) throws IllegalAccessException {
         return userService.changePassword(request, connectedUser);
+    }
+
+    @GetMapping("/comparison")
+    public ResponseEntity<Map<String, Object>> getUserComparison() {
+        Map<String, Object> comparison = userService.getUserComparison();
+        return ResponseEntity.ok(comparison);
+    }
+
+    @GetMapping("/seller-by-week")
+    public ResponseEntity<?> getUserByWeek() {
+        return userService.countSellerByWeek();
     }
 
 

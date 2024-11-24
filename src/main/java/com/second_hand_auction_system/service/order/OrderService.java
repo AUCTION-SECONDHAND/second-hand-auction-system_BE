@@ -219,10 +219,12 @@ public class OrderService implements IOrderService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
         Page<Order> orders;
-        if (status != null) {
-            orders = orderRepository.findByStatus(status, pageable);
-        } else {
+        if (status == null) {
             orders = orderRepository.findAll(pageable);
+
+        } else {
+            orders = orderRepository.findByStatus(status, pageable);
+
         }
 
         List<OrderResponse> orderResponses = orders.stream()

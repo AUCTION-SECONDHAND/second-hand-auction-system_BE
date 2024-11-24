@@ -43,6 +43,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.io.IOException;
 import java.nio.file.attribute.UserPrincipal;
 import java.security.Principal;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -474,6 +476,64 @@ public class UserService implements IUserService {
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .status(HttpStatus.OK)
                 .message("Change password successful")
+                .build());
+    }
+
+    @Override
+    public Map<String, Object> getUserComparison() {
+        LocalDate currentDate = LocalDate.now();
+        int currentMonth = currentDate.getMonthValue();
+        int currentYear = currentDate.getYear();
+
+        // Lấy số lượng người dùng trong tháng này
+        Long currentMonthUsers = userRepository.countUsersByMonthAndYear(currentMonth, currentYear);
+
+        // Lấy số lượng người dùng trong tháng trước
+        int previousMonth = (currentMonth == 1) ? 12 : currentMonth - 1;
+        int previousYear = (currentMonth == 1) ? currentYear - 1 : currentYear;
+
+        Long previousMonthUsers = userRepository.countUsersByPreviousMonth(previousMonth, previousYear);
+
+        // Tính sự thay đổi
+        int change = (previousMonthUsers != 0) ? (int) (currentMonthUsers - previousMonthUsers) : 0;
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("currentMonthUsers", currentMonthUsers);
+        response.put("previousMonthUsers", previousMonthUsers);
+        response.put("change", change);
+
+        return response;
+    }
+
+    @Override
+    public ResponseEntity<?> countSellerByWeek() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if(authHeader == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder().status(HttpStatus.UNAUTHORIZED).data(null).message("Unauthorized")
+                    .build());
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .data(null)
+                    .message("User not found")
+                    .build());
+        }
+        LocalDate currentDay = LocalDate.now();
+        LocalDate startOfWeek = currentDay.with(DayOfWeek.MONDAY);
+        LocalDate sundayOfWeek = currentDay.with(DayOfWeek.SUNDAY);
+        Map<String,Long> sellerByWeek = new HashMap<>();
+        for (LocalDate date = startOfWeek; !date.isAfter(sundayOfWeek); date = date.plusDays(1)) {
+            sellerByWeek.put(date.getDayOfWeek().toString(),
+                    userRepository.countByCreateAtBetween(date.atStartOfDay(),date.plusDays(1).atStartOfDay()));
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(sellerByWeek)
+                .message("Data seller")
                 .build());
     }
 

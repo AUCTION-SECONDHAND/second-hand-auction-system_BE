@@ -8,6 +8,7 @@ import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -15,6 +16,10 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     Page<Order> findAllByUser_Id( Integer userId, Pageable pageable);
 
     Page<Order> findByStatus(OrderStatus status, Pageable pageable);
+
+//    @Query("SELECT o FROM Order o WHERE o.status = :status")
+//    Page<Order> findByStatus( OrderStatus status, Pageable pageable);
+
 
     boolean existsByAuction_AuctionIdAndUserId(Integer auctionId, Integer userId);
 

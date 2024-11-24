@@ -26,6 +26,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -195,6 +196,27 @@ public class AuctionService implements IAuctionService {
                 .message("Auction not found")
                 .data(null)
                 .build());
+    }
+
+    @Override
+    public long countAuctionsCreatedToday() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String email = jwtService.extractUserEmail(token);
+        if (email == null) {
+            throw new RuntimeException("Unauthorized");
+        }
+        var user = userRepository.findByEmail(email).orElse(null);
+        if(user == null){
+            throw new RuntimeException("User not found");
+        }
+        if (!(user.getRole().equals(Role.ADMIN))){
+            throw new RuntimeException("You don't have permission to access this resource");
+        }
+        return auctionRepository.countAuctionsCreatedToday();
     }
 
 
