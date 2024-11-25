@@ -1,7 +1,9 @@
 package com.second_hand_auction_system.controller;
 
+import com.second_hand_auction_system.dtos.request.walletCustomer.Deposit;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawApprove;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawRequestDTO;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.withdraw.APiResponse;
 import com.second_hand_auction_system.models.Transaction;
 import com.second_hand_auction_system.repositories.TransactionRepository;
@@ -70,5 +72,10 @@ public class WithdrawRequestController {
                 vnpTransactionNo, vnpTransactionStatus, vnpTxnRef, vnpSecureHash);
         return transactionWalletService.updateTransaction(transactionId, vnpTransactionStatus);
 
+    }
+
+    @PostMapping("/transfer/{withdrawId}")
+    public ResponseEntity<ResponseObject> transfer (@RequestBody Deposit deposit, @PathVariable Integer withdrawId) {
+        return withdrawRequestService.transfer(deposit,withdrawId);
     }
 }

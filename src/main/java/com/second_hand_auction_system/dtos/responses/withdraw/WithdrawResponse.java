@@ -16,7 +16,7 @@ public class WithdrawResponse {
     private double requestAmount;
 
     private RequestStatus requestStatus;
-
+    private Integer withdrawId;
     private String note;
     private String bankAccount;
     private LocalDateTime processAt;

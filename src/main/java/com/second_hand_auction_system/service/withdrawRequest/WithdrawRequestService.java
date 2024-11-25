@@ -1,9 +1,12 @@
 package com.second_hand_auction_system.service.withdrawRequest;
 
+import com.second_hand_auction_system.dtos.request.walletCustomer.Deposit;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawApprove;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawRequestDTO;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
+import com.second_hand_auction_system.dtos.responses.wallet.WalletResponse;
 import com.second_hand_auction_system.dtos.responses.withdraw.WithdrawResponse;
+import com.second_hand_auction_system.models.Transaction;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.models.Wallet;
 import com.second_hand_auction_system.models.WithdrawRequest;
@@ -15,7 +18,6 @@ import com.second_hand_auction_system.service.jwt.JwtService;
 import com.second_hand_auction_system.utils.PaymentMethod;
 import com.second_hand_auction_system.utils.RequestStatus;
 import com.second_hand_auction_system.utils.Role;
-import com.second_hand_auction_system.utils.TransactionType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +33,10 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -145,29 +149,74 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Order.desc("processAt")));
         Page<WithdrawRequest> withdrawRequestPage = withdrawRequestRepository.findAll(pageable);
         List<WithdrawResponse> withdrawResponses = withdrawRequestPage.stream()
-
-                .map(withdrawRequest -> WithdrawResponse.builder()
-                        .requestAmount(withdrawRequest.getRequestAmount())
-                        .requestStatus(withdrawRequest.getRequestStatus())
-                        .note(withdrawRequest.getNote())
-                        .bankAccount(withdrawRequest.getBankAccount())
-                        .processAt(withdrawRequest.getProcessAt())
-                        .paymentMethod(withdrawRequest.getPaymentMethod())
-                        .accountNumber(withdrawRequest.getAccountNumber())
-                        .walletCustomerId(withdrawRequest.getWallet().getWalletId())
-                        .sellerName(withdrawRequest.getWallet().getUser().getFullName())
-                        .avtar(withdrawRequest.getWallet().getUser().getAvatar())
-                        .build())
+                .map(withdrawRequest -> {
+                    User user = withdrawRequest.getWallet() != null ? withdrawRequest.getWallet().getUser() : null;
+                    return WithdrawResponse.builder()
+                            .bankName(withdrawRequest.getBankName())
+                            .withdrawId(withdrawRequest.getWithdrawRequestId())
+                            .requestAmount(withdrawRequest.getRequestAmount())
+                            .requestStatus(withdrawRequest.getRequestStatus())
+                            .note(withdrawRequest.getNote())
+                            .bankAccount(withdrawRequest.getBankAccount())
+                            .processAt(withdrawRequest.getProcessAt())
+                            .paymentMethod(withdrawRequest.getPaymentMethod())
+                            .accountNumber(withdrawRequest.getAccountNumber())
+                            .walletCustomerId(withdrawRequest.getWallet() != null ? withdrawRequest.getWallet().getWalletId() : null)
+                            .sellerName(user != null ? user.getFullName() : "Unknown User")
+                            .avtar(user != null ? user.getAvatar() : "default-avatar.png")
+                            .build();
+                })
                 .toList();
-        Map<String,Object> map = new HashMap<>();
-        map.put("data",withdrawResponses);
-        map.put("totalPages",withdrawRequestPage.getTotalPages());
-        map.put("totalElements",withdrawRequestPage.getTotalElements());
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", withdrawResponses);
+        map.put("totalPages", withdrawRequestPage.getTotalPages());
+        map.put("totalElements", withdrawRequestPage.getTotalElements());
 
         return ResponseEntity.ok(ResponseObject.builder()
                 .status(HttpStatus.OK)
                 .data(map)
                 .message("All requests successful")
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> transfer(Deposit deposit, Integer withdrawId) {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .message("Unauthorized")
+                    .build());
+        }
+        String token = authHeader.substring(7);
+        String email = jwtService.extractUserEmail(token);
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        var requester = userRepository.findByEmail(email).orElse(null);
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null)
+                    .build());
+        }
+        var withdrawRequest = withdrawRequestRepository.findById(withdrawId).orElse(null);
+        if (withdrawRequest == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("Withdrawal request not found")
+                    .data(null)
+                    .build());
+        }
+
+        WalletResponse walletResponse = vnpayService.deposite(deposit.getAmount(),deposit.getDescription());
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                        .data(walletResponse)
+                        .message("Chuyen tien thanh cong")
+                        .status(HttpStatus.OK)
                 .build());
     }
 

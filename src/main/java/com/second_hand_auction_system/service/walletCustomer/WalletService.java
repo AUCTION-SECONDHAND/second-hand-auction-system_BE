@@ -3,6 +3,7 @@ package com.second_hand_auction_system.service.walletCustomer;
 import com.second_hand_auction_system.dtos.request.walletCustomer.Deposit;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.wallet.WalletResponse;
+import com.second_hand_auction_system.models.Transaction;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.models.Wallet;
 import com.second_hand_auction_system.repositories.TransactionRepository;
@@ -64,6 +65,7 @@ public class WalletService implements IWalletService {
             }
             // Gọi dịch vụ VNPay để thực hiện giao dịch
             WalletResponse vnpay = vnpayService.deposite(deposit.getAmount(), deposit.getDescription());
+
 
             // Trả về kết quả
             return ResponseEntity.status(HttpStatus.OK)
