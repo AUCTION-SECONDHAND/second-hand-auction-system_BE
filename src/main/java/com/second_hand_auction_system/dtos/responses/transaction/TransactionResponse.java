@@ -13,4 +13,5 @@ public class TransactionResponse {
     private double totalRevenue;
     private int totalUser;
     private int totalAuction;
+    private int totalOrder;
 }

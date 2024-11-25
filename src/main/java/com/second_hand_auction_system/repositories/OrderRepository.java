@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.repositories;
 
+import com.second_hand_auction_system.dtos.responses.order.SellerOrderStatics;
 import com.second_hand_auction_system.models.Order;
 import com.second_hand_auction_system.utils.OrderStatus;
 import com.second_hand_auction_system.utils.Role;
@@ -9,7 +10,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
@@ -23,8 +27,20 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     boolean existsByAuction_AuctionIdAndUserId(Integer auctionId, Integer userId);
 
-    Page<Order> findAllByUser_IdAndUser_Role(Integer userId, Role role, Pageable pageable);
 
     Page<Order> findAllByAuction_Item_User_Id(Integer sellerId, Pageable pageable);
+
+
+    @Query("SELECT " +
+            "MONTH(o.createAt) AS month, " +
+            "COUNT(o) AS totalOrders, " +
+            "SUM(CASE WHEN o.status = 'delivered' THEN 1 ELSE 0 END) AS deliveredOrders, " +
+            "SUM(CASE WHEN o.status = 'cancel' THEN 1 ELSE 0 END) AS cancelledOrders, " +
+            "SUM(o.totalAmount) AS totalAmount " +
+            "FROM Order o " +
+            "GROUP BY MONTH(o.createAt) " +
+            "ORDER BY MONTH(o.createAt)")
+    List<Object[]> getOrderStatisticsByMonth();
+
 
 }

@@ -8,6 +8,7 @@ import com.second_hand_auction_system.dtos.responses.item.ItemBriefResponseOrder
 import com.second_hand_auction_system.dtos.responses.order.GHNResponse;
 import com.second_hand_auction_system.dtos.responses.order.OrderDetailResponse;
 import com.second_hand_auction_system.dtos.responses.order.OrderResponse;
+import com.second_hand_auction_system.dtos.responses.order.SellerOrderStatics;
 import com.second_hand_auction_system.dtos.responses.transaction.TransactionResponse;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.repositories.*;
@@ -391,6 +392,7 @@ public class OrderService implements IOrderService {
                 .totalTransaction(totalTransaction)
                 .totalUser(totalUser)
                 .totalAuction(totalAuction)
+                .totalOrder(totalOrder)
                 .totalRevenue(totalOrder * 0.05)
                 .build();
 
@@ -499,5 +501,31 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         return orderConverter.toOrderDetailResponse(orderExisted);
     }
+
+    @Override
+    public ResponseEntity<?> getOrderStatisticsByMonth() {
+        List<Object[]> statistics = orderRepository.getOrderStatisticsByMonth();
+        List<SellerOrderStatics> statisticsDTOs = new ArrayList<>();
+
+        for (Object[] stat : statistics) {
+            int month = (int) stat[0];
+            long totalOrders = (long) stat[1];
+            long deliveredOrders = (long) stat[2];
+            long cancelledOrders = (long) stat[3];
+            double totalAmount = (double) stat[4];
+
+            SellerOrderStatics dto = new SellerOrderStatics(
+                    month, totalOrders, deliveredOrders, cancelledOrders, totalAmount
+            );
+            statisticsDTOs.add(dto);
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .message("Get order statistics")
+                .data(statisticsDTOs)
+                .build());
+    }
+
+
 
 }

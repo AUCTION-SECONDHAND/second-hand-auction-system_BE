@@ -21,8 +21,15 @@ public interface AuctionRepository extends JpaRepository<Auction, Integer> {
     Double findMaxBidByAuctionId(Integer auctionId);
 
 
-
-
     @Query("SELECT COUNT(a) FROM Auction a WHERE DATE(a.startDate) = CURRENT_DATE")
     long countAuctionsCreatedToday();
+
+    @Query("SELECT MONTH(a.startDate), COUNT(a) " +
+            "FROM Auction a " +
+            "GROUP BY MONTH(a.startDate) " +
+            "ORDER BY MONTH(a.startDate)")
+    List<Object[]> countAuctionsByMonth();
+
+
+
 }

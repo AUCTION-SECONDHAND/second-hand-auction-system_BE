@@ -80,7 +80,7 @@ public class UserController {
         return ResponseEntity.ok(comparison);
     }
 
-    @GetMapping("/seller-by-week")
+    @GetMapping("/count-by-week")
     public ResponseEntity<?> getUserByWeek() {
         return userService.countSellerByWeek();
     }

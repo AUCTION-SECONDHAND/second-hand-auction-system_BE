@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
@@ -74,4 +76,11 @@ public class OrderController {
                         .build()
         );
     }
+
+    @GetMapping("/statistics/monthly")
+    public ResponseEntity<?> getOrderStatisticsByMonth() {
+        return orderService.getOrderStatisticsByMonth();
+    }
+
+
 }

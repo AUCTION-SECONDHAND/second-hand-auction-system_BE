@@ -45,10 +45,7 @@ import java.nio.file.attribute.UserPrincipal;
 import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -525,7 +522,7 @@ public class UserService implements IUserService {
         LocalDate currentDay = LocalDate.now();
         LocalDate startOfWeek = currentDay.with(DayOfWeek.MONDAY);
         LocalDate sundayOfWeek = currentDay.with(DayOfWeek.SUNDAY);
-        Map<String,Long> sellerByWeek = new HashMap<>();
+        Map<String,Long> sellerByWeek = new LinkedHashMap<>();
         for (LocalDate date = startOfWeek; !date.isAfter(sundayOfWeek); date = date.plusDays(1)) {
             sellerByWeek.put(date.getDayOfWeek().toString(),
                     userRepository.countByCreateAtBetween(date.atStartOfDay(),date.plusDays(1).atStartOfDay()));

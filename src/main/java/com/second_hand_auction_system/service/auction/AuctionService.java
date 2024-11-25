@@ -219,6 +219,40 @@ public class AuctionService implements IAuctionService {
         return auctionRepository.countAuctionsCreatedToday();
     }
 
+    @Override
+    public ResponseEntity<?> countAuctionsByMonth() {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String email = jwtService.extractUserEmail(token);
+        if (email == null) {
+            throw new RuntimeException("Unauthorized");
+        }
+        var user = userRepository.findByEmail(email).orElse(null);
+        if(user == null){
+            throw new RuntimeException("User not found");
+        }
+        if (!(user.getRole().equals(Role.ADMIN))){
+            throw new RuntimeException("You don't have permission to access this resource");
+        }
+        // Lấy dữ liệu từ repository
+        List<Object[]> results = auctionRepository.countAuctionsByMonth();
+
+        // Chuyển đổi dữ liệu sang định dạng JSON-friendly (Map)
+        List<Map<String, Object>> response = results.stream().map(row -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("month", row[0]);
+            map.put("count", row[1]);
+            return map;
+        }).toList();
+
+        // Trả về kết quả
+        return ResponseEntity.ok(response);
+    }
+
+
 
     @Scheduled(fixedDelay = 60000)
     @Transactional

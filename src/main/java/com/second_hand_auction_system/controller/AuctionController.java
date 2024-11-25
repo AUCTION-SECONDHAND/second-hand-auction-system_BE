@@ -108,5 +108,10 @@ public class AuctionController {
         return ResponseEntity.ok(count);
     }
 
+    @GetMapping("/count-month")
+    public ResponseEntity<?> countAuctionsCreatedMonth() {
+        return auctionService.countAuctionsByMonth();
+    }
+
 
 }
