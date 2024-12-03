@@ -212,7 +212,8 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         }
 
         WalletResponse walletResponse = vnpayService.deposite(deposit.getAmount(),deposit.getDescription());
-
+        withdrawRequest.setRequestStatus(RequestStatus.ACCEPTED);
+        withdrawRequestRepository.save(withdrawRequest);
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                         .data(walletResponse)
                         .message("Chuyen tien thanh cong")

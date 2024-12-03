@@ -5,6 +5,7 @@ import com.second_hand_auction_system.dtos.request.kyc.KycDto;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface IKnowYourCustomerService {
     ResponseEntity<?> register(KycDto kyc);
@@ -18,4 +19,5 @@ public interface IKnowYourCustomerService {
     ResponseEntity<?> updateKyc(@Valid KycDto kycDto);
 
     ResponseEntity<?> getKycUserById();
+
 }

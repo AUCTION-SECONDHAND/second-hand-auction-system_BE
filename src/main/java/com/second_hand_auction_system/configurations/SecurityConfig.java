@@ -83,7 +83,7 @@ public class SecurityConfig {
                         .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
                         .requestMatchers(GET,"/api/v1/auction-register/**").permitAll()
                         //kyc
-                        .requestMatchers(POST,"/api/v1/kyc/**").hasRole("BUYER")
+                        .requestMatchers(POST,"/api/v1/kyc/**").permitAll()
                         .requestMatchers(PUT,"/api/v1/kyc/user").permitAll()
                         .requestMatchers(PUT,"/api/v1/kyc/approve/**").hasAnyRole("STAFF","ADMIN")
                         .requestMatchers(GET,"/api/v1/kyc/**").permitAll()

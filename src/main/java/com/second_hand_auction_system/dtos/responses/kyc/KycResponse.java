@@ -5,6 +5,7 @@ import com.second_hand_auction_system.utils.Gender;
 import com.second_hand_auction_system.utils.KycStatus;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @AllArgsConstructor
@@ -15,18 +16,15 @@ import java.util.Date;
 public class KycResponse {
     private Integer kycId;
     private String dob;
-    private int age;
     private String fullName;
-    private String phoneNumber;
-    private String email;
-    private Gender gender;
+    private String gender;
     private String cccdNumber;
     private String frontDocumentUrl;
-    private String backDocumentUrl;
+    private String permanentAddress;
     private KycStatus kycStatus;
-    private Date submited;
+    private Date submitted;
+    private String nationality;
     private Integer userId;
-    private AddressResponse address;
     private String reason;
     private String verified_by;
 

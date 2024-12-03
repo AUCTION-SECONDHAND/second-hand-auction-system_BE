@@ -9,12 +9,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/kyc")
 @RequiredArgsConstructor
 public class KnowYourCustomerController {
     private final KnowYourCustomerService kycService;
+
+
 
     @PostMapping()
     public ResponseEntity<?> registerKyc(@Valid  @RequestBody KycDto kyc) {

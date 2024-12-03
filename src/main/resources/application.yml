@@ -83,5 +83,9 @@ payos:
     check_sum: ffe3d79b57d6d0546c330aa86b3fb1d68812f581ae26ba7a23477e2691c5704c
 
 
+fpt_ai:
+  api_key: your-fpt-ai-api-key-here
+  api_url: https://api.fpt.ai/vision/idr/vnm
+
 api:
   prefix: api/v1

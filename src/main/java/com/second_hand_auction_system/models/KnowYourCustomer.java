@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -16,28 +15,20 @@ import java.util.Date;
 @Setter
 @Builder
 @Table(name = "kyc")
-public class KnowYourCustomer extends BaseEntity{
+public class KnowYourCustomer extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer kycId;
 
-    @Column(name ="date_of_birth")
-    private LocalDate dateOfBirth;
-
-    @Column(name = "age")
-    private int age;
+    @Column(name = "date_of_birth")
+    private String dateOfBirth;
 
     @Column(name = "full_name")
     private String fullName;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
-    @Column(name = "email")
-    private String email;
-
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
+    @Column(name = "gender")
+    private String gender;
 
     @Column(name = "reason")
     private String reason;
@@ -45,11 +36,8 @@ public class KnowYourCustomer extends BaseEntity{
     @Column(name = "cccd_number")
     private String cccdNumber;
 
-    @Column(name = "front_document")
-    private String frontDocumentUrl;
-
-    @Column(name = "back_document")
-    private String backDocumentUrl;
+    @Column(name = "nationality")
+    private String nationality;
 
     @Enumerated(EnumType.STRING)
     private KycStatus kycStatus;
@@ -60,7 +48,15 @@ public class KnowYourCustomer extends BaseEntity{
     @Column(name = "verified_by")
     private String verifiedBy;
 
+    @Column(name = "permanent_address")
+    private String permanentAddress;
+
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+
+
+    @Column(name = "home")
+    private String home;
 }

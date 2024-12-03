@@ -294,8 +294,8 @@ public class AuctionService implements IAuctionService {
                         try {
                             if (!bid.equals(winningBid)) {
                                 // Trừ cọc khỏi ví đấu giá và hoàn tiền vào ví người thua
-                                walletAuction.setBalance(walletAuction.getBalance() - depositAmount);
-                                userWallet.setBalance(userWallet.getBalance() + depositAmount);
+                                walletAuction.setBalance(walletAuction.getBalance() - (depositAmount*0.1));
+                                userWallet.setBalance(userWallet.getBalance() + (depositAmount*0.1));
                                 walletRepository.save(walletAuction);
                                 walletRepository.save(userWallet);
 
