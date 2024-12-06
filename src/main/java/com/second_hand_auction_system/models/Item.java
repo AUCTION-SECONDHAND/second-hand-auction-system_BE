@@ -32,11 +32,14 @@ public class Item extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private ItemStatus itemStatus;
 
-    @Column(name = "brand_name")
-    private String brandName;
+//    @Column(name = "brand_name")
+//    private String brandName;
 
     @Column(name = "thumbnail")
     private String thumbnail;
+
+    @Column(name = "price_buy_now")
+    private Double priceBuyNow;
 
 //    @Column(name = "img_default")
 //    private String imgDefault;
@@ -61,8 +64,7 @@ public class Item extends BaseEntity{
     @OneToOne(mappedBy = "item",cascade = CascadeType.ALL,optional = true)
     private Auction auction;
 
-    @OneToOne(mappedBy = "item",cascade = CascadeType.ALL)
-    private ItemSpecific itemSpecific;
+
 
     @ManyToOne
     @JoinColumn(name = "sub_category_id")

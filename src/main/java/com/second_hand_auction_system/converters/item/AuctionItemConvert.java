@@ -116,20 +116,7 @@ public class AuctionItemConvert {
         }
 
         // Ánh xạ các thông tin cụ thể của item nếu có
-        ItemSpecificResponse itemSpecificResponse = null;
-        if (item.getItemSpecific() != null) {
-            ItemSpecific itemSpecific = item.getItemSpecific();
-            itemSpecificResponse = ItemSpecificResponse.builder()
-                    .percent(itemSpecific.getPercent())
-                    .type(itemSpecific.getType())
-                    .color(itemSpecific.getColor())
-                    .weight(itemSpecific.getWeight())
-                    .dimension(itemSpecific.getDimension())
-                    .original(itemSpecific.getOriginal())
-                    .manufactureDate(itemSpecific.getManufactureDate())
-                    .material(itemSpecific.getMaterial())
-                    .build();
-        }
+
 
         // Trả về ItemDetailResponse đã được ánh xạ
         return ItemDetailResponse.builder()
@@ -140,7 +127,6 @@ public class AuctionItemConvert {
                 .itemStatus(item.getItemStatus())
                 .auction(auctionResponse)
                 .scId(subCategoryResponse)
-                .itemSpecific(itemSpecificResponse)
                 .images(imageResponses)
                 .auctionType(auctionTypeResponse)
                 .build();
@@ -185,21 +171,6 @@ public class AuctionItemConvert {
         }
 
         ItemSpecificResponse itemSpecificResponse = null;
-        if (item.getItemSpecific() != null) {
-            ItemSpecific itemSpecific = item.getItemSpecific();
-            itemSpecificResponse = ItemSpecificResponse.builder()
-                    .percent(itemSpecific.getPercent())
-                    .itemSpecId(itemSpecific.getItemSpecificId())
-                    .type(itemSpecific.getType())
-                    .color(itemSpecific.getColor())
-                    .weight(itemSpecific.getWeight())
-                    .dimension(itemSpecific.getDimension())
-                    .original(itemSpecific.getOriginal())
-                    .manufactureDate(itemSpecific.getManufactureDate())
-                    .material(itemSpecific.getMaterial())
-                    .build();
-        }
-
         List<ImageItemResponse> imageResponses = item.getImageItems().stream()
                 .map(image -> ImageItemResponse.builder()
                         .idImage(image.getImageItemId())
@@ -215,7 +186,6 @@ public class AuctionItemConvert {
                 .itemStatus(item.getItemStatus())
                 .auction(auctionResponse)
                 .auctionTypeResponse(auctionTypeResponse)
-                .itemSpecific(itemSpecificResponse)
                 .scId(subCategoryResponse)
                 .imageItemResponse(imageResponses)
                 .createBy(item.getCreateBy())

@@ -38,7 +38,6 @@ public class ItemService implements IItemService {
     private final ImageItemRepository imageItemRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
-    private final ItemSpecificRepository itemSpecificRepository;
     private final IJwtService jwtService;
     private final EmailService emailService;
     private final AuctionRepository auctionRepository;
@@ -70,11 +69,7 @@ public class ItemService implements IItemService {
         item.setUser(requester);
         item.setCreateBy(requester.getFullName());
         item.setUpdateBy(requester.getFullName());
-        if (itemDto.getItemSpecific() != null) {
-            ItemSpecific itemSpecific = modelMapper.map(itemDto.getItemSpecific(), ItemSpecific.class);
-            itemSpecific.setItem(item);
-            item.setItemSpecific(itemSpecific);
-        }
+
         if (itemDto.getImgItem() != null && !itemDto.getImgItem().isEmpty()) {
             List<ImgItemDto> imgItemDtos = itemDto.getImgItem();
             // Limit to 5 images
@@ -126,12 +121,6 @@ public class ItemService implements IItemService {
         itemExist.setUser(requester);
         itemExist.setCreateBy(requester.getUsername());
         itemExist.setUpdateBy(requester.getUsername());
-        if (itemDto.getItemSpecific() != null) {
-            ItemSpecific itemSpecificExist = itemSpecificRepository.findById(itemExist.getItemSpecific().getItemSpecificId())
-                    .orElseThrow(() -> new DataNotFoundException("Item not found"));
-            modelMapper.map(itemDto.getItemSpecific(), itemSpecificExist);
-            itemExist.setItemSpecific(itemSpecificExist);
-        }
         itemRepository.save(itemExist);
     }
 
@@ -163,12 +152,6 @@ public class ItemService implements IItemService {
         item.setUpdateAt(LocalDateTime.now());
         item.setUpdateBy(requester.getUsername());
         item.setItemStatus(approve.getStatus());
-        if (item.getItemSpecific() != null) {
-            ItemSpecific itemSpecificExist = itemSpecificRepository.findById(item.getItemSpecific().getItemSpecificId())
-                    .orElseThrow(() -> new DataNotFoundException("Item not found"));
-            modelMapper.map(item.getItemSpecific(), itemSpecificExist);
-            item.setItemSpecific(itemSpecificExist);
-        }
         itemRepository.save(item);
         emailService.sendNotificationRegisterItem(userEmail, item.getUser().getFullName()
                 , item.getItemName());
@@ -317,20 +300,7 @@ public class ItemService implements IItemService {
                 .map(item -> ItemResponse2.builder()
                         .itemId(item.getItemId())
                         .itemName(item.getItemName())
-                        .brandName(item.getBrandName())
                         .createBy(item.getCreateBy())
-                        .itemSpecific(item.getItemSpecific() != null ?
-                                ItemSpecificResponse.builder() // Đảm bảo sử dụng đúng lớp
-                                        .itemSpecId(item.getItemSpecific().getItemSpecificId())
-                                        .color(item.getItemSpecific().getColor())
-                                        .manufactureDate(item.getItemSpecific().getManufactureDate())
-                                        .type(item.getItemSpecific().getType())
-                                        .weight(item.getItemSpecific().getWeight())
-                                        .percent(item.getItemSpecific().getPercent())
-                                        .material(item.getItemSpecific().getMaterial())
-                                        .dimension(item.getItemSpecific().getDimension())
-                                        .original(item.getItemSpecific().getOriginal())
-                                        .build() : null)
                         .itemCondition(String.valueOf(item.getItemCondition()))
                         .itemDescription(item.getItemDescription())
                         .thumbnail(item.getThumbnail())

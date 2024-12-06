@@ -49,20 +49,7 @@ public class orderConverter {
                     .build();
         }
 
-        ItemSpecificResponse itemSpecificResponse = null;
-        if (order.getItem().getItemSpecific() != null) {
-            ItemSpecific itemSpecific = order.getItem().getItemSpecific();
-            itemSpecificResponse = ItemSpecificResponse.builder()
-                    .percent(itemSpecific.getPercent())
-                    .type(itemSpecific.getType())
-                    .color(itemSpecific.getColor())
-                    .weight(itemSpecific.getWeight())
-                    .dimension(itemSpecific.getDimension())
-                    .original(itemSpecific.getOriginal())
-                    .manufactureDate(itemSpecific.getManufactureDate())
-                    .material(itemSpecific.getMaterial())
-                    .build();
-        }
+
 
         ItemDetailResponse itemDetailResponse = null;
         if (order.getItem() != null) {
@@ -75,7 +62,6 @@ public class orderConverter {
                     .itemStatus(item.getItemStatus())
                     .auction(auctionResponse)
                     .scId(subCategoryResponse)
-                    .itemSpecific(itemSpecificResponse)
                     .images(imageResponses)
                     .build();
         }

@@ -8,7 +8,6 @@ import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResp
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.FeedBack;
-import com.second_hand_auction_system.models.ItemSpecific;
 import com.second_hand_auction_system.utils.ItemStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -49,7 +48,7 @@ public class ItemResponse extends BaseResponse {
     @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
     private String updateAt;
 
-    private ItemSpecificResponse itemSpecific;
+//    private ItemSpecificResponse itemSpecific;
 
     private List<ImageItemResponse> imageItemResponse;
 

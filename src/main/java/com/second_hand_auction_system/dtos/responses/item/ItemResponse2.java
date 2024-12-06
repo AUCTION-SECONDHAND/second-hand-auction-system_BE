@@ -1,6 +1,5 @@
 package com.second_hand_auction_system.dtos.responses.item;
 
-import com.second_hand_auction_system.models.ItemSpecific;
 import com.second_hand_auction_system.utils.ItemStatus;
 import lombok.*;
 

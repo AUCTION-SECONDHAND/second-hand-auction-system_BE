@@ -27,6 +27,9 @@ public class AuctionRegistration extends BaseEntity {
     @Column(name = "registrantion")
     private Boolean registration;
 
+    @Column(name="number_participant")
+    private int numberParticipant;
+
     @ManyToMany
     @JoinTable(
             name = "deposite_user",
