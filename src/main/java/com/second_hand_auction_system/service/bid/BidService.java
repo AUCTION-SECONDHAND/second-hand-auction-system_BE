@@ -101,6 +101,18 @@ public class BidService implements IBidService {
                             .build());
         }
 
+        // **Mới thêm: Kiểm tra nếu người dùng đang là người thắng hiện tại**
+        Bid winningBid = bidRepository.findTopByAuction_AuctionIdAndWinBidTrue(auction.getAuctionId());
+        if (winningBid != null && winningBid.getUser().getId().equals(requester.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Bạn đang là người thắng hiện tại, không thể đặt giá mới")
+                            .status(HttpStatus.FORBIDDEN)
+                            .build());
+        }
+
+
         // Kiểm tra người dùng đã đăng ký đấu giá chưa
         boolean auctionRegister = auctionRegistrationsRepository.existsAuctionRegistrationByUserIdAndAuctionIdAndRegistrationTrue(requester.getId(), auction.getAuctionId());
         if (!auctionRegister) {
@@ -273,6 +285,17 @@ public class BidService implements IBidService {
             Bid existingBid = bidRepository.findById(bidId).orElse(null);
             if (existingBid == null) {
                 return buildNotFoundResponse("Bạn chưa dua ra muc gia nao");
+            }
+
+            // 3.1 Check if win bid = true
+            if (existingBid.isWinBid()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                        ResponseObject.builder()
+                                .message("Không thể đặt giá mới vì bạn đang là người chiến thắng hiện tại.")
+                                .status(HttpStatus.FORBIDDEN)
+                                .data(null)
+                                .build()
+                );
             }
 
             // 4. Find the auction
