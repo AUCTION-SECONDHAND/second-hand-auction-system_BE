@@ -49,6 +49,9 @@ public class Auction extends BaseEntity{
     @Column(name = "price_step")
     private double priceStep;
 
+    @Column(name = "number_participant")
+    private int numberParticipant;
+
     @Column(name = "ship_type")
     private String shipType;
 
