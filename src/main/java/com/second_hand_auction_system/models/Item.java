@@ -32,17 +32,15 @@ public class Item extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private ItemStatus itemStatus;
 
-//    @Column(name = "brand_name")
-//    private String brandName;
-
     @Column(name = "thumbnail")
     private String thumbnail;
 
     @Column(name = "price_buy_now")
     private Double priceBuyNow;
 
-//    @Column(name = "img_default")
-//    private String imgDefault;
+    @Column(name = "item_document")
+    private String itemDocument;
+
     @Column(name = "reason")
     private String reason;
 

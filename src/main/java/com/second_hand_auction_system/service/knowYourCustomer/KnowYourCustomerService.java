@@ -118,6 +118,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .dateOfBirth(kycDto.getDob())  // Gán ngày sinh
                 .reason("")  // Gán lý do
                 .home(kycDto.getHome())
+                .image(kycDto.getImage())
                 .cccdNumber(kycDto.getCccdNumber())  // Gán số CCCD
                 .build();
 
@@ -198,22 +199,22 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                     .message("User not found")
                     .build());
         }
-        Address address = addressRepository.findByUserIdAndStatusIsTrue(user.getId()).orElse(null);
-        assert  address != null;
-        if (knowYourCustomer.getKycStatus().equals(KycStatus.APPROVED)) {
-            user.setRole(Role.SELLER);
-            SellerInformation sellerInformation = SellerInformation.builder()
-                    .sellerId(requester.getId())
-                    .avatar(requester.getAvatar())
-                    .address(address.getAddress_name())
-                    .storeName(requester.getFullName())
-                    .user(requester)
-                    .build();
-            sellerInformationRepository.save(sellerInformation);
-        } else if (knowYourCustomer.getKycStatus().equals(KycStatus.PENDING) ||
-                knowYourCustomer.getKycStatus().equals(KycStatus.REJECTED)) {
-            user.setRole(Role.BUYER);  // Update the user's role to BUYER
-        }
+//        Address address = addressRepository.findByUserIdAndStatusIsTrue(user.getId()).orElse(null);
+//        assert  address != null;
+//        if (knowYourCustomer.getKycStatus().equals(KycStatus.APPROVED)) {
+//            user.setRole(Role.SELLER);
+//            SellerInformation sellerInformation = SellerInformation.builder()
+//                    .sellerId(requester.getId())
+//                    .avatar(requester.getAvatar())
+//                    .address(address.getAddress_name())
+//                    .storeName(requester.getFullName())
+//                    .user(requester)
+//                    .build();
+//            sellerInformationRepository.save(sellerInformation);
+//        } else if (knowYourCustomer.getKycStatus().equals(KycStatus.PENDING) ||
+//                knowYourCustomer.getKycStatus().equals(KycStatus.REJECTED)) {
+//            user.setRole(Role.BUYER);  // Update the user's role to BUYER
+//        }
         userRepository.save(user);
 
 
@@ -230,23 +231,10 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
     public ResponseEntity<?> getKycById(int kycId) {
         var kyc = knowYourCustomerRepository.findById(kycId).orElse(null);
         if (kyc != null) {
-            var address = addressRepository.findByUserIdAndStatusIsTrue(kyc.getUser().getId()).orElse(null);
-            AddressResponse addressResponse = address != null ?
-                    modelMapper.map(address, AddressResponse.class) :
-                    new AddressResponse(); // Create an empty or default AddressResponse
-
-            // Set default values in AddressResponse if address is null
-            if (address == null) {
-                addressResponse.setProvince_name("N/A");
-                addressResponse.setDistrict_name("N/A");
-                addressResponse.setWard_name("N/A");
-                addressResponse.setAddress_name("N/A");
-            }
-
             KycResponse kycResponse = KycResponse.builder()
                     .kycId(kycId)
                     .userId(kyc.getKycId())
-                    .dob(kyc.getDateOfBirth().toString())
+                    .dob(kyc.getDateOfBirth())
                     .gender(kyc.getGender())
                     .cccdNumber(kyc.getCccdNumber())
                     .kycStatus(kyc.getKycStatus())
@@ -254,6 +242,8 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                     .permanentAddress(kyc.getPermanentAddress())
                     .nationality(kyc.getNationality())
                     .fullName(kyc.getFullName())
+                    .home(kyc.getHome())
+                    .imageUrl(kyc.getImage())
                     .build();
 
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
@@ -279,11 +269,10 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .stream()
                 .map(kyc -> KycResponse.builder()
                         .kycId(kyc.getKycId())
-                        .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null)
+                        .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth() : null)
                         .fullName(kyc.getFullName())
                         .gender(kyc.getGender())
                         .cccdNumber(kyc.getCccdNumber())
-
                         .kycStatus(kyc.getKycStatus())
                         .permanentAddress(kyc.getPermanentAddress())
                         .nationality(kyc.getNationality())
@@ -291,7 +280,6 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                         .userId(kyc.getUser() != null ? kyc.getUser().getId() : null)
                         .build())
                 .collect(Collectors.toList());
-
         Map<String, Object> response = new HashMap<>();
         response.put("data", kycResponses);
         response.put("totalPages", kycPage.getTotalPages());

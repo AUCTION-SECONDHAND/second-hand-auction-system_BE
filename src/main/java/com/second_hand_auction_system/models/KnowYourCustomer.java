@@ -42,6 +42,9 @@ public class KnowYourCustomer extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private KycStatus kycStatus;
 
+    @Column(name ="image")
+    private String image;
+
     @Column(name = "submitted")
     private Date submitted;
 
@@ -54,8 +57,6 @@ public class KnowYourCustomer extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
-
-
 
     @Column(name = "home")
     private String home;

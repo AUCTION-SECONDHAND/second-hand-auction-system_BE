@@ -19,13 +19,14 @@ public class KycResponse {
     private String fullName;
     private String gender;
     private String cccdNumber;
-    private String frontDocumentUrl;
     private String permanentAddress;
     private KycStatus kycStatus;
     private Date submitted;
     private String nationality;
     private Integer userId;
     private String reason;
+    private String home;
+    private String imageUrl;
     private String verified_by;
 
 
