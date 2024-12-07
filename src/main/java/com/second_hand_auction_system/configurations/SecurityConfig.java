@@ -38,7 +38,7 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-ui.html",
             "/api/v1/auth/**",
-            "/api/v1/auctions/**",
+
             "/api/v1/users/**",
             "/api/v1/user/forgot-password/**",
             "/api/v1/withdrawRequest/vnpay-payment/**",
@@ -73,7 +73,7 @@ public class SecurityConfig {
                         //wallet-customer
                         .requestMatchers(POST, "/api/v1/walletCustomer/**").hasAnyRole("BUYER", "SELLER")
                         .requestMatchers(POST,"api/v1/walletCustomer/confirm-webhook").hasAnyRole("BUYER", "SELLER")
-                        .requestMatchers(GET,"/api/v1/walletCustomer/**").permitAll()
+                        .requestMatchers(GET,"/api/v1/walletCustomer/**").hasAnyRole("BUYER")
                         //item
                         .requestMatchers(POST, "/api/v1/item/**").hasRole("SELLER")
                         .requestMatchers(PUT, "/api/v1/item/**").hasAnyRole("STAFF","ADMIN")
@@ -94,6 +94,7 @@ public class SecurityConfig {
                         .requestMatchers(PUT,"/api/v1/transactionWallet/upload-evidence/**").permitAll()
                         //auction
                         .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
+                        .requestMatchers(GET,"/api/v1/auctions/**").hasAnyRole("BUYER")
                         .requestMatchers(POST,"api/v1/auction/**").hasRole("STAFF")
 
 

@@ -62,7 +62,6 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
 
-        // Kiểm tra header Authorization
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ResponseObject.builder()
@@ -95,6 +94,16 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                             .build());
         }
 
+        // Kiểm tra xem CCCD đã được sử dụng chưa
+        Optional<KnowYourCustomer> existingByCccd = knowYourCustomerRepository.findByCccdNumber(kycDto.getCccdNumber());
+        if (existingByCccd.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.CONFLICT)
+                            .message("The provided CCCD number has already been used for KYC registration")
+                            .build());
+        }
+
         // Kiểm tra xem KYC đã tồn tại và có trạng thái PENDING hay không
         Optional<KnowYourCustomer> existingKyc = knowYourCustomerRepository.findByUserIdAndKycStatus(requester.getId(), KycStatus.PENDING);
         if (existingKyc.isPresent()) {
@@ -107,24 +116,23 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
 
         // Tạo đối tượng KnowYourCustomer để lưu vào cơ sở dữ liệu
         KnowYourCustomer knowYourCustomer = KnowYourCustomer.builder()
-                .kycStatus(KycStatus.PENDING)  // Trạng thái KYC là PENDING
-                .submitted(new Date())  // Thời gian gửi yêu cầu KYC
-                .user(requester)  // Gán người dùng
+                .kycStatus(KycStatus.PENDING)
+                .submitted(new Date())
+                .user(requester)
                 .fullName(kycDto.getFullName())
-                .verifiedBy("")  // Gán tên người xác nhận
-                .nationality(kycDto.getNationality())  // Gán quốc tịch
-                .permanentAddress(kycDto.getPermanentAddress())  // Gán địa chỉ
-                .gender(kycDto.getGender())  // Gán giới tính
-                .dateOfBirth(kycDto.getDob())  // Gán ngày sinh
-                .reason("")  // Gán lý do
+                .verifiedBy("")
+                .nationality(kycDto.getNationality())
+                .permanentAddress(kycDto.getPermanentAddress())
+                .gender(kycDto.getGender())
+                .dateOfBirth(kycDto.getDob())
+                .reason("")
                 .home(kycDto.getHome())
                 .image(kycDto.getImage())
-                .cccdNumber(kycDto.getCccdNumber())  // Gán số CCCD
+                .cccdNumber(kycDto.getCccdNumber())
                 .build();
 
-// Lưu đối tượng KnowYourCustomer vào cơ sở dữ liệu
+        // Lưu đối tượng KnowYourCustomer vào cơ sở dữ liệu
         knowYourCustomerRepository.save(knowYourCustomer);
-
 
         // Tạo phản hồi cho KYC đã đăng ký
         KycResponse kycResponse = KycResponse.builder()
@@ -133,23 +141,22 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .submitted(knowYourCustomer.getSubmitted())
                 .nationality(knowYourCustomer.getNationality())
                 .permanentAddress(knowYourCustomer.getPermanentAddress())
-                .gender(knowYourCustomer.getGender())  // Gửi giới tính trong phản hồi
-                .dob(knowYourCustomer.getDateOfBirth())  // Gửi ngày sinh trong phản hồi
-                .cccdNumber(knowYourCustomer.getCccdNumber())  // Gửi CCCD trong phản hồi
-                .userId(requester.getId())
                 .gender(knowYourCustomer.getGender())
+                .dob(knowYourCustomer.getDateOfBirth())
+                .cccdNumber(knowYourCustomer.getCccdNumber())
+                .userId(requester.getId())
                 .fullName(knowYourCustomer.getFullName())
                 .verified_by("")
-                .reason(knowYourCustomer.getReason())  // Gửi lý do trong phản hồi
+                .reason(knowYourCustomer.getReason())
                 .build();
 
-        // Trả về phản hồi thành công với dữ liệu đã lưu
         return ResponseEntity.ok(ResponseObject.builder()
-                .data(kycResponse)  // Trả về dữ liệu phản hồi KYC
+                .data(kycResponse)
                 .message("KYC registration successful")
                 .status(HttpStatus.OK)
                 .build());
     }
+
 
 
 
@@ -201,20 +208,20 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         }
 //        Address address = addressRepository.findByUserIdAndStatusIsTrue(user.getId()).orElse(null);
 //        assert  address != null;
-//        if (knowYourCustomer.getKycStatus().equals(KycStatus.APPROVED)) {
-//            user.setRole(Role.SELLER);
-//            SellerInformation sellerInformation = SellerInformation.builder()
-//                    .sellerId(requester.getId())
-//                    .avatar(requester.getAvatar())
-//                    .address(address.getAddress_name())
-//                    .storeName(requester.getFullName())
-//                    .user(requester)
-//                    .build();
-//            sellerInformationRepository.save(sellerInformation);
-//        } else if (knowYourCustomer.getKycStatus().equals(KycStatus.PENDING) ||
-//                knowYourCustomer.getKycStatus().equals(KycStatus.REJECTED)) {
-//            user.setRole(Role.BUYER);  // Update the user's role to BUYER
-//        }
+        if (knowYourCustomer.getKycStatus().equals(KycStatus.APPROVED)) {
+            user.setRole(Role.SELLER);
+            SellerInformation sellerInformation = SellerInformation.builder()
+                    .sellerId(requester.getId())
+                    .avatar(requester.getAvatar())
+                    .address("")
+                    .storeName(requester.getFullName())
+                    .user(requester)
+                    .build();
+            sellerInformationRepository.save(sellerInformation);
+        } else if (knowYourCustomer.getKycStatus().equals(KycStatus.PENDING) ||
+                knowYourCustomer.getKycStatus().equals(KycStatus.REJECTED)) {
+            user.setRole(Role.BUYER);  // Update the user's role to BUYER
+        }
         userRepository.save(user);
 
 
@@ -427,7 +434,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         }
         KycResponse kycResponse =KycResponse.builder()
                 .kycId(kyc.getKycId())
-                .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth().toString() : null)
+                .dob(kyc.getDateOfBirth() != null ? kyc.getDateOfBirth() : null)
                 .fullName(kyc.getFullName())
                 .gender(kyc.getGender())
                 .cccdNumber(kyc.getCccdNumber())
@@ -436,6 +443,8 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
                 .nationality(kyc.getNationality())
                 .submitted(kyc.getSubmitted())
                 .userId(requester.getId())
+                .home(kyc.getHome())
+                .reason(kyc.getReason())
                 .build();
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()

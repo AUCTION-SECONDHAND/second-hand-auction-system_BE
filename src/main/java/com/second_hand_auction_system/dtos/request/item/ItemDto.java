@@ -26,7 +26,7 @@ public class ItemDto {
     private String itemName;
 
     @NotBlank(message = "Item description is required")
-    @Size(min = 10, max = 500, message = "Item description must be between 10 and 500 characters")
+//    @Size(min = 10, max = 500, message = "Item description must be between 10 and 500 characters")
     @JsonProperty("item_description")
     private String itemDescription;
 
@@ -39,7 +39,7 @@ public class ItemDto {
     private String itemDocument;
 
     @JsonProperty("price_buy_now")
-    private double price_buy_now;
+    private Double price_buy_now;
 
     @JsonProperty("img_item")
     private List<ImgItemDto> imgItem;
