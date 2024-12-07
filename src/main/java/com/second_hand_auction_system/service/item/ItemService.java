@@ -43,6 +43,7 @@ public class ItemService implements IItemService {
     private final AuctionRepository auctionRepository;
     private final AuctionItemConvert auctionItemConvert;
     private final AuctionTypeRepository auctionTypeRepository;
+    private final AuctionRegistrationsRepository auctionRegistrationRepository;
 
     @Override
     @Transactional
@@ -184,7 +185,17 @@ public class ItemService implements IItemService {
     public ItemDetailResponse getItemById(int itemId) throws Exception {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
+
+        // Lấy số lượng đăng ký tham gia đấu giá
+        long numberOfRegistrations = 0;
+        if (item.getAuction() != null) {
+            numberOfRegistrations = auctionRegistrationRepository.countRegistrationsByAuctionId(item.getAuction().getAuctionId());
+        }
+
         ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
+
+        itemDetailResponse.setNumberParticipant((int) numberOfRegistrations);
+
         return itemDetailResponse;
     }
 

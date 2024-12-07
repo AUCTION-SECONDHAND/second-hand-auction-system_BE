@@ -42,4 +42,5 @@ public class ItemDetailResponse {
 
     private List<ImageItemResponse> images;
 
+    private int numberParticipant;
 }

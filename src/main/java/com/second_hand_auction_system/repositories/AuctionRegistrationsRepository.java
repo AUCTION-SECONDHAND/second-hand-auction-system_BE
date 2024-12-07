@@ -39,4 +39,7 @@ public interface AuctionRegistrationsRepository extends JpaRepository<AuctionReg
     Integer findAuctionRegistrationIdByAuctionId(@Param("auctionId") Integer auctionId);
 
     Optional<AuctionRegistration> findByAuction_AuctionIdAndUsers_Id(@NotNull(message = "Auction ID is required") Integer auction, Integer id);
+
+    @Query("SELECT COUNT(ar) FROM AuctionRegistration ar WHERE ar.auction.auctionId = :auctionId AND ar.registration = true")
+    Integer countRegistrationsByAuctionId(@Param("auctionId") Integer auctionId);
 }

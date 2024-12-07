@@ -129,6 +129,7 @@ public class AuctionItemConvert {
                 .scId(subCategoryResponse)
                 .images(imageResponses)
                 .auctionType(auctionTypeResponse)
+                .numberParticipant(0)
                 .build();
     }
 
