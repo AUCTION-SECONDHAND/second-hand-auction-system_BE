@@ -37,5 +37,6 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     @Query("SELECT COUNT(b) FROM Bid b WHERE b.auction.auctionId = :auctionId AND b.bidAmount > 0")
     long countBidsByAuctionId(@Param("auctionId") Integer auctionId);
 
+    Bid findTopByAuction_AuctionIdAndWinBidTrue(Integer auctionId);
 
 }
