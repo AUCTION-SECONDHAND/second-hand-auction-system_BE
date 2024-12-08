@@ -39,4 +39,11 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
 
     Bid findTopByAuction_AuctionIdAndWinBidTrue(Integer auctionId);
 
+    Optional<Bid> findByAuction_AuctionIdAndUser_Id(Integer auctionId, Integer userId);
+
+    boolean existsByUserIdAndAuction_AuctionId(Integer userId, Integer auctionId);
+
+
+
+
 }

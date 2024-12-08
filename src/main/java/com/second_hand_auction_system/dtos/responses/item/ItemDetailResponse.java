@@ -43,4 +43,6 @@ public class ItemDetailResponse {
     private List<ImageItemResponse> images;
 
     private int numberParticipant;
+
+    private String checkBid;
 }

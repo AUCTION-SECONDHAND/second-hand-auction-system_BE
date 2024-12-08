@@ -44,6 +44,7 @@ public class ItemService implements IItemService {
     private final AuctionItemConvert auctionItemConvert;
     private final AuctionTypeRepository auctionTypeRepository;
     private final AuctionRegistrationsRepository auctionRegistrationRepository;
+    private final BidRepository bidRepository;
 
     @Override
     @Transactional
@@ -183,21 +184,39 @@ public class ItemService implements IItemService {
 
     @Override
     public ItemDetailResponse getItemById(int itemId) throws Exception {
+        // Giải mã token lấy thông tin userId
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization").substring(7);
+
+        Integer userId = extractUserIdFromToken(token);
+
+        // Lấy thông tin item từ database
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
 
-        // Lấy số lượng đăng ký tham gia đấu giá
+        // Lấy số lượng người tham gia đấu giá
         long numberOfRegistrations = 0;
         if (item.getAuction() != null) {
             numberOfRegistrations = auctionRegistrationRepository.countRegistrationsByAuctionId(item.getAuction().getAuctionId());
         }
 
+        // Convert dữ liệu item sang response
         ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
-
         itemDetailResponse.setNumberParticipant((int) numberOfRegistrations);
+
+        // Kiểm tra xem user đã đặt bid hay chưa
+        boolean userHasBid = false;
+        if (userId != null && item.getAuction() != null) {
+            userHasBid = bidRepository.existsByUserIdAndAuction_AuctionId(userId, item.getAuction().getAuctionId());
+        }
+
+
+        // Gán kết quả vào trường checkBid
+        itemDetailResponse.setCheckBid(userHasBid ? "true" : "false");
 
         return itemDetailResponse;
     }
+
 
     @Override
     public Page<AuctionItemResponse> getAuctionProcess(PageRequest pageRequest) throws Exception {

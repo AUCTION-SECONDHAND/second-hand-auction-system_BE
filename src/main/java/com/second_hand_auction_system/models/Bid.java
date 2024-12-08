@@ -33,4 +33,6 @@ public class Bid extends BaseEntity{
     @ManyToOne
     @JoinColumn(name = "auction_id")
     private Auction auction;
+
+
 }

@@ -2,10 +2,12 @@ package com.second_hand_auction_system.controller;
 
 import com.second_hand_auction_system.dtos.request.bid.BidDto;
 import com.second_hand_auction_system.dtos.request.bid.BidRequest;
+import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.bid.BidResponse;
 import com.second_hand_auction_system.service.bid.BidService;
 import com.second_hand_auction_system.service.bid.IBidService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +31,23 @@ public class BidController {
     public ResponseEntity<?> createBid(@RequestBody BidRequest bidRequest) throws Exception {
         return bidService.createBid(bidRequest);
     }
+
+    @PostMapping("/create/Sealed")
+    public ResponseEntity<?> createBidSealedBid(@RequestBody BidRequest bidRequest) {
+        try {
+            return bidService.createBidSealedBid(bidRequest);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Đã xảy ra lỗi: " + e.getMessage())
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .build()
+            );
+        }
+    }
+
+
 
     @PutMapping("/{bidId}")
     public ResponseEntity<?> updateBid(@PathVariable Integer bidId, @RequestBody BidRequest bidDto) throws Exception {

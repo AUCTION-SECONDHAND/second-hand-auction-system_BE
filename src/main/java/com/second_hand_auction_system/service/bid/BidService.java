@@ -262,6 +262,98 @@ public class BidService implements IBidService {
 
 
     @Override
+    public ResponseEntity<?> createBidSealedBid(BidRequest bidRequest) throws Exception {
+        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
+        if (token == null || !token.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Unauthorized")
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .build());
+        }
+
+        token = token.substring(7);
+        String email = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmail(email).orElse(null);
+
+        if (requester == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("User not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+        }
+
+        Auction auction = auctionRepository.findById(bidRequest.getAuctionId()).orElse(null);
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Auction not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+        }
+
+        // Kiểm tra nếu người dùng đã đặt giá trong phiên này chưa
+        boolean alreadyBid = bidRepository.findByAuction_AuctionIdAndUser_Id(
+                auction.getAuctionId(), requester.getId()).isPresent();
+
+        if (alreadyBid) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Bạn đã từng đặt giá trong phiên đấu giá này rồi")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+
+        List<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+
+        // Bid mới luôn được tạo với winBid=false mặc định
+        Bid newBid = Bid.builder()
+                .winBid(false) // Chưa xác định bid mới có thể thắng
+                .bidTime(LocalDateTime.now())
+                .auction(auction)
+                .user(requester)
+                .bidAmount(bidRequest.getBidAmount())
+                .build();
+
+        // Nếu bid mới thực sự là giá cao nhất, gán winBid=true
+        if (existingBids.isEmpty() || bidRequest.getBidAmount() > existingBids.get(0).getBidAmount()) {
+            newBid.setWinBid(true);
+        }
+
+        // Duy trì trạng thái của các bid cũ, không sửa trừ khi là không hợp lệ
+        bidRepository.saveAll(existingBids);
+        bidRepository.save(newBid);
+
+        // Gửi thông báo
+        String message = "Bạn đang đặt với giá " + newBid.getBidAmount();
+        String title = "Đặt giá thành công";
+        notificationService.createBidNotification(requester.getId(), title, message);
+
+        List<Notifications> notifications = notificationsRepository.findByUser_IdOrderByCreateAtDesc(requester.getId());
+        List<NotificationResponse> notificationResponses = notifications.stream()
+                .map(notificationConverter::toNotificationResponse)
+                .toList();
+        applicationEventPublisher.publishEvent(new NotificationEvent(notificationResponses));
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ResponseObject.builder()
+                        .data(Map.of(
+                                "bidAmount", newBid.getBidAmount(),
+                                "isHighestBid", newBid.isWinBid()))
+                        .message("Bid placed successfully")
+                        .status(HttpStatus.OK)
+                        .build());
+    }
+
+
+    @Override
     public ResponseEntity<?> updateBid(Integer bidId, BidRequest bidDto) {
         try {
             // 1. Extract token from the request
