@@ -3,6 +3,7 @@ package com.second_hand_auction_system.repositories;
 import com.second_hand_auction_system.models.Token;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,6 +20,12 @@ public interface TokenRepository extends JpaRepository<Token, Integer> {
     List<Token> findAllUserTokenByUserId(Integer id);
 
     Optional<Token> findByToken(String token);
+
+
+//    List<Token> findByToken(@Param("token") String token);
+
+
+
 }
 
 

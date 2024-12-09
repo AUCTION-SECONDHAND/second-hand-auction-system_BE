@@ -184,11 +184,19 @@ public class ItemService implements IItemService {
 
     @Override
     public ItemDetailResponse getItemById(int itemId) throws Exception {
-        // Giải mã token lấy thông tin userId
-        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
-                .getRequest().getHeader("Authorization").substring(7);
-
-        Integer userId = extractUserIdFromToken(token);
+        // Giải mã token lấy thông tin userId nếu tồn tại
+        String token = null;
+        Integer userId = null;
+        try {
+            token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                    .getRequest().getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                userId = extractUserIdFromToken(token.substring(7));
+            }
+        } catch (Exception e) {
+            // Token không tồn tại hoặc không hợp lệ
+            System.out.println("Token is missing or invalid: " + e.getMessage());
+        }
 
         // Lấy thông tin item từ database
         Item item = itemRepository.findById(itemId)
@@ -204,18 +212,31 @@ public class ItemService implements IItemService {
         ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
         itemDetailResponse.setNumberParticipant((int) numberOfRegistrations);
 
-        // Kiểm tra xem user đã đặt bid hay chưa
-        boolean userHasBid = false;
+        // Nếu userId tồn tại, kiểm tra thêm thông tin user
         if (userId != null && item.getAuction() != null) {
-            userHasBid = bidRepository.existsByUserIdAndAuction_AuctionId(userId, item.getAuction().getAuctionId());
+            // Kiểm tra xem user đã đặt bid hay chưa
+            boolean userHasBid = bidRepository.existsByUserIdAndAuction_AuctionId(userId, item.getAuction().getAuctionId());
+
+            // Lấy thông tin User và Auction từ database
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new DataNotFoundException("User not found"));
+            Auction auction = auctionRepository.findById(item.getAuction().getAuctionId())
+                    .orElseThrow(() -> new DataNotFoundException("Auction not found"));
+
+            // Lấy Bid và truyền số lượng bid nếu tồn tại hoặc mặc định là 0
+            Integer bidAmount = bidRepository.findByUserAndAuction(user, auction)
+                    .map(Bid::getBidAmount) // Lấy thông tin số lượng bid nếu tồn tại
+                    .orElse(0); // Nếu không có bid thì truyền 0
+
+            itemDetailResponse.setBidAmountUserToken(bidAmount);
+        } else {
+            // Nếu không có token, mặc định bidAmountUserToken là null hoặc 0
+            itemDetailResponse.setBidAmountUserToken(0);
         }
-
-
-        // Gán kết quả vào trường checkBid
-        itemDetailResponse.setCheckBid(userHasBid ? "true" : "false");
 
         return itemDetailResponse;
     }
+
 
 
     @Override
