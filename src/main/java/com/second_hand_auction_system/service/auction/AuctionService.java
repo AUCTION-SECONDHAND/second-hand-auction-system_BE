@@ -54,31 +54,62 @@ public class AuctionService implements IAuctionService {
     public void addAuction(@Valid AuctionDto auctionDto) throws Exception {
         Item itemExist = itemRepository.findById(auctionDto.getItem())
                 .orElseThrow(() -> new Exception("Item not found"));
+
         AuctionType auctionType = auctionTypeRepository.findById(auctionDto.getAuctionTypeId())
                 .orElseThrow(() -> new Exception("Auction type not found"));
+
+        // Kiểm tra loại đấu giá phải khớp với loại của item
         if (!auctionType.getAuctionTypeName().equals(itemExist.getAuctionType().getAuctionTypeName())) {
             throw new Exception("Auction type does not match the item's auction type");
         }
 
+        // Kiểm tra nếu thời gian bắt đầu không sau thời gian kết thúc
+        if (auctionDto.getStartDate().after(auctionDto.getEndDate())) {
+            throw new Exception("Auction start date cannot be after end date");
+        }
+
+        Date currentDate = new Date();
+        long diffInMillies = auctionDto.getStartDate().getTime() - currentDate.getTime();
+        long diffDays = diffInMillies / (24 * 60 * 60 * 1000);
+
+        // Kiểm tra ngày bắt đầu đấu giá
+        if (diffDays < 1) {
+            throw new Exception("Ngày bắt đầu đấu giá phải cách ít nhất 1 ngày tính từ bây giờ");
+        }
+        if (diffDays > 30) {
+            throw new Exception("Ngày bắt đầu đấu giá không được cách quá 30 ngày tính từ bây giờ");
+        }
+
+        // Kiểm tra giờ bắt đầu không được sau giờ kết thúc
         if (auctionDto.getStartTime().after(auctionDto.getEndTime())) {
             throw new Exception("Start time must be before end time");
         }
+
+        // Kiểm tra giá khởi điểm và giá mua ngay không được âm
         if (auctionDto.getStartPrice() < 0) {
             throw new Exception("Start price must be a non-negative value");
         }
         if (auctionDto.getBuyNowPrice() < 0) {
             throw new Exception("Buy now price must be a non-negative value");
         }
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+
+        // Kiểm tra quyền của người dùng
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
         }
+
         String token = authHeader.substring(7);
         String userEmail = jwtService.extractUserEmail(token);
         User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+
         if (requester == null) {
             throw new Exception("User not found");
         }
+
+        // Tạo đối tượng Auction từ DTO và thiết lập các thông tin cần thiết
         Auction auction = modelMapper.map(auctionDto, Auction.class);
         auction.setCreateBy(itemExist.getCreateBy());
         auction.setApproveBy(requester.getFullName());
@@ -86,19 +117,26 @@ public class AuctionService implements IAuctionService {
         auction.setItem(itemExist);
         auction.setStatus(AuctionStatus.OPEN);
         auction.setAuctionType(auctionType);
+
+        // Tạo và lưu ví cho đấu giá
         Wallet wallet = Wallet.builder()
                 .balance(0)
                 .walletType(WalletType.AUCTION)
                 .statusWallet(StatusWallet.ACTIVE)
-                .user(null)
+                .user(requester) // Liên kết ví với người dùng tạo đấu giá
                 .build();
+
         walletRepository.save(wallet);
         auction.setWallet(wallet);
+
+        // Cập nhật trạng thái item
         itemExist.setItemStatus(ItemStatus.ACCEPTED);
         itemRepository.save(itemExist);
-        auctionRepository.save(auction);
 
+        // Lưu đấu giá vào cơ sở dữ liệu
+        auctionRepository.save(auction);
     }
+
 
 
     @Override

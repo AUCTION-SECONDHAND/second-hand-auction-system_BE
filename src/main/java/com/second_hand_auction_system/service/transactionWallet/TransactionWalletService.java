@@ -17,6 +17,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -123,7 +124,7 @@ public class TransactionWalletService implements ITransactionWalletService {
 
     @Override
     public ResponseEntity<?> getTransactionWalletsBider(int size, int page) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createAt")));
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
 
@@ -182,7 +183,7 @@ public class TransactionWalletService implements ITransactionWalletService {
 
 
     @Override
-    public ResponseEntity<?> updateTransaction(Integer transactionId, String vnpTransactionStatus) {
+    public ResponseEntity<?> updateTransaction(Integer transactionId, String vnpTransactionStatus, String vnpTransactionNo) {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
@@ -211,6 +212,7 @@ public class TransactionWalletService implements ITransactionWalletService {
             response.setCode("200");
             response.setMessage("Payment success");
             transactionType.setTransactionStatus(TransactionStatus.COMPLETED);
+            transactionType.setTransactionWalletCode(Long.parseLong(vnpTransactionNo));
             transactionRepository.save(transactionType);
             if (wallet != null) {
                 wallet.setBalance(+(wallet.getBalance() + transactionType.getAmount()));
@@ -221,6 +223,7 @@ public class TransactionWalletService implements ITransactionWalletService {
             response.setCode("500");
             response.setMessage("Payment processing error");
             transactionType.setTransactionStatus(TransactionStatus.FAILED);
+            transactionType.setTransactionWalletCode(Long.parseLong(vnpTransactionNo));
             transactionRepository.save(transactionType);
             if (wallet != null) {
                 wallet.setBalance(wallet.getBalance());

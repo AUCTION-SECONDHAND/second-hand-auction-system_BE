@@ -34,16 +34,16 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
 
     //Page<Item> findAllBySubCategory_MainCategory_mainCategoryId (Integer mainCategoryId, Pageable pageable);
 
-    Page<Item> findAllBySubCategory_SubCategoryId (Integer mainCategoryId, Pageable pageable);
+    Page<Item> findAllBySubCategory_SubCategoryIdAndAuction_Status (Integer mainCategoryId,AuctionStatus auctionStatus, Pageable pageable);
 
-    //Page<Item> findAllByAuction_Status
     @Query("SELECT i FROM Item i " +
             "JOIN i.auction a " +
             "JOIN i.subCategory sc " +
             "WHERE (:itemName IS NULL OR :itemName = '' OR i.itemName LIKE %:itemName%) " +
             "AND (:minPrice IS NULL OR a.startPrice >= :minPrice) " +
             "AND (:maxPrice IS NULL OR a.startPrice <= :maxPrice) " +
-            "AND (:subCategoryIds IS NULL OR sc.subCategoryId IN :subCategoryIds)")
+            "AND (:subCategoryIds IS NULL OR sc.subCategoryId IN :subCategoryIds) " +
+            "AND a.status = 'OPEN'")
     Page<Item> searchItems(
             @Param("itemName") String itemName,
             @Param("minPrice") Double minPrice,
@@ -51,6 +51,7 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
             @Param("subCategoryIds") List<Integer> subCategoryIds,
             Pageable pageable
     );
+
 
     @Query("SELECT i FROM Item i ORDER BY i.itemId ASC ")
     List<Item> findTop10Items(Pageable pageable);

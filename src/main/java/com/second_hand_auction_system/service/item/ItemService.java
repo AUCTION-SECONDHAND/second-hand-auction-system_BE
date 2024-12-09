@@ -177,9 +177,7 @@ public class ItemService implements IItemService {
     @Override
     public Page<AuctionItemResponse> getItem(String keyword, Double minPrice, Double maxPrice, PageRequest pageRequest, List<Integer> subCategoryIds) throws Exception {
         Page<Item> items;
-        items = itemRepository.searchItems(
-                keyword, minPrice, maxPrice, subCategoryIds, pageRequest
-        );
+        items = itemRepository.searchItems(keyword, minPrice, maxPrice, subCategoryIds, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
@@ -188,7 +186,7 @@ public class ItemService implements IItemService {
         String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization").substring(7);
         Integer userId = extractUserIdFromToken(token);
-        Item item = itemRepository.findById(itemId)
+        Item item =  itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
         long numberOfRegistrations = 0;
         if (item.getAuction() != null) {
@@ -398,7 +396,7 @@ public class ItemService implements IItemService {
 
     @Override
     public Page<AuctionItemResponse> getSimilarItem(Integer mainCategoryId, PageRequest pageRequest) throws Exception {
-        Page<Item> items = itemRepository.findAllBySubCategory_SubCategoryId(mainCategoryId, pageRequest);
+        Page<Item> items = itemRepository.findAllBySubCategory_SubCategoryIdAndAuction_Status(mainCategoryId, AuctionStatus.OPEN, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
