@@ -38,8 +38,10 @@ public class ItemDto {
     @JsonProperty("itemDocument")
     private String itemDocument;
 
+    @NotNull(message = "Giá mua ngay không được để trống.")
     @JsonProperty("price_buy_now")
-    private Double price_buy_now;
+    private Double priceBuyNow;
+
 
     @JsonProperty("img_item")
     private List<ImgItemDto> imgItem;

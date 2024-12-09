@@ -21,7 +21,7 @@ public class ItemResponse2 {
 
     private ItemStatus itemStatus;
 
-    private String brandName;
+    private Double priceBuyNow;
 
     private String thumbnail;
 
@@ -30,7 +30,6 @@ public class ItemResponse2 {
     private String createBy;
 
 
-    private ItemSpecificResponse itemSpecific;
     private Integer scId;
     private LocalDateTime create_at;
     private LocalDateTime  update_at;

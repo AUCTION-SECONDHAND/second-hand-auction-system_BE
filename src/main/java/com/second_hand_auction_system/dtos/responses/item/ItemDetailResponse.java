@@ -32,6 +32,8 @@ public class ItemDetailResponse {
 
     private ItemStatus itemStatus;
 
+    private Double priceBuyNow;
+
     private ItemAuctionResponse auction;
 
     private SubCategoryItemResponse scId;

@@ -32,8 +32,7 @@ public class ItemResponse extends BaseResponse {
 
     private ItemStatus itemStatus;
 
-    private String brandName;
-
+    private Double priceBuyNow;
     private String thumbnail;
 
     private String imgItem;

@@ -33,7 +33,6 @@ public class AuctionItemConvert {
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
                     .buyNowPrice(auction.getBuyNowPrice())
-
                     .build();
         }
 
@@ -63,6 +62,7 @@ public class AuctionItemConvert {
                 .itemName(item.getItemName())
                 .itemDescription(item.getItemDescription())
                 .itemStatus(item.getItemStatus())
+                .priceBuyNow(item.getPriceBuyNow())
                 .auction(auctionResponse)
                 .scId(subCategoryResponse)
                 .auctionTypeId(auctionTypeResponse)
@@ -126,6 +126,7 @@ public class AuctionItemConvert {
                 .itemDescription(item.getItemDescription())
                 .itemStatus(item.getItemStatus())
                 .auction(auctionResponse)
+                .priceBuyNow(item.getPriceBuyNow())
                 .scId(subCategoryResponse)
                 .images(imageResponses)
                 .auctionType(auctionTypeResponse)
@@ -171,7 +172,6 @@ public class AuctionItemConvert {
                     .build();
         }
 
-        ItemSpecificResponse itemSpecificResponse = null;
         List<ImageItemResponse> imageResponses = item.getImageItems().stream()
                 .map(image -> ImageItemResponse.builder()
                         .idImage(image.getImageItemId())
@@ -185,6 +185,7 @@ public class AuctionItemConvert {
                 .itemName(item.getItemName())
                 .itemDescription(item.getItemDescription())
                 .itemStatus(item.getItemStatus())
+                .priceBuyNow(item.getPriceBuyNow())
                 .auction(auctionResponse)
                 .auctionTypeResponse(auctionTypeResponse)
                 .scId(subCategoryResponse)

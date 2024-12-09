@@ -19,6 +19,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -184,17 +185,11 @@ public class ItemService implements IItemService {
 
     @Override
     public ItemDetailResponse getItemById(int itemId) throws Exception {
-        // Giải mã token lấy thông tin userId
         String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization").substring(7);
-
         Integer userId = extractUserIdFromToken(token);
-
-        // Lấy thông tin item từ database
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
-
-        // Lấy số lượng người tham gia đấu giá
         long numberOfRegistrations = 0;
         if (item.getAuction() != null) {
             numberOfRegistrations = auctionRegistrationRepository.countRegistrationsByAuctionId(item.getAuction().getAuctionId());
@@ -280,7 +275,7 @@ public class ItemService implements IItemService {
 
     @Override
     public ResponseEntity<?> getItemByUser(int page, int limit) {
-        Pageable pageable = PageRequest.of(page, limit);
+        PageRequest pageable = PageRequest.of(page, limit, Sort.by(Sort.Order.desc("createAt")));
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
 
@@ -334,6 +329,7 @@ public class ItemService implements IItemService {
                         .itemCondition(String.valueOf(item.getItemCondition()))
                         .itemDescription(item.getItemDescription())
                         .thumbnail(item.getThumbnail())
+                        .priceBuyNow(item.getPriceBuyNow())
                         .itemStatus(item.getItemStatus())
                         .create_at(item.getCreateAt())
                         .update_at(item.getUpdateAt())

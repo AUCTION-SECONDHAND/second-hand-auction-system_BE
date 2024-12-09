@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -258,21 +259,27 @@ public class ItemController {
 
     @GetMapping("/auction-process/user")
     public ResponseEntity<?> getAuctionProcessByUser(
-            //@RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "limit", defaultValue = "10") int limit
     ) throws Exception {
-        PageRequest pageRequest = PageRequest.of(page, limit);
-        //, Sort.by("id").descending()
+        // Sắp xếp theo trường createdDate theo thứ tự giảm dần (sản phẩm mới lên đầu)
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Order.desc("createAt")));
+
+        // Lấy kết quả từ service
         Page<AuctionItemResponse> auctionItemResponses = itemService.getAuctionProcess(pageRequest);
+
         int totalPages = auctionItemResponses.getTotalPages();
         Long totalOrder = auctionItemResponses.getTotalElements();
         List<AuctionItemResponse> itemResponseList = auctionItemResponses.getContent();
+
+        // Tạo đối tượng ResponseListObject để trả kết quả
         ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
                 .data(itemResponseList)
                 .totalElements(totalOrder)
                 .totalPages(totalPages)
                 .build();
+
+        // Trả về response kết quả
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
@@ -281,6 +288,7 @@ public class ItemController {
                         .build()
         );
     }
+
 
     @GetMapping("/auction-completed/user")
     public ResponseEntity<?> getAuctionCompleted(@RequestParam(value = "page", defaultValue = "0") int page,
