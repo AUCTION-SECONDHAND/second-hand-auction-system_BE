@@ -101,29 +101,70 @@ public class ItemService implements IItemService {
         itemRepository.save(item);
     }
 
+
     @Override
     public void updateItem(int itemId, ItemDto itemDto) throws Exception {
-        Item itemExist = itemRepository.findById(itemId)
-                .orElseThrow(() -> new DataNotFoundException("Item not found"));
-        SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
-                .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
-//        User userExist = userRepository.findById(itemDto.getUserId())
-//                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + itemDto.getUserId()));
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
         }
+
         String token = authHeader.substring(7);
         String userEmail = jwtService.extractUserEmail(token);
-        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
         if (requester == null) {
             throw new Exception("User not found");
         }
+
+        Item itemExist = itemRepository.findById(itemId)
+                .orElseThrow(() -> new DataNotFoundException("Item not found"));
+
+        SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
+                .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
+
+        // Cập nhật thông tin item
         modelMapper.map(itemDto, itemExist);
         itemExist.setSubCategory(subCategory);
         itemExist.setUser(requester);
+        itemExist.setItemStatus(ItemStatus.PENDING);
         itemExist.setCreateBy(requester.getUsername());
         itemExist.setUpdateBy(requester.getUsername());
+
+        // Kiểm tra imgItem có null hay không trước khi gọi size()
+        if (itemDto.getImgItem() == null) {
+            itemDto.setImgItem(new ArrayList<>());  // Khởi tạo một danh sách rỗng nếu imgItem là null
+        }
+
+        // Kiểm tra số lượng ảnh, nếu quá 5 ảnh thì throw exception
+        if (itemDto.getImgItem().size() > 5) {
+            throw new Exception("Cannot upload more than 5 images.");
+        }
+
+        // Danh sách ảnh hiện tại trong DB
+        List<ImageItem> existingImages = new ArrayList<>(itemExist.getImageItems());
+        List<ImageItem> imageItems = new ArrayList<>();
+
+        // Lặp qua ảnh và tạo các ImageItem
+        for (int i = 0; i < itemDto.getImgItem().size(); i++) {
+            ImgItemDto imgItemDto = itemDto.getImgItem().get(i);
+            ImageItem imageItem = new ImageItem();
+            imageItem.setImageUrl(imgItemDto.getImageUrl());
+            imageItem.setItem(itemExist);  // Thiết lập liên kết với item
+
+            imageItems.add(imageItem);
+
+            // Đặt ảnh đầu tiên làm thumbnail
+            if (i == 0) {
+                itemExist.setThumbnail(imgItemDto.getImageUrl());
+            }
+        }
+
+        // Lưu tất cả ảnh vào cơ sở dữ liệu
+        imageItemRepository.saveAll(imageItems);
+        itemExist.setImageItems(imageItems);  // Cập nhật ảnh vào item
+
+        // Lưu item với ảnh đã cập nhật
         itemRepository.save(itemExist);
     }
 
@@ -182,10 +223,11 @@ public class ItemService implements IItemService {
     }
 
     @Override
-    public ItemDetailResponse getItemById(int itemId) throws Exception {
-        String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
-                .getRequest().getHeader("Authorization").substring(7);
-        Integer userId = extractUserIdFromToken(token);
+    public ItemDetailResponse getItemById(Integer itemId) throws Exception {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
         Item item =  itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
         long numberOfRegistrations = 0;
@@ -199,8 +241,8 @@ public class ItemService implements IItemService {
 
         // Kiểm tra xem user đã đặt bid hay chưa
         boolean userHasBid = false;
-        if (userId != null && item.getAuction() != null) {
-            userHasBid = bidRepository.existsByUserIdAndAuction_AuctionId(userId, item.getAuction().getAuctionId());
+        if (requester.getId() != null && item.getAuction() != null) {
+            userHasBid = bidRepository.existsByUserIdAndAuction_AuctionId(requester.getId(), item.getAuction().getAuctionId());
         }
 
 

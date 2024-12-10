@@ -32,6 +32,7 @@ public class AuctionItemConvert {
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
+                    .percentDeposit(auction.getPercentDeposit())
                     .buyNowPrice(auction.getBuyNowPrice())
                     .build();
         }
@@ -89,6 +90,7 @@ public class AuctionItemConvert {
                     .startPrice(auction.getStartPrice())
                     .approveAt(auction.getApproveAt())
                     .createBy(auction.getCreateBy())
+                    .percentDeposit(auction.getPercentDeposit())
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
@@ -124,7 +126,10 @@ public class AuctionItemConvert {
                 .thumbnail(item.getThumbnail())
                 .itemName(item.getItemName())
                 .itemDescription(item.getItemDescription())
+                .itemCondition(item.getItemCondition())
                 .itemStatus(item.getItemStatus())
+                .priceBuyNow(item.getPriceBuyNow())
+                .reason(item.getReason())
                 .auction(auctionResponse)
                 .priceBuyNow(item.getPriceBuyNow())
                 .scId(subCategoryResponse)

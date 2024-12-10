@@ -48,9 +48,11 @@ public class ItemAuctionResponse {
     @Column(name = "status")
     private AuctionStatus status;
 
-
     @JsonProperty("buy_now_price")
     private Double buyNowPrice;
+
+    @JsonProperty("percent_deposit")
+    private Double percentDeposit;
 
     @Column(name = "create_at")
     @JsonProperty("create_at")

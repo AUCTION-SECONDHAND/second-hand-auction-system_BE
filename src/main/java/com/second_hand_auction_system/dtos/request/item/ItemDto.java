@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.utils.ItemCondition;
 import com.second_hand_auction_system.utils.ItemStatus;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -35,10 +36,11 @@ public class ItemDto {
     private ItemCondition itemCondition;
 
 
-    @JsonProperty("itemDocument")
-    private String itemDocument;
+//    @JsonProperty("itemDocument")
+//    private String itemDocument;
 
     @NotNull(message = "Giá mua ngay không được để trống.")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Price must be greater than or equal to 0")
     @JsonProperty("price_buy_now")
     private Double priceBuyNow;
 

@@ -28,7 +28,7 @@ public interface IItemService {
             List<Integer> subCategoryIds
     ) throws Exception;
 
-    ItemDetailResponse getItemById(int itemId) throws Exception;
+    ItemDetailResponse getItemById(Integer itemId) throws Exception;
     Page<AuctionItemResponse> getAuctionProcess(PageRequest pageRequest) throws Exception;
 
     ResponseEntity<?> getItemAuctionCompleted(int page, int limit);

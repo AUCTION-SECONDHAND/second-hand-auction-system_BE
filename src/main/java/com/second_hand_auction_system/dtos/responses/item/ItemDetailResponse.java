@@ -6,6 +6,7 @@ import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResp
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.models.ImageItem;
 import com.second_hand_auction_system.utils.AuctionStatus;
+import com.second_hand_auction_system.utils.ItemCondition;
 import com.second_hand_auction_system.utils.ItemStatus;
 import jakarta.persistence.Column;
 import lombok.*;
@@ -33,6 +34,9 @@ public class ItemDetailResponse {
     private ItemStatus itemStatus;
 
     private Double priceBuyNow;
+
+    private String reason;
+    private ItemCondition itemCondition;
 
     private ItemAuctionResponse auction;
 
