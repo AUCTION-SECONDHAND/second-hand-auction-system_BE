@@ -10,6 +10,7 @@ import com.second_hand_auction_system.repositories.*;
 import com.second_hand_auction_system.service.email.EmailService;
 import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.*;
+import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +25,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.second_hand_auction_system.utils.AuctionStatus.CANCELLED;
@@ -47,6 +51,7 @@ public class AuctionService implements IAuctionService {
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final OrderRepository orderRepository;
     private final EmailService emailService;
     private final AuctionRegistrationsRepository auctionRegistrationsRepository;
 
@@ -138,7 +143,6 @@ public class AuctionService implements IAuctionService {
     }
 
 
-
     @Override
     public void updateAuction(int auctionId, AuctionDto auctionDto) throws Exception {
         Item itemExist = itemRepository.findById(auctionDto.getItem())
@@ -203,7 +207,7 @@ public class AuctionService implements IAuctionService {
     public ResponseEntity<?> getAuctionById(Integer auctionId) {
         var auction = auctionRepository.findById(auctionId).orElse(null);
         Double maxBid = auctionRepository.findMaxBidByAuctionId(auctionId);
-        if(auction!=null){
+        if (auction != null) {
             ResponseAuction responseAuction = ResponseAuction.builder()
                     .itemName(auction.getItem().getItemName())
                     .amount(maxBid)
@@ -212,7 +216,7 @@ public class AuctionService implements IAuctionService {
                     .description(auction.getDescription())
                     .build();
             return ResponseEntity.ok(ResponseObject.builder()
-            .status(HttpStatus.OK)
+                    .status(HttpStatus.OK)
                     .message("Auction found")
                     .data(responseAuction)
                     .build());
@@ -236,10 +240,10 @@ public class AuctionService implements IAuctionService {
             throw new RuntimeException("Unauthorized");
         }
         var user = userRepository.findByEmail(email).orElse(null);
-        if(user == null){
+        if (user == null) {
             throw new RuntimeException("User not found");
         }
-        if (!(user.getRole().equals(Role.ADMIN))){
+        if (!(user.getRole().equals(Role.ADMIN))) {
             throw new RuntimeException("You don't have permission to access this resource");
         }
         return auctionRepository.countAuctionsCreatedToday();
@@ -257,10 +261,10 @@ public class AuctionService implements IAuctionService {
             throw new RuntimeException("Unauthorized");
         }
         var user = userRepository.findByEmail(email).orElse(null);
-        if(user == null){
+        if (user == null) {
             throw new RuntimeException("User not found");
         }
-        if (!(user.getRole().equals(Role.ADMIN))){
+        if (!(user.getRole().equals(Role.ADMIN))) {
             throw new RuntimeException("You don't have permission to access this resource");
         }
         // Lấy dữ liệu từ repository
@@ -279,10 +283,9 @@ public class AuctionService implements IAuctionService {
     }
 
 
-
     @Scheduled(fixedDelay = 60000)
     @Transactional
-    public void closeExpiredAuctions() {
+    public void closeExpiredAuctions() throws MessagingException, IOException {
         List<Auction> auctions = auctionRepository.findAll();
 
         for (Auction auction : auctions) {
@@ -292,122 +295,112 @@ public class AuctionService implements IAuctionService {
                             .toLocalDateTime()
                             .with(auction.getEndTime().toLocalTime()))) {
 
-                // Đóng phiên đấu giá
                 auction.setStatus(AuctionStatus.CLOSED);
                 auctionRepository.save(auction);
-                log.info("THONG BAO DA KET THUC CAC PHIEN DAU GIA: " + auction.getAuctionId());
+                log.info("PHIÊN ĐẤU GIÁ KẾT THÚC: " + auction.getAuctionId());
 
-                // Lấy danh sách bid và người thắng
                 List<Bid> bids = bidRepository.findByAuction_AuctionId(auction.getAuctionId());
-                Bid winningBid = getWinningBid(bids);
+                bids.sort(Comparator.comparing(Bid::getBidAmount).reversed());
 
-                // Lấy ví cọc của phiên đấu giá
+                Bid winningBid = !bids.isEmpty() ? bids.get(0) : null;
+                Bid secondPlaceBid = bids.size() > 1 ? bids.get(1) : null;
+
                 Wallet walletAuction = auction.getWallet();
                 if (walletAuction == null) {
                     log.error("Không tìm thấy ví cọc cho phiên đấu giá: " + auction.getAuctionId());
-                    continue;  // Bỏ qua phiên đấu giá này nếu không có ví cọc
+                    continue;
                 }
 
-                List<String> refundedUsers = new ArrayList<>();
-                List<String> losersEmails = new ArrayList<>();
+                if (winningBid != null) {
+                    winningBid.setWinBid(true);
+                    bidRepository.save(winningBid);
+                    log.info("Người thắng đầu tiên: " + winningBid.getUser().getEmail());
 
-                // Hoàn tiền cho các người thua và giữ lại cọc cho người thắng
-                for (Bid bid : bids) {
-                    Wallet userWallet = bid.getUser().getWallet();
-                    double depositAmount = 0.1 * auction.getPriceStep(); // Số tiền cọc cho mỗi người dùng
+                    emailService.sendWinnerNotification(winningBid.getUser().getEmail(), winningBid);
 
-                    if (userWallet != null) {
-                        try {
-                            if (!bid.equals(winningBid)) {
-                                // Trừ cọc khỏi ví đấu giá và hoàn tiền vào ví người thua
-                                walletAuction.setBalance(walletAuction.getBalance() - (depositAmount*0.1));
-                                userWallet.setBalance(userWallet.getBalance() + (depositAmount*0.1));
-                                walletRepository.save(walletAuction);
-                                walletRepository.save(userWallet);
+                    // Kiểm tra trạng thái thanh toán qua Order
+                    Order order = orderRepository.findByAuction_AuctionId(auction.getAuctionId());
+                    if (order != null) {
+                        Transaction transactionAuction = transactionRepository.findTransactionByOrder_OrderId(order.getOrderId()).orElse(null);
+                        if (transactionAuction == null || !transactionAuction.getTransactionStatus().equals(TransactionStatus.COMPLETED)) {
+                            // Kiểm tra thời gian 48 giờ sau khi đấu giá kết thúc
+                            LocalDateTime paymentDeadline = auction.getEndDate().toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDateTime()
+                                    .with(auction.getEndTime().toLocalTime())
+                                    .plusHours(48);
 
-                                // Tạo giao dịch hoàn tiền
-                                Transaction refundTransaction = Transaction.builder()
-                                        .wallet(userWallet)
-                                        .transactionStatus(TransactionStatus.COMPLETED)
-                                        .description("Hoàn cọc cho người thua cuộc")
-                                        .transactionType(TransactionType.REFUND)
-                                        .recipient(userWallet.getUser().getFullName())
-                                        .sender("SYSTEM")
-                                        .amount((long) +depositAmount)
-                                        .transactionWalletCode(random())
-                                        .build();
-                                transactionRepository.save(refundTransaction);
+                            if (LocalDateTime.now().isAfter(paymentDeadline)) {
+                                // Thêm tiền cọc vào ví admin
+                                Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN)
+                                        .orElseThrow(() -> new IllegalStateException("Không tìm thấy ví admin"));
+                                double depositAmount = auction.getPercentDeposit() * auction.getBuyNowPrice();
+                                adminWallet.setBalance(adminWallet.getBalance() + depositAmount);
+                                walletRepository.save(adminWallet);
+                                log.info("Tiền cọc được chuyển vào ví admin: " + depositAmount);
 
-                                refundedUsers.add(bid.getUser().getEmail() + " (số tiền: " + depositAmount + ")");
-                                losersEmails.add(bid.getUser().getEmail());
+                                if (secondPlaceBid != null) {
+                                    secondPlaceBid.setWinBid(true);
+                                    bidRepository.save(secondPlaceBid);
+
+                                    emailService.sendWinnerNotification(secondPlaceBid.getUser().getEmail(), secondPlaceBid);
+                                    log.info("Người thắng thứ hai: " + secondPlaceBid.getUser().getEmail());
+                                } else {
+                                    auction.setStatus(AuctionStatus.CANCELLED);
+                                    auctionRepository.save(auction);
+                                    log.info("Phiên đấu giá thất bại do không có người thanh toán.");
+                                }
                             } else {
-                                // Giữ lại cọc của người thắng
-
-                                log.info("Giữ lại cọc cho người thắng: " + bid.getUser().getEmail());
-                                emailService.sendWinnerNotification(bid.getUser().getEmail(), winningBid);
+                                log.info("Người thắng đầu tiên vẫn còn thời gian để thanh toán: " + auction.getAuctionId());
                             }
-                        } catch (Exception e) {
-                            log.error("Lỗi khi xử lý cọc cho user " + bid.getUser().getEmail() +
-                                    " với số tiền: " + depositAmount, e);
                         }
                     } else {
-                        log.warn("User không có ví: " + bid.getUser().getEmail());
+                        auction.setStatus(AuctionStatus.CANCELLED);
+                        auctionRepository.save(auction);
+                        log.info("Phiên đấu giá thất bại do không có người đặt giá.");
                     }
                 }
-
-                // Gửi email thông báo cho các người thua
-                for (String userEmail : losersEmails) {
-                    if (!userEmail.equals(winningBid.getUser().getEmail())) {
-                        try {
-                            emailService.sendResultForAuction(userEmail, winningBid);
-                        } catch (Exception e) {
-                            log.error("Lỗi khi gửi email cho người dùng: " + userEmail, e);
-                        }
-                    }
-                }
-
-                log.info("Danh sách người dùng được hoàn tiền cho phiên đấu giá " + auction.getAuctionId() + ": "
-                        + String.join(", ", refundedUsers));
             }
         }
     }
 
+
+
+
     // Hàm lấy người thắng (bid cao nhất)
-    private Bid getWinningBid(List<Bid> bids) {
-        return bids.stream()
-                .max(Comparator.comparing(Bid::getBidAmount))
-                .orElse(null);
-    }
+            private Bid getWinningBid (List < Bid > bids) {
+                return bids.stream()
+                        .max(Comparator.comparing(Bid::getBidAmount))
+                        .orElse(null);
+            }
 
-    // Hàm tạo mã giao dịch ngẫu nhiên
-    private long random() {
-        Random random = new Random();
-        int number = random.nextInt(900000) + 100000;
-        return Long.parseLong(String.valueOf(number));
-    }
-
-
+            // Hàm tạo mã giao dịch ngẫu nhiên
+            private long random () {
+                Random random = new Random();
+                int number = random.nextInt(900000) + 100000;
+                return Long.parseLong(String.valueOf(number));
+            }
 
 
-    private AuctionResponse convertToAuctionResponse(Auction auction) {
-        return AuctionResponse.builder()
-                .startTime(auction.getStartTime())
-                .endTime(auction.getEndTime())
-                .startPrice(auction.getStartPrice())
-                .description(auction.getDescription())
-                .termConditions(auction.getTermConditions())
-                .priceStep(auction.getPriceStep())
-                .shipType(auction.getShipType())
+            private AuctionResponse convertToAuctionResponse (Auction auction){
+                return AuctionResponse.builder()
+                        .startTime(auction.getStartTime())
+                        .endTime(auction.getEndTime())
+                        .startPrice(auction.getStartPrice())
+                        .description(auction.getDescription())
+                        .termConditions(auction.getTermConditions())
+                        .priceStep(auction.getPriceStep())
+                        .shipType(auction.getShipType())
 //                .comment(auction.getComment())
-                .status(auction.getStatus())
-                .approveBy(auction.getApproveBy())
-                .approveAt(auction.getApproveAt())
-                .createBy(auction.getCreateBy())
-                .item(auction.getItem().getItemId())
-                .createBy(auction.getCreateBy())
+                        .status(auction.getStatus())
+                        .approveBy(auction.getApproveBy())
+                        .approveAt(auction.getApproveAt())
+                        .createBy(auction.getCreateBy())
+                        .item(auction.getItem().getItemId())
+                        .createBy(auction.getCreateBy())
 //                .createdAt(auction.getCreateAt())
-                .build();
-    }
+                        .build();
+            }
 
 
-}
+        }

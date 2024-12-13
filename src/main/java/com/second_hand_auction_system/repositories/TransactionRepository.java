@@ -19,4 +19,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     Page<Transaction> findByTransactionType(TransactionType transactionType, Pageable pageable);
 
     Optional<Transaction> findByWallet_User_Id(Integer id);
+
+    Optional<Transaction> findTransactionByOrder_OrderId(Integer id);
 }

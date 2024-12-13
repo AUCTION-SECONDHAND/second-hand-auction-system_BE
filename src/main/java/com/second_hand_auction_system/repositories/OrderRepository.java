@@ -43,4 +43,5 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Object[]> getOrderStatisticsByMonth();
 
 
+    Order findByAuction_AuctionId(Integer auctionId);
 }
