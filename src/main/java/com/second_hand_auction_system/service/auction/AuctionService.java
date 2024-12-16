@@ -289,12 +289,16 @@ public class AuctionService implements IAuctionService {
         List<Auction> auctions = auctionRepository.findAll();
 
         for (Auction auction : auctions) {
-            if (auction.getStatus() != null && !auction.getStatus().equals(AuctionStatus.CLOSED) &&
-                    LocalDateTime.now().isAfter(auction.getEndDate().toInstant()
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDateTime()
-                            .with(auction.getEndTime().toLocalTime()))) {
+            if (auction.getStatus() == null || auction.getStatus().equals(AuctionStatus.CLOSED)) {
+                continue;
+            }
 
+            LocalDateTime auctionEndTime = auction.getEndDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime()
+                    .with(auction.getEndTime().toLocalTime());
+
+            if (LocalDateTime.now().isAfter(auctionEndTime)) {
                 auction.setStatus(AuctionStatus.CLOSED);
                 auctionRepository.save(auction);
                 log.info("PHIÊN ĐẤU GIÁ KẾT THÚC: " + auction.getAuctionId());
@@ -321,23 +325,32 @@ public class AuctionService implements IAuctionService {
                     // Kiểm tra trạng thái thanh toán qua Order
                     Order order = orderRepository.findByAuction_AuctionId(auction.getAuctionId());
                     if (order != null) {
-                        Transaction transactionAuction = transactionRepository.findTransactionByOrder_OrderId(order.getOrderId()).orElse(null);
-                        if (transactionAuction == null || !transactionAuction.getTransactionStatus().equals(TransactionStatus.COMPLETED)) {
-                            // Kiểm tra thời gian 48 giờ sau khi đấu giá kết thúc
-                            LocalDateTime paymentDeadline = auction.getEndDate().toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDateTime()
-                                    .with(auction.getEndTime().toLocalTime())
-                                    .plusHours(48);
+                        Transaction transaction = transactionRepository.findTransactionByOrder_OrderId(order.getOrderId()).orElse(null);
+
+                        if (transaction == null || !transaction.getTransactionStatus().equals(TransactionStatus.COMPLETED)) {
+                            LocalDateTime paymentDeadline = auctionEndTime.plusHours(48);
 
                             if (LocalDateTime.now().isAfter(paymentDeadline)) {
                                 // Thêm tiền cọc vào ví admin
                                 Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN)
                                         .orElseThrow(() -> new IllegalStateException("Không tìm thấy ví admin"));
-                                double depositAmount = auction.getPercentDeposit() * auction.getBuyNowPrice();
+                                double depositAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice())/100;
                                 adminWallet.setBalance(adminWallet.getBalance() + depositAmount);
                                 walletRepository.save(adminWallet);
                                 log.info("Tiền cọc được chuyển vào ví admin: " + depositAmount);
+
+                                // Hoàn tiền cho người thua
+                                List<Bid> losingBids = bidRepository.findByAuction_AuctionIdAndWinBidFalse(auction.getAuctionId());
+                                for (Bid losingBid : losingBids) {
+                                    Wallet userWallet = walletRepository.findWalletByUserId(losingBid.getUser().getId()).orElse(null);
+                                    double refundAmount = ((losingBid.getAuction().getPercentDeposit() * auction.getBuyNowPrice())/100);
+                                    assert userWallet != null;
+                                    userWallet.setBalance(userWallet.getBalance() + refundAmount);
+                                    walletRepository.save(userWallet);
+                                    log.info("Hoàn tiền cọc: " + refundAmount + " vào ví của người dùng: " + losingBid.getUser().getEmail());
+
+                                    emailService.sendResultForAuction(losingBid.getUser().getEmail(), winningBid);
+                                }
 
                                 if (secondPlaceBid != null) {
                                     secondPlaceBid.setWinBid(true);
@@ -367,6 +380,7 @@ public class AuctionService implements IAuctionService {
 
 
 
+
     // Hàm lấy người thắng (bid cao nhất)
             private Bid getWinningBid (List < Bid > bids) {
                 return bids.stream()
@@ -374,12 +388,6 @@ public class AuctionService implements IAuctionService {
                         .orElse(null);
             }
 
-            // Hàm tạo mã giao dịch ngẫu nhiên
-            private long random () {
-                Random random = new Random();
-                int number = random.nextInt(900000) + 100000;
-                return Long.parseLong(String.valueOf(number));
-            }
 
 
             private AuctionResponse convertToAuctionResponse (Auction auction){
