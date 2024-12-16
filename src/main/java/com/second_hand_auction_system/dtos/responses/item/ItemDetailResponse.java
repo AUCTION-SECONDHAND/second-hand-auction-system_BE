@@ -50,5 +50,5 @@ public class ItemDetailResponse {
 
     private int numberParticipant;
 
-    private String checkBid;
+    private Integer checkBid;
 }

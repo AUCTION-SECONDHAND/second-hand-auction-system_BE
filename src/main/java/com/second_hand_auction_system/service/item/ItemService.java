@@ -239,15 +239,26 @@ public class ItemService implements IItemService {
         ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
         itemDetailResponse.setNumberParticipant((int) numberOfRegistrations);
 
-        // Kiểm tra xem user đã đặt bid hay chưa
-        boolean userHasBid = false;
-        if (requester.getId() != null && item.getAuction() != null) {
-            userHasBid = bidRepository.existsByUserIdAndAuction_AuctionId(requester.getId(), item.getAuction().getAuctionId());
+        // Kiểm tra xem user đã đặt bid hay chưa và lấy bidAmount nếu có
+        Integer checkBid = null; // Mặc định là null
+        if (requester != null && requester.getId() != null && item.getAuction() != null) {
+            if (item.getAuction().getAuctionType().getAuctionTypeId() == 3) {
+                Bid userBid = bidRepository.findByUserIdAndAuction_AuctionId(
+                        requester.getId(),
+                        item.getAuction().getAuctionId()
+                ).orElse(null);
+
+                if (userBid != null) {
+                    checkBid = userBid.getBidAmount(); // Lấy bidAmount của user
+                }
+            }
         }
 
 
+
+
         // Gán kết quả vào trường checkBid
-        itemDetailResponse.setCheckBid(userHasBid ? "true" : "false");
+        itemDetailResponse.setCheckBid(checkBid);
 
         return itemDetailResponse;
     }
