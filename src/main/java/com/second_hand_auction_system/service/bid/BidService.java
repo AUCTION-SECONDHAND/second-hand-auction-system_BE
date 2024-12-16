@@ -654,7 +654,8 @@ public class BidService implements IBidService {
                     .winBid(bid.isWinBid())
                     .userId(bid.getUser().getId())
                     .auctionId(bid.getAuction().getAuctionId())
-                    .username(bid.getUser().getUsername())
+                    .email(bid.getUser().getUsername())
+                    .username(bid.getUser().getFullName())
                     .build();
 
             bidResponses.add(bidResponse);
