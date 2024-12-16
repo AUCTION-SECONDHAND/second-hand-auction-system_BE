@@ -325,6 +325,13 @@ public class BidService implements IBidService {
         // Nếu bid mới thực sự là giá cao nhất, gán winBid=true
         if (existingBids.isEmpty() || bidRequest.getBidAmount() > existingBids.get(0).getBidAmount()) {
             newBid.setWinBid(true);
+
+            // set winBid = false
+            for (Bid bid: existingBids){
+                if(!bid.getBidId().equals(newBid.getBidId())){
+                    bid.setWinBid(false);
+                }
+            }
         }
 
         // Duy trì trạng thái của các bid cũ, không sửa trừ khi là không hợp lệ
