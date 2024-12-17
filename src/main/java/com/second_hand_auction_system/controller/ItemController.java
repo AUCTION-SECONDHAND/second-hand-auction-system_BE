@@ -264,21 +264,17 @@ public class ItemController {
     ) throws Exception {
         // Sắp xếp theo trường createdDate theo thứ tự giảm dần (sản phẩm mới lên đầu)
         PageRequest pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Order.desc("createAt")));
-
         // Lấy kết quả từ service
         Page<AuctionItemResponse> auctionItemResponses = itemService.getAuctionProcess(pageRequest);
-
         int totalPages = auctionItemResponses.getTotalPages();
         Long totalOrder = auctionItemResponses.getTotalElements();
         List<AuctionItemResponse> itemResponseList = auctionItemResponses.getContent();
-
         // Tạo đối tượng ResponseListObject để trả kết quả
         ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
                 .data(itemResponseList)
                 .totalElements(totalOrder)
                 .totalPages(totalPages)
                 .build();
-
         // Trả về response kết quả
         return ResponseEntity.ok(
                 ResponseObject.builder()

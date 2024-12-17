@@ -20,15 +20,15 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
 
     Page<Item> findAllByItemStatusOrderByItemIdDesc(ItemStatus itemStatus, Pageable pageable);
 
-
     @Query("SELECT i FROM Item i " +
             "JOIN i.auction a " +
             "JOIN Bid b ON a.auctionId = b.auction.auctionId " +
             "JOIN b.user u " +
-            "WHERE b.bidAmount = (SELECT MAX(bid.bidAmount) FROM Bid bid WHERE bid.auction.auctionId = a.auctionId) " +
-            "AND a.status = 'CLOSED' " +
-            "AND u.id = :userId")
-    Page<Item> findWinningItemsByUserIdAndAuctionStatus(@Param("userId") Integer userId, Pageable pageable);
+            "WHERE u.id = :userId " +
+            "AND b.winBid = true " + "AND a.status = 'CLOSED'"  )
+    Page<Item> findItemsByUserId(@Param("userId") Integer userId, Pageable pageable);
+
+
 
 
 

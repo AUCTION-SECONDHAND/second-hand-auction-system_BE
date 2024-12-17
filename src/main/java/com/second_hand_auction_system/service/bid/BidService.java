@@ -100,6 +100,44 @@ public class BidService implements IBidService {
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
+        if (bidRequest.getBidAmount().equals(auction.getBuyNowPrice())) {
+            // Tạo bid mới với trạng thái thắng
+            Bid buyNowBid = Bid.builder()
+                    .winBid(true)
+                    .bidTime(LocalDateTime.now())
+                    .auction(auction)
+                    .user(requester)
+                    .bidAmount(bidRequest.getBidAmount())
+                    .build();
+            bidRepository.save(buyNowBid);
+
+            // Cập nhật trạng thái phiên đấu giá thành CLOSED
+            auction.setStatus(AuctionStatus.CLOSED);
+            auctionRepository.save(auction);
+
+            // Gửi thông báo đến tất cả những người tham gia
+            String message = "Đấu giá đã kết thúc với giá mua ngay: " + auction.getBuyNowPrice();
+            String title = "Đấu giá kết thúc";
+            notificationService.createBidNotification(requester.getId(), title, message);
+
+            // Gửi sự kiện cập nhật thông báo
+            List<Notifications> notifications = notificationsRepository.findByUser_IdOrderByCreateAtDesc(requester.getId());
+            List<NotificationResponse> notificationResponses = notifications.stream()
+                    .map(notificationConverter::toNotificationResponse)
+                    .toList();
+            applicationEventPublisher.publishEvent(new NotificationEvent(notificationResponses));
+
+            // Gửi thông báo qua WebSocket
+            messagingTemplate.convertAndSend("/topic/bids", message);
+
+            // Trả về phản hồi thành công
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Bạn đã mua ngay thành công với giá: " + auction.getBuyNowPrice())
+                            .status(HttpStatus.OK)
+                            .build());
+        }
 
         // **Mới thêm: Kiểm tra nếu người dùng đang là người thắng hiện tại**
         Bid winningBid = bidRepository.findTopByAuction_AuctionIdAndWinBidTrue(auction.getAuctionId());
@@ -132,8 +170,6 @@ public class BidService implements IBidService {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-
-
         // Kiểm tra trạng thái và thời gian phiên đấu giá
         // Ensure that all date and time fields are not null
         if (auction.getStartDate() == null || auction.getStartTime() == null ||
@@ -191,8 +227,6 @@ public class BidService implements IBidService {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-
-
         // Lấy danh sách các bid hiện có
         List<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
 
@@ -244,7 +278,6 @@ public class BidService implements IBidService {
         String message = "Bạn đang đặt với giá " + newBid.getBidAmount();
         String title = "Đặt giá thành công ";
         notificationService.createBidNotification(requester.getId(), title, message);
-
         List<Notifications> notifications = notificationsRepository.findByUser_IdOrderByCreateAtDesc(requester.getId());
         List<NotificationResponse> notificationResponses = notifications.stream()
                 .map(notificationConverter::toNotificationResponse)
@@ -333,11 +366,9 @@ public class BidService implements IBidService {
                 }
             }
         }
-
         // Duy trì trạng thái của các bid cũ, không sửa trừ khi là không hợp lệ
         bidRepository.saveAll(existingBids);
         bidRepository.save(newBid);
-
         // Gửi thông báo
         String message = "Bạn đang đặt với giá " + newBid.getBidAmount();
         String title = "Đặt giá thành công";

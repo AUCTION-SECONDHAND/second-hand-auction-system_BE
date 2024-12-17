@@ -78,9 +78,9 @@ public class AuctionService implements IAuctionService {
         long diffDays = diffInMillies / (24 * 60 * 60 * 1000);
 
         // Kiểm tra ngày bắt đầu đấu giá
-        if (diffDays < 1) {
-            throw new Exception("Ngày bắt đầu đấu giá phải cách ít nhất 1 ngày tính từ bây giờ");
-        }
+//        if (diffDays < 1) {
+//            throw new Exception("Ngày bắt đầu đấu giá phải cách ít nhất 1 ngày tính từ bây giờ");
+//        }
         if (diffDays > 30) {
             throw new Exception("Ngày bắt đầu đấu giá không được cách quá 30 ngày tính từ bây giờ");
         }
@@ -124,15 +124,14 @@ public class AuctionService implements IAuctionService {
         auction.setAuctionType(auctionType);
 
         // Tạo và lưu ví cho đấu giá
-        Wallet wallet = Wallet.builder()
+        Wallet walletAuction = Wallet.builder()
                 .balance(0)
                 .walletType(WalletType.AUCTION)
                 .statusWallet(StatusWallet.ACTIVE)
-                .user(requester) // Liên kết ví với người dùng tạo đấu giá
                 .build();
 
-        walletRepository.save(wallet);
-        auction.setWallet(wallet);
+        walletRepository.save(walletAuction);
+        auction.setWallet(walletAuction);
 
         // Cập nhật trạng thái item
         itemExist.setItemStatus(ItemStatus.ACCEPTED);
