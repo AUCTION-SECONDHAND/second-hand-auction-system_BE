@@ -220,10 +220,11 @@ public class ItemService implements IItemService {
 
     @Override
     public Page<AuctionItemResponse> getItem(String keyword, Double minPrice, Double maxPrice, PageRequest pageRequest, List<Integer> subCategoryIds) throws Exception {
-        Page<Item> items;
-        items = itemRepository.searchItems(keyword, minPrice, maxPrice, subCategoryIds, pageRequest);
+        List<AuctionStatus> statuses = Arrays.asList(AuctionStatus.OPEN, AuctionStatus.PENDING);
+        Page<Item> items = itemRepository.searchItems(keyword, minPrice, maxPrice, subCategoryIds, statuses, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
+
 
     @Override
     public ItemDetailResponse getItemById(Integer itemId) throws Exception {

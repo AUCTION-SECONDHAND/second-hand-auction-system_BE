@@ -215,22 +215,6 @@ public class AuctionService implements IAuctionService {
         auctionRepository.save(auctionExist);
     }
 
-//    @Override
-//    public ResponseEntity<List<AuctionDto>> getAllAuctions(int page, int size) {
-//        Pageable pageable = PageRequest.of(page, size);
-//        Page<Auction> auctions = auctionRepository.findAll(pageable);
-//        List<AuctionDto> auctionDtoList = auctions.getContent().stream()
-//                .map(auction -> modelMapper.map(auction, AuctionDto.class))
-//                .collect(Collectors.toList());
-//        ResponseObject responseObject = ResponseObject.<List<AuctionDto>>builder()
-//                .data(auctionDtoList)
-//                .message("List of auctions")
-//                .status(HttpStatus.OK)
-//                .build();
-//
-//        return ResponseEntity.ok((List<AuctionDto>) responseObject);
-//    }
-
     @Override
     public ResponseEntity<?> getAll() {
         try {
@@ -345,12 +329,10 @@ public class AuctionService implements IAuctionService {
             if (auction.getStatus() == null || auction.getStatus().equals(AuctionStatus.CLOSED)) {
                 continue;
             }
-
             LocalDateTime auctionEndTime = auction.getEndDate().toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime()
                     .with(auction.getEndTime().toLocalTime());
-
             if (LocalDateTime.now().isAfter(auctionEndTime)) {
                 auction.setStatus(AuctionStatus.CLOSED);
                 auctionRepository.save(auction);
@@ -381,7 +363,7 @@ public class AuctionService implements IAuctionService {
                         Transaction transaction = transactionRepository.findTransactionByOrder_OrderId(order.getOrderId()).orElse(null);
 
                         if (transaction == null || !transaction.getTransactionStatus().equals(TransactionStatus.COMPLETED)) {
-                            LocalDateTime paymentDeadline = auctionEndTime.plusHours(48);
+                            LocalDateTime paymentDeadline = auctionEndTime.plusHours(24);
 
                             if (LocalDateTime.now().isAfter(paymentDeadline)) {
                                 // Thêm tiền cọc vào ví admin
@@ -400,6 +382,16 @@ public class AuctionService implements IAuctionService {
                                     assert userWallet != null;
                                     userWallet.setBalance(userWallet.getBalance() + refundAmount);
                                     walletRepository.save(userWallet);
+                                    Transaction transactionRefund = Transaction.builder()
+                                            .recipient(userWallet.getUser().getFullName())
+                                            .commissionRate(0)
+                                            .description("Hoàn tiền sau phien đấu giá")
+                                            .commissionAmount(0)
+                                            .transactionStatus(TransactionStatus.COMPLETED)
+                                            .sender("Hệ thống phiên đấu giá" + auction.getAuctionId())
+                                            .wallet(userWallet)
+                                            .build();
+                                    transactionRepository.save(transactionRefund);
                                     log.info("Hoàn tiền cọc: " + refundAmount + " vào ví của người dùng: " + losingBid.getUser().getEmail());
 
                                     emailService.sendResultForAuction(losingBid.getUser().getEmail(), winningBid);

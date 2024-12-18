@@ -43,14 +43,16 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
             "AND (:minPrice IS NULL OR a.startPrice >= :minPrice) " +
             "AND (:maxPrice IS NULL OR a.startPrice <= :maxPrice) " +
             "AND (:subCategoryIds IS NULL OR sc.subCategoryId IN :subCategoryIds) " +
-            "AND a.status = 'OPEN'")
+            "AND a.status IN (:statuses)")
     Page<Item> searchItems(
             @Param("itemName") String itemName,
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,
             @Param("subCategoryIds") List<Integer> subCategoryIds,
+            @Param("statuses") List<AuctionStatus> statuses,
             Pageable pageable
     );
+
 
 
     @Query("SELECT i FROM Item i ORDER BY i.itemId ASC ")

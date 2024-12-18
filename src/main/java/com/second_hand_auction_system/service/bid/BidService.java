@@ -123,12 +123,24 @@ public class BidService implements IBidService {
             // Kiểm tra nếu người dùng đã chọn "mua ngay" rồi
             Bid existingBuyNowBid = bidRepository.findTopByAuction_AuctionIdAndWinBidTrue(auction.getAuctionId());
             if (existingBuyNowBid != null && existingBuyNowBid.getUser().getId().equals(requester.getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         ResponseObject.builder()
                                 .data(null)
                                 .message("Bạn đã chọn giá mua ngay rồi, không thể đặt giá mới.")
-                                .status(HttpStatus.FORBIDDEN)
+                                .status(HttpStatus.BAD_REQUEST)
                                 .build());
+            }
+
+            // Kiểm tra nếu đã có người khác đặt giá "mua ngay" và giá mới phải cao hơn giá "mua ngay"
+            if (existingBuyNowBid != null) {
+                if (bidAmountRequest <= existingBuyNowBid.getBidAmount()) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                            ResponseObject.builder()
+                                    .data(null)
+                                    .message("Bạn phải đặt giá mua ngay cao hơn vì có người đã chọn giá mua ngay sản phẩm")
+                                    .status(HttpStatus.BAD_REQUEST)
+                                    .build());
+                }
             }
 
             // Tạo bid "mua ngay"
@@ -253,7 +265,7 @@ public class BidService implements IBidService {
         // 13. Gửi phản hồi thành công
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseObject.builder()
-                        .data(newBid)
+                        .data(null)
                         .message("Bid placed successfully")
                         .status(HttpStatus.OK)
                         .build());
