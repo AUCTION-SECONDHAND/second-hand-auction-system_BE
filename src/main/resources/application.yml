@@ -4,12 +4,12 @@ server:
 open:
   api:
     title: API-service document
-    version: V1.0.0
+    version: V1.0.0 (production)
     description: API for the second-hand auction system
     licenseUrl: "https://example.com/license"  # Replace with actual license URL
     licenseName: API License
-    serversUrl: http://localhost:8080/
-    serversDescription: Server v1
+    serversUrl: https://auction-system-fpt-2024-production.azurewebsites.net/
+    serversDescription: Server production
 
 springdoc:
   api-docs:
