@@ -172,6 +172,9 @@ public class ItemService implements IItemService {
     public void deleteItem(int itemId) throws Exception {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
+        if(item.getItemStatus().equals(ItemStatus.ACCEPTED) ||  item.getItemStatus().equals(ItemStatus.PENDING_AUCTION)){
+            throw new Exception("Sản phẩm này đã và đang được phê duyệt");
+        }
         item.setItemStatus(ItemStatus.INACTIVE);
         itemRepository.save(item);
     }
@@ -272,9 +275,13 @@ public class ItemService implements IItemService {
         if (userId == null) {
             throw new Exception("User not found");
         }
-        Page<Item> items = itemRepository.findWinningItemsByUserIdAndAuctionStatus(userId, pageRequest);
+        Page<Item> items = itemRepository.findItemsByUserId(userId, pageRequest);
+
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
+
+
+
 
     @Override
     public ResponseEntity<?> getItemAuctionCompleted(int page, int limit) {

@@ -145,7 +145,7 @@ public class OrderService implements IOrderService {
 
             // Tính toán hoa hồng và số tiền thực nhận cho admin
             double orderAmount = orderEntity.getTotalAmount();
-            double commissionRate = 0.05;
+            double commissionRate = 0.2;
             double commissionAmount = orderAmount * commissionRate;
             double netAmountForAdmin = orderAmount - commissionAmount;
 
