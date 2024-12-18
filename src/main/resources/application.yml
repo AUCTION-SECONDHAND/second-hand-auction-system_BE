@@ -22,10 +22,11 @@ spring:
     name: second-hand-auction-system_BE
   datasource:
     # Duc Anh
-    url: jdbc:mysql://localhost:3306/secondHandAuction?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    #url: jdbc:mysql://localhost:3306/secondHandAuction?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://root:uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl@junction.proxy.rlwy.net:45319/railway?useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 12345
+    password: uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl
 
   jpa:
     show-sql: false
