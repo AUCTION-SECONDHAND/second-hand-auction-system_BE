@@ -227,18 +227,28 @@ public class ItemService implements IItemService {
 
     @Override
     public ItemDetailResponse getItemById(Integer itemId) throws Exception {
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
-        String token = authHeader.substring(7);
-        String userEmail = jwtService.extractUserEmail(token);
-        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
-        Item item =  itemRepository.findById(itemId)
+        // Lấy token từ Authorization header
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        String authHeader = attributes != null ? attributes.getRequest().getHeader("Authorization") : null;
+        String userEmail = null;
+        User requester = null;
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            userEmail = jwtService.extractUserEmail(token);
+            requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        }
+
+        // Lấy thông tin Item
+        Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
+
         long numberOfRegistrations = 0;
         if (item.getAuction() != null) {
             numberOfRegistrations = auctionRegistrationRepository.countRegistrationsByAuctionId(item.getAuction().getAuctionId());
         }
 
-        // Convert dữ liệu item sang response
+        // Chuyển đổi dữ liệu Item sang Response
         ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
         itemDetailResponse.setNumberParticipant((int) numberOfRegistrations);
 
@@ -256,9 +266,6 @@ public class ItemService implements IItemService {
                 }
             }
         }
-
-
-
 
         // Gán kết quả vào trường checkBid
         itemDetailResponse.setCheckBid(checkBid);
