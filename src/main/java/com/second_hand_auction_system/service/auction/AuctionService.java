@@ -143,16 +143,70 @@ public class AuctionService implements IAuctionService {
     }
 
 
+
     @Override
     public void updateAuction(int auctionId, AuctionDto auctionDto) throws Exception {
-        Item itemExist = itemRepository.findById(auctionDto.getItem())
-                .orElseThrow(() -> new Exception("Item not found"));
+
+        //        Item itemExist = itemRepository.findById(auctionDto.getItem())
+        //                .orElseThrow(() -> new Exception("Item not found"));
+        // Kiểm tra xem Auction tồn tại hay không
         Auction auctionExist = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new Exception("Auction not found"));
-        modelMapper.map(auctionDto, auctionExist);
-        auctionExist.setItem(itemExist);
+
+        // Cập nhật từng trường nếu chúng được truyền vào
+        if (auctionDto.getStartTime() != null) {
+            auctionExist.setStartTime(auctionDto.getStartTime());
+        }
+        if (auctionDto.getEndTime() != null) {
+            auctionExist.setEndTime(auctionDto.getEndTime());
+        }
+        if (auctionDto.getBuyNowPrice() != 0) {
+            auctionExist.setBuyNowPrice(auctionDto.getBuyNowPrice());
+        }
+        if (auctionDto.getStartDate() != null) {
+            auctionExist.setStartDate(auctionDto.getStartDate());
+        }
+        if (auctionDto.getEndDate() != null) {
+            auctionExist.setEndDate(auctionDto.getEndDate());
+        }
+        if (auctionDto.getStartPrice() != 0) {
+            auctionExist.setStartPrice(auctionDto.getStartPrice());
+        }
+        if (auctionDto.getDescription() != null) {
+            auctionExist.setDescription(auctionDto.getDescription());
+        }
+        if (auctionDto.getTermConditions() != null) {
+            auctionExist.setTermConditions(auctionDto.getTermConditions());
+        }
+        if (auctionDto.getPriceStep() != 0) {
+            auctionExist.setPriceStep(auctionDto.getPriceStep());
+        }
+        if (auctionDto.getNumberParticipant() != 0) {
+            auctionExist.setNumberParticipant(auctionDto.getNumberParticipant());
+        }
+        if (auctionDto.getShipType() != null) {
+            auctionExist.setShipType(auctionDto.getShipType());
+        }
+        if (auctionDto.getPercentDeposit() != 0) {
+            auctionExist.setPercentDeposit(auctionDto.getPercentDeposit());
+        }
+        if (auctionDto.getComment() != null) {
+            auctionExist.setComment(auctionDto.getComment());
+        }
+
+        if (auctionExist.getEndDate() != null && auctionExist.getEndDate().before(new Date())) {
+            auctionExist.setStatus(AuctionStatus.CLOSED); // Nếu kết thúc thời gian thì set trạng thái hoàn thành
+        } else if (auctionExist.getStartDate() != null && auctionExist.getStartDate().before(new Date())) {
+            auctionExist.setStatus(AuctionStatus.OPEN); // Nếu thời gian bắt đầu đã qua thì set OPEN
+        } else {
+            auctionExist.setStatus(AuctionStatus.PENDING);
+        }
+
+
+        // Lưu thông tin sau khi kiểm tra từng trường
         auctionRepository.save(auctionExist);
     }
+
 
     @Override
     public void removeAuction(int auctionId) throws Exception {
