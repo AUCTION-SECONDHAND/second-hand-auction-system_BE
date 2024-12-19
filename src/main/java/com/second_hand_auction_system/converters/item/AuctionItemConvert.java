@@ -5,23 +5,33 @@ import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResp
 import com.second_hand_auction_system.dtos.responses.item.*;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.models.*;
+import com.second_hand_auction_system.repositories.BidRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class AuctionItemConvert {
     private final ModelMapper modelMapper;
+    private final BidRepository bidRepository;
 
     public AuctionItemResponse toAuctionItemResponse(Item item) {
         // Ánh xạ Auction nếu tồn tại
         ItemAuctionResponse auctionResponse = null;
         if (item.getAuction() != null) {
             Auction auction = item.getAuction();
+
+            Optional<Bid> bidOptional = bidRepository.findByAuction_AuctionIdAndWinBidTrue(auction.getAuctionId());
+            Integer winBidAmount = null;
+            if (bidOptional.isPresent()) {
+                winBidAmount = bidOptional.get().getBidAmount();
+            }
+
             auctionResponse = ItemAuctionResponse.builder()
                     .auctionId(auction.getAuctionId())
                     .startTime(auction.getStartTime())
@@ -34,6 +44,7 @@ public class AuctionItemConvert {
                     .status(auction.getStatus())
                     .percentDeposit(auction.getPercentDeposit())
                     .buyNowPrice(auction.getBuyNowPrice())
+                    .winBid(winBidAmount)
                     .build();
         }
 
