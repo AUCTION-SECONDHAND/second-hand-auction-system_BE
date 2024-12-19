@@ -34,7 +34,8 @@ public class ItemResponse extends BaseResponse {
 
     private Double priceBuyNow;
     private String thumbnail;
-
+    private Double priceStepItem;
+    private String itemDocument;
     private String imgItem;
 
     private String createBy;

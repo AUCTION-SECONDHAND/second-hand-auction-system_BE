@@ -1,16 +1,11 @@
 package com.second_hand_auction_system.repositories;
 
-import com.second_hand_auction_system.dtos.responses.order.SellerOrderStatics;
 import com.second_hand_auction_system.models.Order;
 import com.second_hand_auction_system.utils.OrderStatus;
-import com.second_hand_auction_system.utils.Role;
-import jakarta.validation.constraints.NotNull;
-import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -44,4 +39,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
 
     Order findByAuction_AuctionId(Integer auctionId);
+
+
 }

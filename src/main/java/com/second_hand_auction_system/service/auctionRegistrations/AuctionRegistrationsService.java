@@ -91,7 +91,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .build());
         }
 
-        if (auctionExist.getStatus().equals(AuctionStatus.OPEN)) {
+        if (auctionExist.getStatus().equals(AuctionStatus.PENDING)) {
             // Kiểm tra xem người dùng đã đăng ký phiên này chưa
             Optional<AuctionRegistration> existingRegistration = auctionRegistrationsRepository
                     .findByAuction_AuctionIdAndUsers_Id(auctionRegistrationsDto.getAuction(), requester.getId());

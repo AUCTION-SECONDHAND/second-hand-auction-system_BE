@@ -172,6 +172,9 @@ public class ItemService implements IItemService {
     public void deleteItem(int itemId) throws Exception {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
+        if(item.getItemStatus().equals(ItemStatus.ACCEPTED) ||  item.getItemStatus().equals(ItemStatus.PENDING_AUCTION)){
+            throw new Exception("Sản phẩm này đã và đang được phê duyệt");
+        }
         item.setItemStatus(ItemStatus.INACTIVE);
         itemRepository.save(item);
     }
@@ -217,25 +220,36 @@ public class ItemService implements IItemService {
 
     @Override
     public Page<AuctionItemResponse> getItem(String keyword, Double minPrice, Double maxPrice, PageRequest pageRequest, List<Integer> subCategoryIds) throws Exception {
-        Page<Item> items;
-        items = itemRepository.searchItems(keyword, minPrice, maxPrice, subCategoryIds, pageRequest);
+        List<AuctionStatus> statuses = Arrays.asList(AuctionStatus.OPEN, AuctionStatus.PENDING);
+        Page<Item> items = itemRepository.searchItems(keyword, minPrice, maxPrice, subCategoryIds, statuses, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
+
     @Override
     public ItemDetailResponse getItemById(Integer itemId) throws Exception {
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
-        String token = authHeader.substring(7);
-        String userEmail = jwtService.extractUserEmail(token);
-        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
-        Item item =  itemRepository.findById(itemId)
+        // Lấy token từ Authorization header
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        String authHeader = attributes != null ? attributes.getRequest().getHeader("Authorization") : null;
+        String userEmail = null;
+        User requester = null;
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            userEmail = jwtService.extractUserEmail(token);
+            requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        }
+
+        // Lấy thông tin Item
+        Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
+
         long numberOfRegistrations = 0;
         if (item.getAuction() != null) {
             numberOfRegistrations = auctionRegistrationRepository.countRegistrationsByAuctionId(item.getAuction().getAuctionId());
         }
 
-        // Convert dữ liệu item sang response
+        // Chuyển đổi dữ liệu Item sang Response
         ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
         itemDetailResponse.setNumberParticipant((int) numberOfRegistrations);
 
@@ -254,9 +268,6 @@ public class ItemService implements IItemService {
             }
         }
 
-
-
-
         // Gán kết quả vào trường checkBid
         itemDetailResponse.setCheckBid(checkBid);
 
@@ -272,9 +283,13 @@ public class ItemService implements IItemService {
         if (userId == null) {
             throw new Exception("User not found");
         }
-        Page<Item> items = itemRepository.findWinningItemsByUserIdAndAuctionStatus(userId, pageRequest);
+        Page<Item> items = itemRepository.findItemsByUserId(userId, pageRequest);
+
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
+
+
+
 
     @Override
     public ResponseEntity<?> getItemAuctionCompleted(int page, int limit) {

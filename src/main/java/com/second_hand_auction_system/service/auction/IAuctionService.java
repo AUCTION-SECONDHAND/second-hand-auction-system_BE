@@ -19,4 +19,6 @@ public interface IAuctionService {
     long countAuctionsCreatedToday();
 
     ResponseEntity<?> countAuctionsByMonth();
+
+    ResponseEntity<?> updateStatus(Integer auctionId);
 }

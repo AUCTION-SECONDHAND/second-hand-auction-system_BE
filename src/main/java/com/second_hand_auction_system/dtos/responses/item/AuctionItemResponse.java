@@ -29,4 +29,5 @@ public class AuctionItemResponse extends BaseResponse {
     private SubCategoryItemResponse scId;
 
     private AuctionTypeResponse auctionTypeId;
+    private Double winBid;
 }

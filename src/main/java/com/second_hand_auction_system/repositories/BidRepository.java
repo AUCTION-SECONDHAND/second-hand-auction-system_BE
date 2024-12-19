@@ -46,4 +46,7 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     Optional<Bid> findByUserIdAndAuction_AuctionId(Integer userId, Integer auctionId);
 
     List<Bid> findByAuction_AuctionIdAndWinBidFalse(Integer auctionId);
+
+    Optional<Bid> findByAuction_AuctionIdAndWinBidTrue(Integer auctionId);
+
 }

@@ -62,4 +62,6 @@ public class ItemAuctionResponse {
     @JsonProperty("update_at")
     private LocalDateTime updateAt;
 
+    private Integer winBid;
+
 }
