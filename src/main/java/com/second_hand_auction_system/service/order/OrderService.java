@@ -220,7 +220,6 @@ public class OrderService implements IOrderService {
     }
 
 
-
     private long random() {
         Random random = new Random();
         int number = random.nextInt(900000) + 100000;
@@ -544,6 +543,39 @@ public class OrderService implements IOrderService {
                 .data(statisticsDTOs)
                 .build());
     }
+
+
+    @Override
+    public ResponseEntity<?> getTotalMoney() {
+        List<Object[]> statistics = orderRepository.getTotalMoneyByMonth();
+
+        // Tạo một mảng với 12 tháng và giá trị mặc định là 0
+        double[] monthlyAmounts = new double[12];
+
+        // Lặp qua các kết quả trả về từ database và cập nhật giá trị cho tháng tương ứng
+        for (Object[] stat : statistics) {
+            int month = (int) stat[0]; // Lấy tháng
+            double totalAmount = (double) stat[1]; // Lấy tổng tiền của tháng đó
+            monthlyAmounts[month - 1] = totalAmount; // Gán giá trị cho tháng tương ứng (tháng 1 = index 0)
+        }
+
+        // Tạo danh sách các tháng và số tiền
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            Map<String, Object> monthData = new HashMap<>();
+            monthData.put("month", i + 1); // Tháng (1-12)
+            monthData.put("totalAmount", monthlyAmounts[i]); // Số tiền tổng cho tháng đó
+            result.add(monthData);
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .message("Get total money by month")
+                .data(result)
+                .build());
+    }
+
+
+
 
 //    @Override
 //    public ResponseEntity<Map<String, Object>> getOrderStatsByMonth() {

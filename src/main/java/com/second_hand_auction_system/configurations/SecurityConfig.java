@@ -105,7 +105,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF", "SELLER")
                                 //order
                                 .requestMatchers(POST, "/api/v1/orders/**").hasAnyRole("SELLER", "BUYER")
-                                .requestMatchers(GET, "api/v1/orders/statistics/monthly").hasAnyRole("SELLER")
+                                .requestMatchers(GET, "api/v1/orders/getTotalMoneyByMonth").hasAnyRole("SELLER")
                                 .requestMatchers(GET, "/api/v1/orders/user").hasRole("BUYER")
                                 .requestMatchers(GET, "api/v1/orders/seller").hasRole("SELLER")
                                 .requestMatchers(GET, "/api/v1/orders/**").hasAnyRole("ADMIN")

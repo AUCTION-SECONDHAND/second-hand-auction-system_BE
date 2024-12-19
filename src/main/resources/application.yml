@@ -16,7 +16,6 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
-
 spring:
   application:
     name: second-hand-auction-system_BE

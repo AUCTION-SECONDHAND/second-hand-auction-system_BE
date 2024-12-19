@@ -26,4 +26,5 @@ public interface IOrderService {
 
     ResponseEntity<?> getOrderStatisticsByMonth();
 
+    ResponseEntity<?> getTotalMoney();
 }

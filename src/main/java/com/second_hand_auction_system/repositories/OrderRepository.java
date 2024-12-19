@@ -41,4 +41,14 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     Order findByAuction_AuctionId(Integer auctionId);
 
 
+    @Query("SELECT " +
+            "FUNCTION('MONTH', o.createAt) AS month, " +
+            "SUM(o.totalAmount) AS totalAmount " +
+            "FROM Order o " +
+            "GROUP BY FUNCTION('MONTH', o.createAt) " +
+            "ORDER BY FUNCTION('MONTH', o.createAt) ASC")
+    List<Object[]> getTotalMoneyByMonth();
+
+
+
 }
