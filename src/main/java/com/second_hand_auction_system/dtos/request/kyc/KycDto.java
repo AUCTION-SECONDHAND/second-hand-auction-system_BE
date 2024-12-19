@@ -20,7 +20,6 @@ public class KycDto {
     private String fullName;
 
     @NotNull(message = "Date of birth cannot be null")
-    @Past(message = "Date of birth must be in the past")
     private String dob;
 
     @NotBlank(message = "Gender cannot be blank")
