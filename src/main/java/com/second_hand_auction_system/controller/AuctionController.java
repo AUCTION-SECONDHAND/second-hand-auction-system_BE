@@ -92,6 +92,11 @@ public class AuctionController {
 //        return auctionService.getAllAuctions(page,size);
 //    }
 
+    @PutMapping("/update/{auctionId}")
+    public ResponseEntity<?> updateAuction(@PathVariable Integer auctionId){
+        return auctionService.updateStatus(auctionId);
+    }
+
     @GetMapping
     public ResponseEntity<?> getAuctions(){
         return auctionService.getAll();

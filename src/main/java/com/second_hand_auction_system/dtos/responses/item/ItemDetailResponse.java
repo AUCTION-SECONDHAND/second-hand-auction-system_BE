@@ -29,6 +29,10 @@ public class ItemDetailResponse {
 
     private String itemDescription;
 
+    private Double priceStepItem;
+
+    private String itemDocument;
+
     private String thumbnail;
 
     private ItemStatus itemStatus;

@@ -38,15 +38,14 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-ui.html",
             "/api/v1/auth/**",
-
             "/api/v1/users/**",
             "/api/v1/user/forgot-password/**",
             "/api/v1/withdrawRequest/vnpay-payment/**",
             "/api/v1/bids/highest-bid/**",
             "/api/v1/bids/**",
+            "/api/v1/auctions/update/**",
             "/socket/**",
     };
-
 
 
     @Bean
@@ -55,65 +54,67 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(WHITE_LIST).permitAll()
-                        .requestMatchers(GET, "/api/v1/user/comparison").hasRole("ADMIN")
-                        .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
-                        .requestMatchers(PUT,"/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
-                        .requestMatchers(PATCH,"/api/v1/user/**").hasAnyRole("SELLER","BUYER")
-                        .requestMatchers(DELETE,"/api/v1/user/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/feedback/**").permitAll()
-                        .requestMatchers("/api/v1/seller-information/**").permitAll()
+                                .requestMatchers(WHITE_LIST).permitAll()
+                                .requestMatchers(GET, "/api/v1/user/comparison").hasRole("ADMIN")
+                                .requestMatchers(POST, "/api/v1/user/**").hasRole("ADMIN")
+                                .requestMatchers(PUT, "/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
+                                .requestMatchers(PATCH, "/api/v1/user/**").hasAnyRole("SELLER", "BUYER")
+                                .requestMatchers(DELETE, "/api/v1/user/**").hasRole("ADMIN")
+                                .requestMatchers("/api/v1/feedback/**").permitAll()
+                                .requestMatchers("/api/v1/seller-information/**").permitAll()
 
-                        //main-category
-                        .requestMatchers(POST, "/api/v1/main-category/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers("/api/v1/main-category/**").permitAll()
-                        //sub-category
-                        .requestMatchers(POST, "/api/v1/sub-category/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers("/api/v1/sub-category/**").permitAll()
-                        //wallet-customer
-                        .requestMatchers(POST, "/api/v1/walletCustomer/**").hasAnyRole("BUYER", "SELLER")
-                        .requestMatchers(POST,"api/v1/walletCustomer/confirm-webhook").hasAnyRole("BUYER", "SELLER")
-                        .requestMatchers(GET,"/api/v1/walletCustomer/**").hasAnyRole("BUYER")
-                        //item
-                        .requestMatchers(POST, "/api/v1/item/**").hasRole("SELLER")
+                                //main-category
+                                .requestMatchers(POST, "/api/v1/main-category/**").hasAnyRole("ADMIN", "STAFF")
+                                .requestMatchers("/api/v1/main-category/**").permitAll()
+                                //sub-category
+                                .requestMatchers(POST, "/api/v1/sub-category/**").hasAnyRole("ADMIN", "STAFF")
+                                .requestMatchers("/api/v1/sub-category/**").permitAll()
+                                //wallet-customer
+                                .requestMatchers(POST, "/api/v1/walletCustomer/**").hasAnyRole("BUYER", "SELLER")
+                                .requestMatchers(POST, "api/v1/walletCustomer/confirm-webhook").hasAnyRole("BUYER", "SELLER")
+                                .requestMatchers(GET, "/api/v1/walletCustomer/**").hasAnyRole("BUYER")
+                                //item
+                                .requestMatchers(POST, "/api/v1/item/**").hasRole("SELLER")
 //                        .requestMatchers(PUT, "/api/v1/item/**").hasAnyRole("SELLER","ADMIN","STAFF")
-                        .requestMatchers(GET,"/api/v1/item/**").permitAll()
+                                .requestMatchers(GET, "/api/v1/item/**").permitAll()
 
-                        //register_auction_bider
-                        .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
-                        .requestMatchers(GET,"/api/v1/auction-register/**").permitAll()
-                        //kyc
-                        .requestMatchers(POST,"/api/v1/kyc/**").permitAll()
-                        .requestMatchers(PUT,"/api/v1/kyc/user").permitAll()
-                        .requestMatchers(PUT,"/api/v1/kyc/approve/**").hasAnyRole("STAFF","ADMIN")
-                        .requestMatchers(GET,"/api/v1/kyc/**").permitAll()
+                                //register_auction_bider
+                                .requestMatchers(POST, "/api/v1/auction-register/**").hasRole("BUYER")
+                                .requestMatchers(GET, "/api/v1/auction-register/**").permitAll()
+                                //kyc
+                                .requestMatchers(POST, "/api/v1/kyc/**").permitAll()
+                                .requestMatchers(PUT, "/api/v1/kyc/user").permitAll()
+                                .requestMatchers(PUT, "/api/v1/kyc/approve/**").hasAnyRole("STAFF", "ADMIN")
+                                .requestMatchers(GET, "/api/v1/kyc/**").permitAll()
 
-                        ///transactionWallet
-                        .requestMatchers(GET,"/api/v1/transactionWallet/get-transaction-wallet").permitAll()
-                        .requestMatchers(GET,"/api/v1/transactionWallet/get-transaction-admin").hasRole("ADMIN")
-                        .requestMatchers(PUT,"/api/v1/transactionWallet/upload-evidence/**").permitAll()
-                        //auction
-                        .requestMatchers(POST,"/api/v1/auction-register/**").hasRole("BUYER")
-                        .requestMatchers(GET,"/api/v1/auctions/**").hasAnyRole("BUYER")
-                        .requestMatchers(POST,"api/v1/auction/**").hasRole("STAFF")
+                                ///transactionWallet
+                                .requestMatchers(GET, "/api/v1/transactionWallet/get-transaction-wallet").permitAll()
+                                .requestMatchers(GET, "/api/v1/transactionWallet/get-transaction-admin").hasRole("ADMIN")
+                                .requestMatchers(PUT, "/api/v1/transactionWallet/upload-evidence/**").permitAll()
+                                //auction
+                                .requestMatchers(POST, "/api/v1/auction-register/**").hasRole("BUYER")
+                                .requestMatchers(PUT,"/api/v1/auctions/update").permitAll()
+                                .requestMatchers(GET, "/api/v1/auctions/**").hasAnyRole("BUYER")
+                                .requestMatchers(POST, "api/v1/auction/**").hasRole("STAFF")
 
 
-                        //withdraw
-                        .requestMatchers(PUT,"/api/v1/withdrawRequest/**").hasRole("STAFF")
-                        .requestMatchers(GET,"api/v1/withdrawRequest/**").permitAll()
-                        //auction_type
-                        .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF", "SELLER")
-                        //order
-                        .requestMatchers(POST,"/api/v1/orders/**").hasAnyRole("SELLER", "BUYER")
-                        .requestMatchers(GET,"/api/v1/orders/user").hasRole( "BUYER")
-                        .requestMatchers(GET,"api/v1/orders/seller").hasRole("SELLER")
-                        .requestMatchers(GET,"/api/v1/orders/**").hasRole("ADMIN")
-                        //transactionType
-                        .requestMatchers("/api/v1/transactionSystem/**").permitAll()
-                        //notification
-                        //.requestMatchers(PUT,"/api/v1/notifications/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers("/api/v1/notifications/**").permitAll()
-                        .anyRequest().authenticated()
+                                //withdraw
+                                .requestMatchers(PUT, "/api/v1/withdrawRequest/**").hasRole("STAFF")
+                                .requestMatchers(GET, "api/v1/withdrawRequest/**").permitAll()
+                                //auction_type
+                                .requestMatchers("/api/v1/auctionType/**").hasAnyRole("ADMIN", "STAFF", "SELLER")
+                                //order
+                                .requestMatchers(POST, "/api/v1/orders/**").hasAnyRole("SELLER", "BUYER")
+                                .requestMatchers(GET, "api/v1/orders/statistics/monthly").hasAnyRole("SELLER")
+                                .requestMatchers(GET, "/api/v1/orders/user").hasRole("BUYER")
+                                .requestMatchers(GET, "api/v1/orders/seller").hasRole("SELLER")
+                                .requestMatchers(GET, "/api/v1/orders/**").hasAnyRole("ADMIN")
+                                //transactionType
+                                .requestMatchers("/api/v1/transactionSystem/**").permitAll()
+                                //notification
+                                //.requestMatchers(PUT,"/api/v1/notifications/**").hasAnyRole("ADMIN", "STAFF")
+                                .requestMatchers("/api/v1/notifications/**").permitAll()
+                                .anyRequest().authenticated()
 
 
                 )
@@ -135,9 +136,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-
-
 
 
 }

@@ -48,6 +48,9 @@ public class ItemDto {
     private Double priceBuyNow;
 
 
+    @JsonProperty("item_document")
+    private String itemDocument;
+
     @JsonProperty("img_item")
     private List<ImgItemDto> imgItem;
 

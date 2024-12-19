@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.second_hand_auction_system.utils.AuctionStatus.CANCELLED;
+import static com.second_hand_auction_system.utils.AuctionStatus.CLOSED;
 
 @Service
 @RequiredArgsConstructor
@@ -140,7 +141,6 @@ public class AuctionService implements IAuctionService {
         // Lưu đấu giá vào cơ sở dữ liệu
         auctionRepository.save(auction);
     }
-
 
 
     @Override
@@ -319,12 +319,33 @@ public class AuctionService implements IAuctionService {
         return ResponseEntity.ok(response);
     }
 
+    @Override
+    public ResponseEntity<?> updateStatus(Integer auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElse(null);
+        if (auction == null) {
+            throw new RuntimeException("Auction not found");
+        }
+        if (auction.getStatus().equals(AuctionStatus.PENDING) && (auction.getNumberParticipant() >= 2)) {
+            auction.setStatus(AuctionStatus.OPEN);
+        } else {
+            auction.setStatus(AuctionStatus.CLOSED);
+        }
+        if (auction.getStatus().equals(AuctionStatus.OPEN)) {
+            auction.setStatus(AuctionStatus.CLOSED);
+
+        }
+        auctionRepository.save(auction);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Auction updated")
+                .data(auction.getStatus())
+                .build());
+    }
+
 
     @Scheduled(fixedDelay = 60000)
     @Transactional
     public void closeExpiredAuctions() throws MessagingException, IOException {
         List<Auction> auctions = auctionRepository.findAll();
-
         for (Auction auction : auctions) {
             if (auction.getStatus() == null || auction.getStatus().equals(AuctionStatus.CLOSED)) {
                 continue;
@@ -369,7 +390,7 @@ public class AuctionService implements IAuctionService {
                                 // Thêm tiền cọc vào ví admin
                                 Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN)
                                         .orElseThrow(() -> new IllegalStateException("Không tìm thấy ví admin"));
-                                double depositAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice())/100;
+                                double depositAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice()) / 100;
                                 adminWallet.setBalance(adminWallet.getBalance() + depositAmount);
                                 walletRepository.save(adminWallet);
                                 log.info("Tiền cọc được chuyển vào ví admin: " + depositAmount);
@@ -378,7 +399,7 @@ public class AuctionService implements IAuctionService {
                                 List<Bid> losingBids = bidRepository.findByAuction_AuctionIdAndWinBidFalse(auction.getAuctionId());
                                 for (Bid losingBid : losingBids) {
                                     Wallet userWallet = walletRepository.findWalletByUserId(losingBid.getUser().getId()).orElse(null);
-                                    double refundAmount = ((losingBid.getAuction().getPercentDeposit() * auction.getBuyNowPrice())/100);
+                                    double refundAmount = ((losingBid.getAuction().getPercentDeposit() * auction.getBuyNowPrice()) / 100);
                                     assert userWallet != null;
                                     userWallet.setBalance(userWallet.getBalance() + refundAmount);
                                     walletRepository.save(userWallet);
@@ -393,10 +414,8 @@ public class AuctionService implements IAuctionService {
                                             .build();
                                     transactionRepository.save(transactionRefund);
                                     log.info("Hoàn tiền cọc: " + refundAmount + " vào ví của người dùng: " + losingBid.getUser().getEmail());
-
                                     emailService.sendResultForAuction(losingBid.getUser().getEmail(), winningBid);
                                 }
-
                                 if (secondPlaceBid != null) {
                                     secondPlaceBid.setWinBid(true);
                                     bidRepository.save(secondPlaceBid);
@@ -423,37 +442,55 @@ public class AuctionService implements IAuctionService {
     }
 
 
-
-
-
-    // Hàm lấy người thắng (bid cao nhất)
-            private Bid getWinningBid (List < Bid > bids) {
-                return bids.stream()
-                        .max(Comparator.comparing(Bid::getBidAmount))
-                        .orElse(null);
+    @Scheduled(fixedDelay = 60000)
+    @Transactional
+    public void openAuction() throws Exception {
+        List<Auction> auctions = auctionRepository.findAll();
+        for (Auction auction : auctions) {
+            // Nếu trạng thái chưa được xác định hoặc đã là OPEN thì bỏ qua
+            if (auction.getStatus() == null || auction.getStatus().equals(AuctionStatus.OPEN)) {
+                continue;
             }
-
-
-
-            private AuctionResponse convertToAuctionResponse (Auction auction){
-                return AuctionResponse.builder()
-                        .startTime(auction.getStartTime())
-                        .endTime(auction.getEndTime())
-                        .startPrice(auction.getStartPrice())
-                        .description(auction.getDescription())
-                        .termConditions(auction.getTermConditions())
-                        .priceStep(auction.getPriceStep())
-                        .shipType(auction.getShipType())
-//                .comment(auction.getComment())
-                        .status(auction.getStatus())
-                        .approveBy(auction.getApproveBy())
-                        .approveAt(auction.getApproveAt())
-                        .createBy(auction.getCreateBy())
-                        .item(auction.getItem().getItemId())
-                        .createBy(auction.getCreateBy())
-//                .createdAt(auction.getCreateAt())
-                        .build();
+            // Lấy thời gian bắt đầu của đấu giá từ startDate và startTime
+            LocalDateTime auctionStartTime = auction.getStartDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime()
+                    .with(auction.getStartTime().toLocalTime());
+            // Kiểm tra nếu thời gian hiện tại đã qua thời gian bắt đầu của đấu giá
+            if (LocalDateTime.now().isAfter(auctionStartTime)) {
+                auction.setStatus(AuctionStatus.OPEN);
+                auctionRepository.save(auction);
             }
-
-
         }
+    }
+
+
+    private Bid getWinningBid(List<Bid> bids) {
+        return bids.stream()
+                .max(Comparator.comparing(Bid::getBidAmount))
+                .orElse(null);
+    }
+
+
+    private AuctionResponse convertToAuctionResponse(Auction auction) {
+        return AuctionResponse.builder()
+                .startTime(auction.getStartTime())
+                .endTime(auction.getEndTime())
+                .startPrice(auction.getStartPrice())
+                .description(auction.getDescription())
+                .termConditions(auction.getTermConditions())
+                .priceStep(auction.getPriceStep())
+                .shipType(auction.getShipType())
+//                .comment(auction.getComment())
+                .status(auction.getStatus())
+                .approveBy(auction.getApproveBy())
+                .approveAt(auction.getApproveAt())
+                .createBy(auction.getCreateBy())
+                .item(auction.getItem().getItemId())
+                .createBy(auction.getCreateBy())
+//                .createdAt(auction.getCreateAt())
+                .build();
+    }
+
+
+}

@@ -145,6 +145,8 @@ public class AuctionItemConvert {
                 .priceBuyNow(item.getPriceBuyNow())
                 .scId(subCategoryResponse)
                 .images(imageResponses)
+                .itemDocument(item.getItemDocument())
+                .priceStepItem(item.getPriceStepItem())
                 .auctionType(auctionTypeResponse)
                 .numberParticipant(0)
                 .build();
@@ -206,6 +208,8 @@ public class AuctionItemConvert {
                 .auctionTypeResponse(auctionTypeResponse)
                 .scId(subCategoryResponse)
                 .imageItemResponse(imageResponses)
+                .itemDocument(item.getItemDocument())
+                .priceStepItem(item.getPriceStepItem())
                 .createBy(item.getCreateBy())
                 .createAt(String.valueOf(item.getCreateAt()))
                 .updateAt(String.valueOf(item.getUpdateAt()))

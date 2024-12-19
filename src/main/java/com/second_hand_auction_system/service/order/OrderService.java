@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -146,7 +147,7 @@ public class OrderService implements IOrderService {
                     log.warn("Insufficient wallet balance or wallet not found for user: " + requester.getId());
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                             .status(HttpStatus.BAD_REQUEST)
-                            .message("Wallet doesn't have enough balance")
+                            .message("So dư tài khoản của bạn không đủ.Vui lòng nạp thêm để thanh toán đơn hàng")
                             .data(null)
                             .build());
                 }
@@ -544,6 +545,40 @@ public class OrderService implements IOrderService {
                 .build());
     }
 
+//    @Override
+//    public ResponseEntity<Map<String, Object>> getOrderStatsByMonth() {
+//
+//
+//
+//                int currentYear = LocalDate.now().getYear(); // Lấy năm hiện tại
+//
+//                // Lấy danh sách giao dịch theo năm
+//                List<MonthlyTransactionStats> transactions = transactionRepository.getMonthlyTransactionStats(currentYear);
+//
+//                // Xử lý dữ liệu
+//                List<String> labels = transactions.stream()
+//                        .map(trans -> "Tháng " + trans.getMonth()) // Format nhãn là "Tháng X"
+//                        .collect(Collectors.toList());
+//
+//                List<Long> chuaThanhToan = transactions.stream()
+//                        .map(MonthlyTransactionStats::getUnpaidAmount) // Số tiền chưa thanh toán
+//                        .collect(Collectors.toList());
+//
+//                List<Long> thanhToan = transactions.stream()
+//                        .map(MonthlyTransactionStats::getPaidAmount) // Số tiền đã thanh toán
+//                        .collect(Collectors.toList());
+//
+//                // Tạo Map để trả về
+//                Map<String, Object> response = new HashMap<>();
+//                response.put("labels", labels);
+//                response.put("chuaThanhToan", chuaThanhToan);
+//                response.put("thanhToan", thanhToan);
+//
+//                return response;
+//            }
+//
+//
+//    }
 
 
 }
