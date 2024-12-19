@@ -38,8 +38,8 @@ public class Item extends BaseEntity{
     @Column(name = "price_buy_now")
     private Double priceBuyNow;
 
-    @Column(name = "item_document")
-    private String itemDocument;
+    @Column(name = "price_step_item")
+    private Double priceStepItem;
 
     @Column(name = "reason")
     private String reason;

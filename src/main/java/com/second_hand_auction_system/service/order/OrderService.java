@@ -48,6 +48,7 @@ public class OrderService implements IOrderService {
     private final FeedbackRepository feedbackRepository;
     private final com.second_hand_auction_system.converters.order.orderConverter orderConverter;
     private final GHNService ghnService;
+
     @Override
     public ResponseEntity<?> create(OrderDTO order) {
         // Kiểm tra xem phiên đấu giá có tồn tại hay không
@@ -110,7 +111,13 @@ public class OrderService implements IOrderService {
                     .build());
         }
         Address address = addressRepository.findByUserIdAndStatusIsTrue(requester.getId()).orElse(null);
-        assert address != null;
+        if (address == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                    .data(null)
+                    .message("Address not found")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build());
+        }
 
         // Tạo đối tượng order
         Order orderEntity = Order.builder()
@@ -132,66 +139,76 @@ public class OrderService implements IOrderService {
 
         // Xử lý ví nếu paymentMethod là WALLET_PAYMENT
         if (order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)) {
-            Wallet customerWallet = walletRepository.findWalletByUserId(requester.getId()).orElse(null);
+            try {
+                Wallet customerWallet = walletRepository.findWalletByUserId(requester.getId()).orElse(null);
 
-            if (customerWallet == null || customerWallet.getBalance() < orderEntity.getTotalAmount()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                        .status(HttpStatus.BAD_REQUEST)
-                        .message("Wallet doesn't have enough balance")
-                        .data(null));
+                if (customerWallet == null || customerWallet.getBalance() < orderEntity.getTotalAmount()) {
+                    log.warn("Insufficient wallet balance or wallet not found for user: " + requester.getId());
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .message("Wallet doesn't have enough balance")
+                            .data(null)
+                            .build());
+                }
+
+                log.info("Wallet balance before deduction: " + customerWallet.getBalance());
+
+                // Tính toán hoa hồng và số tiền thực nhận cho admin
+                double orderAmount = orderEntity.getTotalAmount();
+
+                // Trừ số tiền từ ví customer
+                customerWallet.setBalance(customerWallet.getBalance() - orderAmount);
+                walletRepository.save(customerWallet);
+                log.info("Wallet balance after deduction: " + customerWallet.getBalance());
+
+                // Cập nhật orderEntity
+                orderEntity.setTotalAmount(orderAmount); // Cập nhật tổng tiền bao gồm hoa hồng
+                orderRepository.save(orderEntity);
+
+                // Cộng tiền vào ví admin
+                Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
+                if (adminWallet != null) {
+                    log.info("Admin wallet balance before: " + adminWallet.getBalance());
+                    adminWallet.setBalance(adminWallet.getBalance() + orderAmount); // Cộng tiền admin
+                    walletRepository.save(adminWallet);
+                    log.info("Admin wallet balance after: " + adminWallet.getBalance());
+                } else {
+                    log.warn("Admin wallet not found");
+                }
+
+                // Tạo giao dịch ghi nhận giao dịch và hoa hồng
+                Transaction transactionWallet = new Transaction();
+                transactionWallet.setAmount((long) orderAmount);
+                transactionWallet.setWallet(customerWallet);
+                transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
+                transactionWallet.setTransactionType(TransactionType.TRANSFER);
+                transactionWallet.setCommissionAmount(0);
+                transactionWallet.setCommissionRate(0);
+                transactionWallet.setOrder(orderEntity);
+                assert adminWallet != null;
+                transactionWallet.setRecipient(adminWallet.getUser().getFullName());
+                transactionWallet.setSender(requester.getFullName());
+                transactionWallet.setDescription(order.getNote());
+                transactionWallet.setTransactionWalletCode(random());
+                transactionSystemRepository.save(transactionWallet);
+
+                // Cập nhật trạng thái phiên đấu giá sau khi thanh toán thành công
+                auction.setStatus(AuctionStatus.COMPLETED);
+                auctionRepository.save(auction);
+
+                return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                        .data("Success")
+                        .message("Order created successfully")
+                        .status(HttpStatus.OK)
+                        .build());
+            } catch (Exception ex) {
+                log.error("Error occurred during wallet payment processing: ", ex);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
+                        .data(null)
+                        .message("An unexpected error occurred during wallet payment processing")
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .build());
             }
-
-            log.info("Wallet balance before deduction: " + customerWallet.getBalance());
-
-            // Tính toán hoa hồng và số tiền thực nhận cho admin
-            double orderAmount = orderEntity.getTotalAmount();
-            double commissionRate = 0.2;
-            double commissionAmount = orderAmount * commissionRate;
-            double netAmountForAdmin = orderAmount - commissionAmount;
-
-            // Trừ số tiền từ ví customer
-            customerWallet.setBalance(customerWallet.getBalance() - orderAmount);
-            walletRepository.save(customerWallet);
-            log.info("Wallet balance after deduction: " + customerWallet.getBalance());
-
-            // Cập nhật orderEntity
-            orderEntity.setTotalAmount(orderAmount + commissionAmount); // Cập nhật tổng tiền bao gồm hoa hồng
-            orderRepository.save(orderEntity);
-
-            // Cộng tiền vào ví admin
-            Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
-            if (adminWallet != null) {
-                log.info("Admin wallet balance before: " + adminWallet.getBalance());
-                adminWallet.setBalance(adminWallet.getBalance() + netAmountForAdmin);
-                walletRepository.save(adminWallet);
-                log.info("Admin wallet balance after: " + adminWallet.getBalance());
-            }
-
-            // Tạo giao dịch ghi nhận giao dịch và hoa hồng
-            Transaction transactionWallet = new Transaction();
-            transactionWallet.setAmount((long) (orderAmount + netAmountForAdmin));
-            transactionWallet.setWallet(customerWallet);
-            transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
-            transactionWallet.setTransactionType(TransactionType.TRANSFER);
-            transactionWallet.setCommissionAmount((int) commissionAmount);
-            transactionWallet.setCommissionRate(commissionRate);
-            transactionWallet.setOrder(orderEntity);
-            assert adminWallet != null;
-            transactionWallet.setRecipient(adminWallet.getUser().getFullName());
-            transactionWallet.setSender(requester.getFullName());
-            transactionWallet.setDescription(order.getNote());
-            transactionWallet.setTransactionWalletCode(random());
-            transactionSystemRepository.save(transactionWallet);
-
-            // Cập nhật trạng thái phiên đấu giá sau khi thanh toán thành công
-            auction.setStatus(AuctionStatus.COMPLETED);
-            auctionRepository.save(auction);
-
-            return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                    .data("Success")
-                    .message("Order created successfully")
-                    .status(HttpStatus.OK)
-                    .build());
         }
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
@@ -200,6 +217,7 @@ public class OrderService implements IOrderService {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .build());
     }
+
 
 
     private long random() {
