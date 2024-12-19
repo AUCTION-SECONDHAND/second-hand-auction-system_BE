@@ -1,10 +1,12 @@
 package com.second_hand_auction_system.controller;
 
+import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseListObject;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
+import com.second_hand_auction_system.dtos.responses.item.ImageItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemResponse;
 import com.second_hand_auction_system.service.item.IItemService;
@@ -125,6 +127,20 @@ public class ItemController {
     @GetMapping("top-10-featured-item")
     public ResponseEntity<?> getTop10FeaturedItem() throws Exception {
         List<AuctionItemResponse> itemResponseList = itemService.getTop10FeaturedItem();
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
+                        .data(itemResponseList)
+                        .build()
+        );
+    }
+
+    @GetMapping("image-item/{id}")
+    public ResponseEntity<?> getTop10FeaturedItem(
+            @PathVariable Integer id
+    ) throws Exception {
+        List<ImageItemResponse> itemResponseList = itemService.getImageItem(id);
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
@@ -366,6 +382,34 @@ public class ItemController {
                         .status(HttpStatus.OK)
                         .message("Success")
                         .data(responseListObject)
+                        .build()
+        );
+    }
+
+
+    @PutMapping("/image-item/{itemId}")
+    public ResponseEntity<?> updateImageItem(
+            @PathVariable Integer itemId,
+            @Valid @RequestBody List<ImgItemDto> imgItemDtos,
+            BindingResult result
+    ) throws Exception {
+        if (result.hasErrors()) {
+            List<String> errorMessages = result.getFieldErrors()
+                    .stream()
+                    .map(FieldError::getDefaultMessage)
+                    .toList();
+            return ResponseEntity.badRequest().body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .message(String.valueOf(errorMessages))
+                            .build()
+            );
+        }
+        itemService.updateImageItem(itemId, imgItemDtos);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("Success")
                         .build()
         );
     }

@@ -1,8 +1,10 @@
 package com.second_hand_auction_system.service.item;
 
+import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
+import com.second_hand_auction_system.dtos.responses.item.ImageItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemResponse;
 import org.springframework.data.domain.Page;
@@ -18,6 +20,8 @@ public interface IItemService {
 
     void deleteItem(int itemId) throws Exception;
 
+    void updateImageItem (int itemId, List<ImgItemDto> imgItemDto) throws Exception;
+
     void approve(int itemId, ItemApprove approve) throws Exception;
     List<AuctionItemResponse> getTop10FeaturedItem() throws Exception;
     Page<AuctionItemResponse> getProductAppraisal(PageRequest pageRequest) throws Exception;
@@ -27,6 +31,8 @@ public interface IItemService {
             PageRequest pageRequest,
             List<Integer> subCategoryIds
     ) throws Exception;
+
+    List<ImageItemResponse> getImageItem(int itemId) throws Exception;
 
     ItemDetailResponse getItemById(Integer itemId) throws Exception;
     Page<AuctionItemResponse> getAuctionProcess(PageRequest pageRequest) throws Exception;
@@ -58,4 +64,7 @@ public interface IItemService {
     ) throws Exception;
 
     Page<AuctionItemResponse> getSimilarItem(Integer mainCategoryId, PageRequest pageRequest) throws Exception;
+
+
+
 }

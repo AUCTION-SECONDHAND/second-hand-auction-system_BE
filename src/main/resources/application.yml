@@ -4,12 +4,12 @@ server:
 open:
   api:
     title: API-service document
-    version: V1.0.0
+    version: V1.0.0 (production)
     description: API for the second-hand auction system
     licenseUrl: "https://example.com/license"  # Replace with actual license URL
     licenseName: API License
-    serversUrl: http://localhost:8080/
-    serversDescription: Server v1
+    serversUrl: https://auction-system-fpt-2024-production.azurewebsites.net/
+    serversDescription: Server production
 
 springdoc:
   api-docs:
@@ -21,10 +21,11 @@ spring:
     name: second-hand-auction-system_BE
   datasource:
     # Duc Anh
-    url: jdbc:mysql://localhost:3306/secondHandAuction?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    #url: jdbc:mysql://localhost:3306/secondHandAuction?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://root:uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl@junction.proxy.rlwy.net:45319/railway?useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 12345
+    password: uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl
 
   jpa:
     show-sql: false
