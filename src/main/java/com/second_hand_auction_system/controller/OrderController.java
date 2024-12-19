@@ -82,5 +82,9 @@ public class OrderController {
         return orderService.getOrderStatisticsByMonth();
     }
 
+    @GetMapping("/getTotalMoneyByMonth")
+    public ResponseEntity<?> getTotalMoneyByMonth() {
+        return orderService.getTotalMoney();
+    }
 
 }

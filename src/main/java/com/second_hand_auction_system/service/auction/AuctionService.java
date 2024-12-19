@@ -442,27 +442,27 @@ public class AuctionService implements IAuctionService {
     }
 
 
-    @Scheduled(fixedDelay = 60000)
-    @Transactional
-    public void openAuction() throws Exception {
-        List<Auction> auctions = auctionRepository.findAll();
-        for (Auction auction : auctions) {
-            // Nếu trạng thái chưa được xác định hoặc đã là OPEN thì bỏ qua
-            if (auction.getStatus() == null || auction.getStatus().equals(AuctionStatus.OPEN)) {
-                continue;
-            }
-            // Lấy thời gian bắt đầu của đấu giá từ startDate và startTime
-            LocalDateTime auctionStartTime = auction.getStartDate().toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime()
-                    .with(auction.getStartTime().toLocalTime());
-            // Kiểm tra nếu thời gian hiện tại đã qua thời gian bắt đầu của đấu giá
-            if (LocalDateTime.now().isAfter(auctionStartTime)) {
-                auction.setStatus(AuctionStatus.OPEN);
-                auctionRepository.save(auction);
-            }
-        }
-    }
+//    @Scheduled(fixedDelay = 60000)
+//    @Transactional
+//    public void openAuction() throws Exception {
+//        List<Auction> auctions = auctionRepository.findAll();
+//        for (Auction auction : auctions) {
+//            // Nếu trạng thái chưa được xác định hoặc đã là OPEN thì bỏ qua
+//            if (auction.getStatus() == null || auction.getStatus().equals(AuctionStatus.OPEN)) {
+//                continue;
+//            }
+//            // Lấy thời gian bắt đầu của đấu giá từ startDate và startTime
+//            LocalDateTime auctionStartTime = auction.getStartDate().toInstant()
+//                    .atZone(ZoneId.systemDefault())
+//                    .toLocalDateTime()
+//                    .with(auction.getStartTime().toLocalTime());
+//            // Kiểm tra nếu thời gian hiện tại đã qua thời gian bắt đầu của đấu giá
+//            if (LocalDateTime.now().isAfter(auctionStartTime)) {
+//                auction.setStatus(AuctionStatus.OPEN);
+//                auctionRepository.save(auction);
+//            }
+//        }
+//    }
 
 
     private Bid getWinningBid(List<Bid> bids) {
