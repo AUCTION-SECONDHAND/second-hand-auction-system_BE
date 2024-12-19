@@ -16,6 +16,7 @@ import com.second_hand_auction_system.service.bid.BidService;
 import com.second_hand_auction_system.service.ghn.GHNService;
 import com.second_hand_auction_system.service.jwt.JwtService;
 import com.second_hand_auction_system.utils.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,8 +30,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.time.LocalDate;
+import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -573,6 +575,99 @@ public class OrderService implements IOrderService {
                 .data(result)
                 .build());
     }
+
+
+//    @Scheduled(fixedRate = 300000) // 5 phút
+//    @Transactional
+//    public void processCompletedOrders() {
+//        List<Order> completedOrders = orderRepository.findAllByStatus(OrderStatus.delivered);
+//
+//        for (Order order : completedOrders) {
+//            try {
+//                // Kiểm tra trạng thái giao dịch của đơn hàng trước
+//                Transaction orderTransaction = (Transaction) transactionSystemRepository.findTransactionByOrder(order)
+//                        .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch cho đơn hàng: " + order.getOrderCode()));
+//                if (orderTransaction.getTransactionStatus() != TransactionStatus.COMPLETED) {
+//                    System.err.println("Đơn hàng " + order.getOrderCode() + " chưa hoàn tất giao dịch.");
+//                    continue; // Bỏ qua đơn hàng này nếu giao dịch chưa hoàn tất
+//                }
+//                Wallet userWallet = walletRepository.findByUserId(order.getUser().getId())
+//                        .orElseThrow(() -> new RuntimeException("Không tìm thấy ví người dùng cho đơn hàng: " + order.getOrderCode()));
+//
+//                Wallet walletAdmin = walletRepository.findWalletByWalletType(WalletType.ADMIN)
+//                        .orElseThrow(() -> new RuntimeException("Không tìm thấy ví ADMIN"));
+//
+//                double orderAmount = order.getTotalAmount();
+//                double commissionRate = 0.2; // 20% hoa hồng
+//                double commissionAmount = orderAmount * commissionRate;
+//                double sellerAmount = orderAmount - commissionAmount;
+//
+//                if (walletAdmin.getBalance() >= sellerAmount) {
+//                    // Cập nhật số dư
+//                    walletAdmin.setBalance(walletAdmin.getBalance() - sellerAmount);
+//                    userWallet.setBalance(userWallet.getBalance() + sellerAmount);
+//
+//                    // Tạo mã giao dịch duy nhất cho người bán và Admin
+//                    String transactionCodeSeller = code();
+//                    String transactionCodeAdmin = code();
+//
+//                    // Tạo giao dịch cho người bán
+//                    Transaction transactionSeller = Transaction.builder()
+//                            .wallet(walletAdmin)
+//                            .sender("Admin")
+//                            .description("Chuyển tiền đơn hàng " + order.getOrderCode())
+//                            .commissionAmount((int) commissionAmount)
+//                            .transactionStatus(TransactionStatus.COMPLETED)
+//                            .commissionRate(commissionRate)
+//                            .recipient(userWallet.getUser().getFullName())
+//                            .transactionType(TransactionType.TRANSFER)
+//                            .transactionWalletCode(Long.parseLong(transactionCodeSeller))
+//                            .amount((long) sellerAmount)
+//                            .order(order)
+//                            .build();
+//
+//                    transactionSystemRepository.save(transactionSeller);
+//
+//                    // Tạo giao dịch cho Admin
+//                    Transaction transactionAdmin = Transaction.builder()
+//                            .wallet(walletAdmin)
+//                            .sender(walletAdmin.getUser().getFullName())
+//                            .description("Chuyển tiền đơn hàng " + order.getOrderCode())
+//                            .commissionAmount((int) commissionAmount)
+//                            .transactionStatus(TransactionStatus.COMPLETED)
+//                            .commissionRate(commissionRate)
+//                            .recipient(userWallet.getUser().getFullName())
+//                            .transactionType(TransactionType.TRANSFER)
+//                            .transactionWalletCode(Long.parseLong(transactionCodeAdmin))
+//                            .amount((long) commissionAmount)
+//                            .order(order)
+//                            .build();
+//
+//                    transactionSystemRepository.save(transactionAdmin);
+//
+//                    // Lưu các thay đổi vào ví
+//                    walletRepository.save(walletAdmin);
+//                    walletRepository.save(userWallet);
+//
+//                    // Đánh dấu đơn hàng đã được xử lý
+//                    orderRepository.save(order);
+//
+//                    System.out.printf("Chuyển tiền thành công cho đơn hàng %s: Hoa hồng giữ lại %.2f, Người bán nhận %.2f%n",
+//                            order.getOrderCode(), commissionAmount, sellerAmount);
+//                } else {
+//                    System.err.println("Ví Admin không đủ số dư để thực hiện giao dịch cho đơn hàng: " + order.getOrderCode());
+//                }
+//            } catch (Exception e) {
+//                System.err.printf("Lỗi xử lý đơn hàng %d: %s%n", order.getOrderId(), e.getMessage());
+//            }
+//        }
+//    }
+//    private String code() {
+//        SecureRandom random = new SecureRandom();
+//        int otp = random.nextInt(900000) + 100000;
+//        return String.valueOf(otp);
+//    }
+
 
 
 

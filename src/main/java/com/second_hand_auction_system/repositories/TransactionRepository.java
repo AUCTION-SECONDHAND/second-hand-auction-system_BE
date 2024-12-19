@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.repositories;
 
+import com.second_hand_auction_system.models.Order;
 import com.second_hand_auction_system.models.Transaction;
 import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionType;
@@ -21,4 +22,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     Optional<Transaction> findByWallet_User_Id(Integer id);
 
     Optional<Transaction> findTransactionByOrder_OrderId(Integer id);
+
+    Optional<Object> findTransactionByOrder(Order order);
 }

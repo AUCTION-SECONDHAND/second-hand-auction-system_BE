@@ -49,6 +49,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             "ORDER BY FUNCTION('MONTH', o.createAt) ASC")
     List<Object[]> getTotalMoneyByMonth();
 
-
+    List<Order> findAllByStatus(OrderStatus status);
 
 }
