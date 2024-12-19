@@ -247,7 +247,15 @@ public class BidService implements IBidService {
                 .bidAmount(bidRequest.getBidAmount())
                 .build();
         bidRepository.save(newBid);
-
+        BidResponse bidResponse = BidResponse.builder()
+                .bidAmount(newBid.getBidAmount())
+                .bidTime(newBid.getBidTime())
+                .winBid(newBid.isWinBid())
+                .userId(newBid.getUser().getId())
+                .auctionId(newBid.getAuction().getAuctionId())
+                .username(newBid.getUser().getFullName())
+                .build();
+        sendBidUpdate(bidResponse);
         // 11. Cập nhật các bid cũ thành winBid = false
         existingBids.forEach(b -> {
             b.setWinBid(false);
