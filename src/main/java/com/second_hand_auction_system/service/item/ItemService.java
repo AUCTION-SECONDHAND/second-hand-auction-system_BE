@@ -102,8 +102,75 @@ public class ItemService implements IItemService {
     }
 
 
+//    @Override
+//    public void updateItem(int itemId, ItemDto itemDto) throws Exception {
+//        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+//                .getRequest().getHeader("Authorization");
+//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//            throw new Exception("Unauthorized");
+//        }
+//
+//        String token = authHeader.substring(7);
+//        String userEmail = jwtService.extractUserEmail(token);
+//        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+//        if (requester == null) {
+//            throw new Exception("User not found");
+//        }
+//
+//        Item itemExist = itemRepository.findById(itemId)
+//                .orElseThrow(() -> new DataNotFoundException("Item not found"));
+//
+//        SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
+//                .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
+//
+//        // Cập nhật thông tin item
+//        modelMapper.map(itemDto, itemExist);
+//        itemExist.setSubCategory(subCategory);
+//        itemExist.setUser(requester);
+//        itemExist.setItemStatus(ItemStatus.PENDING);
+//        itemExist.setCreateBy(requester.getUsername());
+//        itemExist.setUpdateBy(requester.getUsername());
+//
+//        // Kiểm tra imgItem có null hay không trước khi gọi size()
+//        if (itemDto.getImgItem() == null) {
+//            itemDto.setImgItem(new ArrayList<>());  // Khởi tạo một danh sách rỗng nếu imgItem là null
+//        }
+//
+//        // Kiểm tra số lượng ảnh, nếu quá 5 ảnh thì throw exception
+//        if (itemDto.getImgItem().size() > 5) {
+//            throw new Exception("Cannot upload more than 5 images.");
+//        }
+//
+//        // Danh sách ảnh hiện tại trong DB
+//        List<ImageItem> existingImages = new ArrayList<>(itemExist.getImageItems());
+//        List<ImageItem> imageItems = new ArrayList<>();
+//
+//        // Lặp qua ảnh và tạo các ImageItem
+//        for (int i = 0; i < itemDto.getImgItem().size(); i++) {
+//            ImgItemDto imgItemDto = itemDto.getImgItem().get(i);
+//            ImageItem imageItem = new ImageItem();
+//            imageItem.setImageUrl(imgItemDto.getImageUrl());
+//            imageItem.setItem(itemExist);  // Thiết lập liên kết với item
+//
+//            imageItems.add(imageItem);
+//
+//            // Đặt ảnh đầu tiên làm thumbnail
+//            if (i == 0) {
+//                itemExist.setThumbnail(imgItemDto.getImageUrl());
+//            }
+//        }
+//        // Lưu tất cả ảnh vào cơ sở dữ liệu
+//        imageItemRepository.saveAll(imageItems);
+//        itemExist.setImageItems(imageItems);  // Cập nhật ảnh vào item
+//
+//        // Lưu item với ảnh đã cập nhật
+//        itemRepository.save(itemExist);
+//    }
+
+
     @Override
     public void updateItem(int itemId, ItemDto itemDto) throws Exception {
+
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
                 .getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -116,55 +183,17 @@ public class ItemService implements IItemService {
         if (requester == null) {
             throw new Exception("User not found");
         }
-
         Item itemExist = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
-
         SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
                 .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
-
-        // Cập nhật thông tin item
+//        User userExist = userRepository.findById(itemDto.getUserId())
+//                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + itemDto.getUserId()));
         modelMapper.map(itemDto, itemExist);
         itemExist.setSubCategory(subCategory);
         itemExist.setUser(requester);
-        itemExist.setItemStatus(ItemStatus.PENDING);
         itemExist.setCreateBy(requester.getUsername());
         itemExist.setUpdateBy(requester.getUsername());
-
-        // Kiểm tra imgItem có null hay không trước khi gọi size()
-        if (itemDto.getImgItem() == null) {
-            itemDto.setImgItem(new ArrayList<>());  // Khởi tạo một danh sách rỗng nếu imgItem là null
-        }
-
-        // Kiểm tra số lượng ảnh, nếu quá 5 ảnh thì throw exception
-        if (itemDto.getImgItem().size() > 5) {
-            throw new Exception("Cannot upload more than 5 images.");
-        }
-
-        // Danh sách ảnh hiện tại trong DB
-        List<ImageItem> existingImages = new ArrayList<>(itemExist.getImageItems());
-        List<ImageItem> imageItems = new ArrayList<>();
-
-        // Lặp qua ảnh và tạo các ImageItem
-        for (int i = 0; i < itemDto.getImgItem().size(); i++) {
-            ImgItemDto imgItemDto = itemDto.getImgItem().get(i);
-            ImageItem imageItem = new ImageItem();
-            imageItem.setImageUrl(imgItemDto.getImageUrl());
-            imageItem.setItem(itemExist);  // Thiết lập liên kết với item
-
-            imageItems.add(imageItem);
-
-            // Đặt ảnh đầu tiên làm thumbnail
-            if (i == 0) {
-                itemExist.setThumbnail(imgItemDto.getImageUrl());
-            }
-        }
-
-        // Lưu tất cả ảnh vào cơ sở dữ liệu
-        imageItemRepository.saveAll(imageItems);
-        itemExist.setImageItems(imageItems);  // Cập nhật ảnh vào item
-
-        // Lưu item với ảnh đã cập nhật
         itemRepository.save(itemExist);
     }
 
@@ -172,11 +201,52 @@ public class ItemService implements IItemService {
     public void deleteItem(int itemId) throws Exception {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
-        if(item.getItemStatus().equals(ItemStatus.ACCEPTED) ||  item.getItemStatus().equals(ItemStatus.PENDING_AUCTION)){
+        if (item.getItemStatus().equals(ItemStatus.ACCEPTED) || item.getItemStatus().equals(ItemStatus.PENDING_AUCTION)) {
             throw new Exception("Sản phẩm này đã và đang được phê duyệt");
         }
         item.setItemStatus(ItemStatus.INACTIVE);
         itemRepository.save(item);
+    }
+
+    @Override
+    public void updateImageItem(int itemId, List<ImgItemDto> imgItemDto) throws Exception {
+        Item itemExisting = itemRepository.findById(itemId)
+                .orElseThrow(() -> new DataNotFoundException("Item not found"));
+        List<ImageItem> existingProductImages = imageItemRepository.findByItem_ItemId(itemId);
+        int currentImageCount = existingProductImages.size();
+        int maxImageCount = 5;
+
+        // Check if the total number of images after adding new ones exceeds the max limit
+        int newImageCount = (int) imgItemDto.stream().filter(dto -> dto.getId() == 0).count();
+        if (currentImageCount + newImageCount > maxImageCount) {
+            throw new DataNotFoundException("Cannot add more images. Maximum limit of 5 images reached.");
+        }
+
+        for (ImgItemDto imageDto : imgItemDto) {
+            ImageItem productImage;
+
+            if (imageDto.getId() == 0) {
+                // Create new ProductImages entity
+                productImage = new ImageItem();
+            } else {
+                // Update existing ProductImages entity
+                productImage = imageItemRepository.findById(imageDto.getId())
+                        .orElseThrow(() -> new DataNotFoundException("Image not found with id: " + imageDto.getId()));
+            }
+
+            // Map the DTO to the product image entity
+            productImage.setImageUrl(imageDto.getImageUrl());
+            productImage.setItem(itemExisting);
+            imageItemRepository.save(productImage);
+        }
+
+        // After saving images, set the first image as the thumbnail
+        List<ImageItem> updatedProductImages = imageItemRepository.findByItem_ItemId(itemId);
+        if (!updatedProductImages.isEmpty()) {
+            String firstImageUrl = updatedProductImages.get(0).getImageUrl();
+            itemExisting.setThumbnail(firstImageUrl);
+            itemRepository.save(itemExisting);
+        }
     }
 
     @Override
@@ -225,6 +295,18 @@ public class ItemService implements IItemService {
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
+
+    @Override
+    public List<ImageItemResponse> getImageItem(int itemId) throws Exception {
+        Item item = itemRepository.findById(itemId).orElseThrow(() -> new DataNotFoundException("Item not found"));
+        List<ImageItem> imageItems = imageItemRepository.findByItem_ItemId(itemId);
+        return imageItems.stream()
+                .map(imageItem -> ImageItemResponse.builder()
+                        .idImage(imageItem.getImageItemId())
+                        .image(imageItem.getImageUrl())
+                        .build())
+                .toList();
+    }
 
     @Override
     public ItemDetailResponse getItemById(Integer itemId) throws Exception {
@@ -287,8 +369,6 @@ public class ItemService implements IItemService {
 
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
-
-
 
 
     @Override

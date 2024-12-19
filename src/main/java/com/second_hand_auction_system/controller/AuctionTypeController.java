@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/auctionType")
+    @RequestMapping("/api/v1/auctionType")
 @RequiredArgsConstructor
 public class AuctionTypeController {
     private final IAuctionTypeService iAuctionTypeService;
