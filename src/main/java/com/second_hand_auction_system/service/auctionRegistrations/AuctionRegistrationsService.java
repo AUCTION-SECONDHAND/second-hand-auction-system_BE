@@ -147,9 +147,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 auctionRegistrationUser.setUpdateAt(LocalDateTime.now());
                 registrationUserRepository.save(auctionRegistrationUser);
             }
-//            double commissionRate = 0.05;
-//            double commissionAmount = depositAmount * commissionRate;
-            //Transaction của ví cọc
+
             Transaction transactionWallet = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
                     .amount(+(long) depositAmount)
