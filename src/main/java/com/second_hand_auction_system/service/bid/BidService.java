@@ -163,20 +163,26 @@ public class BidService implements IBidService {
             }
 
             // Kiểm tra thời gian kết thúc của phiên đấu giá
-            Time now = Time.valueOf(LocalTime.now()); // Chuyển đổi thời gian hiện tại thành java.sql.Time
-            Time endTime = auction.getEndTime(); // Lấy thời gian kết thúc từ phiên đấu giá
+            // Get current time and auction end time
+            LocalDateTime nowDateTime = LocalDateTime.now();
+            LocalDateTime auctionEndDateTime = LocalDateTime.of(auction.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), auction.getEndTime().toLocalTime());
 
-            // Chuyển đổi Time sang LocalTime để thực hiện các phép toán
-            LocalTime nowLocal = now.toLocalTime();
-            LocalTime endTimeLocal = endTime.toLocalTime();
-
-            long minutesRemaining = ChronoUnit.MINUTES.between(nowLocal, endTimeLocal);
+// Calculate the remaining time in minutes
+            long minutesRemaining = ChronoUnit.MINUTES.between(nowDateTime, auctionEndDateTime);
 
             if (minutesRemaining > 10) {
-                // Nếu còn nhiều hơn 10 phút, chỉnh thời gian kết thúc còn 10 phút
-                LocalTime newEndTimeLocal = nowLocal.plusMinutes(10);
-                auction.setEndTime(Time.valueOf(newEndTimeLocal)); // Chuyển đổi ngược lại sang Time và cập nhật
+                // If more than 10 minutes remain, adjust the end time to 10 minutes from now
+                LocalDateTime newEndDateTime = nowDateTime.plusMinutes(10); // Add 10 minutes to the current time
+                auction.setEndDate(Date.from(newEndDateTime.atZone(ZoneId.systemDefault()).toInstant())); // Update the auction end date
+                auction.setEndTime(Time.valueOf(newEndDateTime.toLocalTime())); // Update the auction end time to 10 minutes from now
+            } else {
+                // If less than or equal to 10 minutes remain, do not change the end time
+                // No action required
             }
+
+// Save the updated auction
+            auctionRepository.save(auction);
+
 
             // Nếu còn ít hơn hoặc bằng 10 phút, không cần chỉnh `endTime`
 
@@ -187,7 +193,7 @@ public class BidService implements IBidService {
                         bidRepository.save(b);
                     });
 
-            // Tạo bid mua ngay và cập nhật trạng thái đấu giá
+            // Tạo bid "mua ngay" và cập nhật trạng thái đấu giá
             Bid buyNowBid = Bid.builder()
                     .winBid(true)
                     .bidTime(LocalDateTime.now())
@@ -212,6 +218,9 @@ public class BidService implements IBidService {
                             .status(HttpStatus.OK)
                             .build());
         }
+
+
+
 
 
         // 6.3. Xử lý đặt bid thông thường
