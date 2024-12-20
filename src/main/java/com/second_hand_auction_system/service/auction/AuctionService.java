@@ -61,19 +61,19 @@ public class AuctionService implements IAuctionService {
     @Override
     public void addAuction(@Valid AuctionDto auctionDto) throws Exception {
         Item itemExist = itemRepository.findById(auctionDto.getItem())
-                .orElseThrow(() -> new Exception("Item not found"));
+                .orElseThrow(() -> new Exception("Sản phẩm không tìm thấy"));
 
         AuctionType auctionType = auctionTypeRepository.findById(auctionDto.getAuctionTypeId())
-                .orElseThrow(() -> new Exception("Auction type not found"));
+                .orElseThrow(() -> new Exception("Phiên đấu giá không tìm thấy"));
 
         // Kiểm tra loại đấu giá phải khớp với loại của item
         if (!auctionType.getAuctionTypeName().equals(itemExist.getAuctionType().getAuctionTypeName())) {
-            throw new Exception("Auction type does not match the item's auction type");
+            throw new Exception("Loại đấu giá không khớp với loại đấu giá của mặt hàng");
         }
 
         // Kiểm tra nếu thời gian bắt đầu không sau thời gian kết thúc
         if (auctionDto.getStartDate().after(auctionDto.getEndDate())) {
-            throw new Exception("Auction start date cannot be after end date");
+            throw new Exception("Ngày bắt đầu đấu giá không được sau ngày kết thúc");
         }
 
         Date currentDate = new Date();
@@ -90,15 +90,15 @@ public class AuctionService implements IAuctionService {
 
         // Kiểm tra giờ bắt đầu không được sau giờ kết thúc
         if (auctionDto.getStartTime().after(auctionDto.getEndTime())) {
-            throw new Exception("Start time must be before end time");
+            throw new Exception("Thời gian bắt đầu phải trước thời gian kết thúc");
         }
 
         // Kiểm tra giá khởi điểm và giá mua ngay không được âm
         if (auctionDto.getStartPrice() < 0) {
-            throw new Exception("Start price must be a non-negative value");
+            throw new Exception("Giá khởi điểm phải là giá trị không âm");
         }
         if (auctionDto.getBuyNowPrice() < 0) {
-            throw new Exception("Buy now price must be a non-negative value");
+            throw new Exception("Giá mua ngay phải là giá trị không âm");
         }
 
         // Kiểm tra quyền của người dùng
@@ -114,7 +114,7 @@ public class AuctionService implements IAuctionService {
         User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
 
         if (requester == null) {
-            throw new Exception("User not found");
+            throw new Exception("Không tìm thấy người dùng");
         }
 
         // Tạo đối tượng Auction từ DTO và thiết lập các thông tin cần thiết
@@ -152,7 +152,7 @@ public class AuctionService implements IAuctionService {
         //                .orElseThrow(() -> new Exception("Item not found"));
         // Kiểm tra xem Auction tồn tại hay không
         Auction auctionExist = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new Exception("Auction not found"));
+                .orElseThrow(() -> new Exception("Phiên đấu giá không tìm thấy"));
 
         // Cập nhật từng trường nếu chúng được truyền vào
         if (auctionDto.getStartTime() != null) {
@@ -212,7 +212,7 @@ public class AuctionService implements IAuctionService {
     @Override
     public void removeAuction(int auctionId) throws Exception {
         Auction auctionExist = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new Exception("Auction not found"));
+                .orElseThrow(() -> new Exception("Phiên đấu giá không tìm thấy"));
         auctionExist.setStatus(CANCELLED);
         auctionRepository.save(auctionExist);
     }
@@ -280,10 +280,10 @@ public class AuctionService implements IAuctionService {
         }
         var user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
-            throw new RuntimeException("User not found");
+            throw new RuntimeException("Không tìm thấy người dùng");
         }
         if (!(user.getRole().equals(Role.ADMIN))) {
-            throw new RuntimeException("You don't have permission to access this resource");
+            throw new RuntimeException("Bạn không có quyền truy cập vào tài nguyên này");
         }
         return auctionRepository.countAuctionsCreatedToday();
     }
@@ -301,10 +301,10 @@ public class AuctionService implements IAuctionService {
         }
         var user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
-            throw new RuntimeException("User not found");
+            throw new RuntimeException("Không tìm thấy người dùng");
         }
         if (!(user.getRole().equals(Role.ADMIN))) {
-            throw new RuntimeException("You don't have permission to access this resource");
+            throw new RuntimeException("Bạn không có quyền truy cập vào tài nguyên này");
         }
         // Lấy dữ liệu từ repository
         List<Object[]> results = auctionRepository.countAuctionsByMonth();
@@ -325,7 +325,7 @@ public class AuctionService implements IAuctionService {
     public ResponseEntity<?> updateStatus(Integer auctionId) {
         Auction auction = auctionRepository.findById(auctionId).orElse(null);
         if (auction == null) {
-            throw new RuntimeException("Auction not found");
+            throw new RuntimeException("Phiên đấu giá không tìm thấy");
         }
 
         // Kiểm tra nếu phiên đấu giá đang trong trạng thái PENDING thì chuyển sang OPEN
@@ -345,7 +345,7 @@ public class AuctionService implements IAuctionService {
         auctionRepository.save(auction);
 
         return ResponseEntity.ok(ResponseObject.builder()
-                .message("Auction updated")
+                .message("Phiên đấu giá đã cập nhật")
                 .data(auction.getStatus())
                 .build());
     }

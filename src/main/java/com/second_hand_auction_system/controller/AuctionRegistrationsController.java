@@ -66,7 +66,7 @@ public class AuctionRegistrationsController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -92,7 +92,7 @@ public class AuctionRegistrationsController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -104,7 +104,7 @@ public class AuctionRegistrationsController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Thành công")
                         .data(auctionRegistrationsResponse)
                         .build()
         );
@@ -116,7 +116,7 @@ public class AuctionRegistrationsController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Thành công")
                         .data(checkStatusAuctionRegisterResponse)
                         .build()
         );
@@ -129,7 +129,7 @@ public class AuctionRegistrationsController {
             return ResponseEntity.ok(
                     ResponseObject.builder()
                             .status(HttpStatus.OK)
-                            .message("Success")
+                            .message("Thành công")
                             .data(checkStatusAuctionRegisterResponse)
                             .build()
             );
@@ -137,7 +137,7 @@ public class AuctionRegistrationsController {
             return ResponseEntity.ok(
                     ResponseObject.builder()
                             .status(HttpStatus.OK)
-                            .message("Error")
+                            .message("Lỗi")
                             .data(e.getMessage())
                             .build()
             );

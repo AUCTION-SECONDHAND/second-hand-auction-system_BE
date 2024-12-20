@@ -46,7 +46,7 @@ public class AuctionController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Tạo đấu giá thành công")
                         .build()
         );
     }
@@ -67,7 +67,7 @@ public class AuctionController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Cập nhật đấu giá thành công")
                         .build()
         );
     }
@@ -80,7 +80,7 @@ public class AuctionController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Xóa thành công")
                         .build()
         );
     }

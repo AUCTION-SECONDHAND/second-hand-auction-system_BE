@@ -66,14 +66,14 @@ public class AuthenticationController {
             return ResponseEntity.ok(
                     ResponseObject.builder()
                             .status(HttpStatus.valueOf(HttpStatus.OK.value()))
-                            .message("Logout successful")
+                            .message("Logout Thành công")
                             .build()
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     ResponseObject.builder()
                             .status(HttpStatus.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()))
-                            .message("Logout failed")
+                            .message("Logout Thất bại")
                             .build()
             );
         }
