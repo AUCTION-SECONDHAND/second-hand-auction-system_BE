@@ -89,7 +89,7 @@ public class BidService implements IBidService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("User not found")
+                            .message("Không tìm thấy người dùng")
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
@@ -100,7 +100,7 @@ public class BidService implements IBidService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("Auction not found")
+                            .message("Phiên đấu giá không tìm thấy")
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
@@ -110,7 +110,7 @@ public class BidService implements IBidService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("Auction is not currently open")
+                            .message("Cuộc đấu giá hiện tại không mở")
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
@@ -285,7 +285,7 @@ public class BidService implements IBidService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("User not found")
+                            .message("Không tìm thấy người dùng")
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
@@ -295,7 +295,7 @@ public class BidService implements IBidService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("Auction not found")
+                            .message("Không tìm thấy cuộc đấu giá")
                             .status(HttpStatus.NOT_FOUND)
                             .build());
         }
@@ -354,7 +354,7 @@ public class BidService implements IBidService {
                         .data(Map.of(
                                 "bidAmount", newBid.getBidAmount(),
                                 "isHighestBid", newBid.isWinBid()))
-                        .message("Bid placed successfully")
+                        .message("Đã đặt giá thầu thành công")
                         .status(HttpStatus.OK)
                         .build());
     }
@@ -376,7 +376,7 @@ public class BidService implements IBidService {
             // 2. Validate user
             User requester = userRepository.findByEmail(email).orElse(null);
             if (requester == null) {
-                return buildNotFoundResponse("User not found");
+                return buildNotFoundResponse("Không tìm thấy người dùng");
             }
 
             // 3. Check if the bid exists
@@ -388,7 +388,7 @@ public class BidService implements IBidService {
             // 4. Find the auction
             Auction auction = auctionRepository.findById(bidDto.getAuctionId()).orElse(null);
             if (auction == null) {
-                return buildNotFoundResponse("Auction not found");
+                return buildNotFoundResponse("Không tìm thấy phiên đấu giá");
             }
 
             // 5. Check auction type
@@ -398,17 +398,17 @@ public class BidService implements IBidService {
 
             // 6. Validate new bid amount
             if (bidDto.getBidAmount() <= existingBid.getBidAmount()) {
-                return buildBadRequestResponse("New bid amount must be higher than the existing bid amount: " + existingBid.getBidAmount());
+                return buildBadRequestResponse("Số tiền đấu thầu mới phải cao hơn số tiền đấu thầu hiện tại: " + existingBid.getBidAmount());
             }
 
             // 7. Check auction timing
             if (!isAuctionActive(auction)) {
-                return buildBadRequestResponse("Bidding is not allowed at this time");
+                return buildBadRequestResponse("Không được phép đấu giá vào thời điểm này");
             }
 
             // 8. Check auction status
             if (!auction.getStatus().equals(AuctionStatus.OPEN)) {
-                return buildBadRequestResponse("Auction is not open for bidding");
+                return buildBadRequestResponse("Cuộc đấu giá không mở để đấu giá");
             }
 
             // 9. Update the bid
@@ -439,7 +439,7 @@ public class BidService implements IBidService {
             // 10. Return success response
             return ResponseEntity.ok(ResponseObject.builder()
                     .data(bidResponse)
-                    .message("Bid updated successfully")
+                    .message("Đã cập nhật giá thầu thành công")
                     .status(HttpStatus.OK)
                     .build());
         } catch (Exception e) {

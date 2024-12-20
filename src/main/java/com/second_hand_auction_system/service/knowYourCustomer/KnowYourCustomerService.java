@@ -81,7 +81,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ResponseObject.builder()
                             .status(HttpStatus.UNAUTHORIZED)
-                            .message("Unauthorized request - User not found")
+                            .message("Yêu cầu trái phép - Không tìm thấy người dùng")
                             .build());
         }
 
@@ -90,7 +90,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ResponseObject.builder()
                             .status(HttpStatus.FORBIDDEN)
-                            .message("Forbidden request - Only buyers can register for KYC")
+                            .message("Yêu cầu bị cấm - Chỉ người mua mới có thể đăng ký KYC")
                             .build());
         }
 
@@ -100,7 +100,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ResponseObject.builder()
                             .status(HttpStatus.CONFLICT)
-                            .message("The provided CCCD number has already been used for KYC registration")
+                            .message("Số CCCD được cung cấp đã được sử dụng để đăng ký KYC")
                             .build());
         }
 
@@ -110,7 +110,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ResponseObject.builder()
                             .status(HttpStatus.CONFLICT)
-                            .message("KYC registration already exists and is pending for this user")
+                            .message("Đăng ký KYC đã tồn tại và đang chờ xử lý cho người dùng này")
                             .build());
         }
 
@@ -180,7 +180,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ResponseObject.builder()
                             .status(HttpStatus.UNAUTHORIZED)
-                            .message("Unauthorized request - User not found")
+                            .message("Yêu cầu trái phép - Không tìm thấy người dùng")
                             .build());
         }
 
@@ -188,7 +188,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         if (optionalKyc.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .status(HttpStatus.NOT_FOUND)
-                    .message("KYC not found with id: " + kycId)
+                    .message("Không tìm thấy KYC với id: " + kycId)
                     .data(null)
                     .build());
         }
@@ -203,7 +203,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
                     .status(HttpStatus.NOT_FOUND)
                     .data(null)
-                    .message("User not found")
+                    .message("Không tìm thấy người dùng")
                     .build());
         }
 //        Address address = addressRepository.findByUserIdAndStatusIsTrue(user.getId()).orElse(null);
@@ -229,7 +229,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .status(HttpStatus.OK)
                 .data(null)
-                .message("Approve KYC successful. User has been upgraded to SELLER.")
+                .message("Phê duyệt KYC thành công. Người dùng đã được nâng cấp lên SELLER.")
                 .build());
     }
 
@@ -306,7 +306,7 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ResponseObject.builder()
                             .data(null)
-                            .message("Missing or invalid Authorization header")
+                            .message("Tiêu đề ủy quyền bị thiếu hoặc không hợp lệ")
                             .status(HttpStatus.UNAUTHORIZED)
                             .build());
         }
