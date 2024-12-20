@@ -128,6 +128,14 @@ public class BidService implements IBidService {
         // 6. Kiểm tra giá thầu hiện tại và xử lý "Buy Now"
         double bidAmount = bidRequest.getBidAmount();
         Bid highestBid = bidRepository.findTopByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+        if (highestBid != null && bidAmount == highestBid.getBidAmount()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Bạn phải tra mức giá cao hơn")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
         if (highestBid == null || bidAmount >= highestBid.getBidAmount() + auction.getPriceStep()) {
             // Kiểm tra giá thầu hợp lệ
             double minBid = (highestBid == null) ? auction.getStartPrice() : highestBid.getBidAmount() + auction.getPriceStep();
