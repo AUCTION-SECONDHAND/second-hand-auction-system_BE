@@ -54,7 +54,7 @@ public class AuctionTypeController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Thành công")
                         .data(auctionTypeResponses)
                         .build()
         );

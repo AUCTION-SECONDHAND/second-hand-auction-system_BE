@@ -29,5 +29,4 @@ public class KycResponse {
     private String imageUrl;
     private String verified_by;
 
-
 }

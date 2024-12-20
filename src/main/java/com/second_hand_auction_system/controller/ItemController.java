@@ -52,7 +52,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Tạo sản phẩm thành công")
                         .build()
         );
     }
@@ -79,7 +79,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Cập nhật sản phẩm thành công")
                         .build()
         );
     }
@@ -106,7 +106,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Phê duyệt thành công")
                         .build()
         );
     }
@@ -119,7 +119,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Xóa thành công")
                         .build()
         );
     }
@@ -130,7 +130,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(itemResponseList)
                         .build()
         );
@@ -144,7 +144,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(itemResponseList)
                         .build()
         );
@@ -176,7 +176,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -201,7 +201,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -225,7 +225,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -255,7 +255,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -267,7 +267,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(itemDetailResponse)
                         .build()
         );
@@ -295,7 +295,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -322,7 +322,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(auctionItemResponse)
                         .build()
         );
@@ -380,7 +380,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -409,7 +409,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .build()
         );
     }
