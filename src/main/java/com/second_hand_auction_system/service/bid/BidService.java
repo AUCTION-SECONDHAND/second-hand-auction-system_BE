@@ -167,24 +167,22 @@ public class BidService implements IBidService {
             LocalDateTime nowDateTime = LocalDateTime.now();
             LocalDateTime auctionEndDateTime = LocalDateTime.of(auction.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), auction.getEndTime().toLocalTime());
 
-// Calculate the remaining time in minutes
+            // Calculate the remaining time in minutes
             long minutesRemaining = ChronoUnit.MINUTES.between(nowDateTime, auctionEndDateTime);
 
             if (minutesRemaining > 10) {
-                // If more than 10 minutes remain, adjust the end time to 10 minutes from now
+                // Nếu còn hơn 10 phút, chỉnh lại thời gian kết thúc là 10 phút từ bây giờ
                 LocalDateTime newEndDateTime = nowDateTime.plusMinutes(10); // Add 10 minutes to the current time
                 auction.setEndDate(Date.from(newEndDateTime.atZone(ZoneId.systemDefault()).toInstant())); // Update the auction end date
                 auction.setEndTime(Time.valueOf(newEndDateTime.toLocalTime())); // Update the auction end time to 10 minutes from now
             } else {
-                // If less than or equal to 10 minutes remain, do not change the end time
-                // No action required
+                // Nếu còn ít hơn hoặc bằng 10 phút, giữ nguyên thời gian kết thúc
+                auction.setEndDate(auction.getEndDate());  // No change
+                auction.setEndTime(auction.getEndTime());  // No change
             }
 
-// Save the updated auction
+            // Save the updated auction
             auctionRepository.save(auction);
-
-
-            // Nếu còn ít hơn hoặc bằng 10 phút, không cần chỉnh `endTime`
 
             // Đánh dấu tất cả các bid hiện tại là không thắng
             bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId())
@@ -218,6 +216,7 @@ public class BidService implements IBidService {
                             .status(HttpStatus.OK)
                             .build());
         }
+
 
 
 

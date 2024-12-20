@@ -21,11 +21,16 @@ spring:
     name: second-hand-auction-system_BE
   datasource:
     # Duc Anh
-    #url: jdbc:mysql://localhost:3306/secondHandAuction?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    url: jdbc:mysql://localhost:3306/secondhandauction
+    url: jdbc:mysql://root:uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl@junction.proxy.rlwy.net:45319/railway?useSSL=true
+#    url: jdbc:mysql://localhost:3306/secondhandauction
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 12345
+    password: uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl
+  task:
+    scheduling:
+      pool:
+        size: 10  # Kích thước của pool thread để xử lý các tác vụ định kỳ
+
 
   jpa:
     show-sql: false
