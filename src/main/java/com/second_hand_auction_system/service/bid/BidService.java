@@ -128,6 +128,24 @@ public class BidService implements IBidService {
         // 6. Kiểm tra giá thầu hiện tại và xử lý "Buy Now"
         double bidAmount = bidRequest.getBidAmount();
         Bid highestBid = bidRepository.findTopByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+        if (highestBid == null || bidAmount >= highestBid.getBidAmount() + auction.getPriceStep()) {
+            // Kiểm tra giá thầu hợp lệ
+            double minBid = (highestBid == null) ? auction.getStartPrice() : highestBid.getBidAmount() + auction.getPriceStep();
+
+// Nếu giá đặt nhỏ hơn mức giá tối thiểu hoặc bằng với giá cao nhất hiện tại thì không hợp lệ
+            if (bidAmount < minBid || (highestBid != null && bidAmount == highestBid.getBidAmount())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        ResponseObject.builder()
+                                .data(null)
+                                .message("Giá đặt phải lớn hơn mức giá cao nhất hiện tại hoặc phải là giá tăng thêm từ mức giá cao nhất.")
+                                .status(HttpStatus.BAD_REQUEST)
+                                .build());
+            }
+
+// Tiến hành xử lý giá thầu hợp lệ
+// (Cái này sẽ chỉ được thực hiện khi giá đặt hợp lệ)
+
+        }
         if (highestBid != null && highestBid.getUser().getId().equals(requester.getId())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
@@ -215,18 +233,8 @@ public class BidService implements IBidService {
 
             messagingTemplate.convertAndSend("/topic/bids", "New bid placed: " + bidAmount);
 
-        } else if (highestBid == null || bidAmount >= highestBid.getBidAmount() + auction.getPriceStep()) {
-            // Kiểm tra giá thầu hợp lệ
-            double minBid = (highestBid == null) ? auction.getStartPrice() : highestBid.getBidAmount() + auction.getPriceStep();
-            if (bidAmount < minBid) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        ResponseObject.builder()
-                                .data(null)
-                                .message("Giá đặt phải ít nhất là: " + minBid)
-                                .status(HttpStatus.BAD_REQUEST)
-                                .build());
-            }
         }
+
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseObject.builder()
