@@ -328,18 +328,14 @@ public class AuctionService implements IAuctionService {
             throw new RuntimeException("Phiên đấu giá không tìm thấy");
         }
 
-        // Kiểm tra nếu phiên đấu giá đang trong trạng thái PENDING thì chuyển sang OPEN
         if (auction.getStatus().equals(AuctionStatus.PENDING)) {
             auction.setStatus(AuctionStatus.OPEN);
         }
-
-        // Kiểm tra nếu phiên đấu giá đang OPEN và thời gian đã kết thúc mới chuyển sang CLOSED
-        if (auction.getStatus().equals(AuctionStatus.OPEN)) {
-            // Giả sử bạn có trường `endTime` để lưu thời gian kết thúc của phiên đấu giá
-            if (auction.getEndTime().before(new Timestamp(System.currentTimeMillis()))) {
-                auction.setStatus(AuctionStatus.CLOSED);
-            }
-        }
+//        if (auction.getStatus().equals(AuctionStatus.OPEN)) {
+//            if (auction.getEndTime().before(new Timestamp(System.currentTimeMillis()))) {
+//                auction.setStatus(AuctionStatus.CLOSED);
+//            }
+//        }
 
         // Lưu lại thay đổi trong cơ sở dữ liệu
         auctionRepository.save(auction);

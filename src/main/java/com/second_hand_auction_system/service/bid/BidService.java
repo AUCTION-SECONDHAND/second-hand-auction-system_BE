@@ -35,7 +35,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.sql.Time;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -128,71 +130,76 @@ public class BidService implements IBidService {
         // 6. Kiểm tra giá thầu hiện tại và xử lý "Buy Now"
         double bidAmount = bidRequest.getBidAmount();
         Bid highestBid = bidRepository.findTopByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
-        if (highestBid != null && bidAmount == highestBid.getBidAmount()) {
+
+        // 6.1. Kiểm tra điều kiện đặt giá
+        double minBid = (highestBid == null) ? auction.getStartPrice() : highestBid.getBidAmount() + auction.getPriceStep();
+        if (bidAmount < minBid) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("Bạn phải tra mức giá cao hơn")
+                            .message("Giá đặt phải lớn hơn mức giá hiện tại và bước giá quy định.")
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-        if (highestBid == null || bidAmount >= highestBid.getBidAmount() + auction.getPriceStep()) {
-            // Kiểm tra giá thầu hợp lệ
-            double minBid = (highestBid == null) ? auction.getStartPrice() : highestBid.getBidAmount() + auction.getPriceStep();
 
-// Nếu giá đặt nhỏ hơn mức giá tối thiểu hoặc bằng với giá cao nhất hiện tại thì không hợp lệ
-            if (bidAmount < minBid || (highestBid != null && bidAmount == highestBid.getBidAmount())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        ResponseObject.builder()
-                                .data(null)
-                                .message("Giá đặt phải lớn hơn mức giá cao nhất hiện tại hoặc phải là giá tăng thêm từ mức giá cao nhất.")
-                                .status(HttpStatus.BAD_REQUEST)
-                                .build());
-            }
-
-// Tiến hành xử lý giá thầu hợp lệ
-// (Cái này sẽ chỉ được thực hiện khi giá đặt hợp lệ)
-
-        }
         if (highestBid != null && highestBid.getUser().getId().equals(requester.getId())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
-                            .message("Bạn là người trả giá cao nhất, không thể đặt thêm giá")
+                            .message("Bạn là người đặt giá cao nhất hiện tại, không thể đặt thêm giá.")
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-        // 6.1. Xử lý "Buy Now"
+
+        // 6.2. Xử lý "Buy Now"
         if (bidAmount == auction.getBuyNowPrice()) {
             if (highestBid != null && highestBid.getBidAmount() >= auction.getBuyNowPrice()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         ResponseObject.builder()
                                 .data(null)
-                                .message("Giá thầu hiện tại đã cao hơn hoặc bằng giá mua ngay, vui lòng trả cao hơn")
+                                .message("Giá thầu hiện tại đã cao hơn hoặc bằng giá mua ngay.")
                                 .status(HttpStatus.BAD_REQUEST)
                                 .build());
             }
 
+            // Kiểm tra thời gian kết thúc của phiên đấu giá
+            Time now = Time.valueOf(LocalTime.now()); // Chuyển đổi thời gian hiện tại thành java.sql.Time
+            Time endTime = auction.getEndTime(); // Lấy thời gian kết thúc từ phiên đấu giá
 
-            // Kết thúc phiên đấu giá với giá "Buy Now"
-            List<Bid> existingBids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
-            existingBids.forEach(b -> {
-                b.setWinBid(false);
-                bidRepository.save(b);
-            });
+            // Chuyển đổi Time sang LocalTime để thực hiện các phép toán
+            LocalTime nowLocal = now.toLocalTime();
+            LocalTime endTimeLocal = endTime.toLocalTime();
 
+            long minutesRemaining = ChronoUnit.MINUTES.between(nowLocal, endTimeLocal);
+
+            if (minutesRemaining > 10) {
+                // Nếu còn nhiều hơn 10 phút, chỉnh thời gian kết thúc còn 10 phút
+                LocalTime newEndTimeLocal = nowLocal.plusMinutes(10);
+                auction.setEndTime(Time.valueOf(newEndTimeLocal)); // Chuyển đổi ngược lại sang Time và cập nhật
+            }
+
+            // Nếu còn ít hơn hoặc bằng 10 phút, không cần chỉnh `endTime`
+
+            // Đánh dấu tất cả các bid hiện tại là không thắng
+            bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId())
+                    .forEach(b -> {
+                        b.setWinBid(false);
+                        bidRepository.save(b);
+                    });
+
+            // Tạo bid mua ngay và cập nhật trạng thái đấu giá
             Bid buyNowBid = Bid.builder()
                     .winBid(true)
                     .bidTime(LocalDateTime.now())
                     .auction(auction)
                     .user(requester)
-                    .bidAmount(bidRequest.getBidAmount())
+                    .bidAmount((int) bidAmount)
                     .build();
             bidRepository.save(buyNowBid);
 
-            auction.setStatus(AuctionStatus.CLOSED);
             auctionRepository.save(auction);
 
+            // Gửi thông báo và cập nhật frontend
             notificationService.createBidNotification(requester.getId(), "Đấu giá kết thúc",
                     "Bạn đã mua ngay thành công với giá: " + auction.getBuyNowPrice());
 
@@ -206,53 +213,46 @@ public class BidService implements IBidService {
                             .build());
         }
 
-        // 6.2. Xử lý đặt bid thông thường
-        if (highestBid != null && bidAmount > highestBid.getBidAmount()) {
-            // Tạo bid mới
-            Bid newBid = Bid.builder()
-                    .winBid(true)
-                    .bidTime(LocalDateTime.now())
-                    .auction(auction)
-                    .user(requester)
-                    .bidAmount(bidRequest.getBidAmount())
-                    .build();
-            bidRepository.save(newBid);
 
+        // 6.3. Xử lý đặt bid thông thường
+        Bid newBid = Bid.builder()
+                .winBid(true)
+                .bidTime(LocalDateTime.now())
+                .auction(auction)
+                .user(requester)
+                .bidAmount((int) bidAmount)
+                .build();
+        bidRepository.save(newBid);
 
+        BidResponse bidResponse = BidResponse.builder()
+                .bidAmount(newBid.getBidAmount())
+                .bidTime(newBid.getBidTime())
+                .winBid(newBid.isWinBid())
+                .userId(newBid.getUser().getId())
+                .auctionId(newBid.getAuction().getAuctionId())
+                .username(newBid.getUser().getFullName())
+                .build();
 
-            BidResponse bidResponse = BidResponse.builder()
-                    .bidAmount(newBid.getBidAmount())
-                    .bidTime(newBid.getBidTime())
-                    .winBid(newBid.isWinBid())
-                    .userId(newBid.getUser().getId())
-                    .auctionId(newBid.getAuction().getAuctionId())
-                    .username(newBid.getUser().getFullName())
-                    .build();
-
-            sendBidUpdate(bidResponse);
-
-            // Cập nhật các bid cũ thành winBid = false
+        sendBidUpdate(bidResponse);
+        // Cập nhật bid cao nhất trước đó thành không thắng
+        if (highestBid != null) {
             highestBid.setWinBid(false);
             bidRepository.save(highestBid);
-
-            // Thông báo đặt giá thành công
-            notificationService.createBidNotification(requester.getId(), "Đặt giá thành công",
-                    "Bạn đã đặt giá: " + bidAmount);
-
-            messagingTemplate.convertAndSend("/topic/bids", "New bid placed: " + bidAmount);
-
         }
 
+        // Thông báo đặt giá thành công
+        notificationService.createBidNotification(requester.getId(), "Đặt giá thành công",
+                "Bạn đã đặt giá: " + bidAmount);
+
+        messagingTemplate.convertAndSend("/topic/bids", "New bid placed: " + bidAmount);
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseObject.builder()
                         .data(null)
-                        .message("Bid placed successfully")
+                        .message("Đặt giá thành công.")
                         .status(HttpStatus.OK)
                         .build());
     }
-
-
 
 
     @Override
