@@ -819,7 +819,6 @@ public class BidService implements IBidService {
                 deadEmitters.add(emitter); // Lưu emitter lỗi để loại bỏ
             }
         });
-
         // Loại bỏ các emitter không còn hoạt động
         emitters.removeAll(deadEmitters);
     }
