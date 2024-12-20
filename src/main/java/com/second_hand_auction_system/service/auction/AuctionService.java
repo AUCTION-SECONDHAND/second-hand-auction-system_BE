@@ -28,10 +28,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.io.IOException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.YearMonth;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -348,113 +345,136 @@ public class AuctionService implements IAuctionService {
 
 
 
-    @Scheduled(fixedDelay = 60000) // 1 phút
+    @Scheduled(fixedDelay = 120000) // 2 phút
     @Transactional
-    public void closeExpiredAuctions() throws MessagingException, IOException {
-        List<Auction> auctions = auctionRepository.findAll();
-        for (Auction auction : auctions) {
-            try {
-                if (auction.getStatus() == null || auction.getStatus().equals(AuctionStatus.CLOSED)) {
-                    continue;
-                }
+    public void processAuctionCompletion() {
+        ZoneId systemZoneId = ZoneId.systemDefault();
 
-                // Kiểm tra thời gian kết thúc đấu giá
-                LocalDateTime auctionEndTime = auction.getEndDate().toInstant()
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDateTime()
-                        .with(auction.getEndTime().toLocalTime());
-                if (LocalDateTime.now().isAfter(auctionEndTime)) {
-                    auction.setStatus(AuctionStatus.CLOSED);
-                    auctionRepository.save(auction);
+        // Chỉ lấy các phiên đấu giá đã kết thúc (CLOSED)
+        List<Auction> closedAuctions = auctionRepository.findByStatus(AuctionStatus.CLOSED);
+
+        for (Auction auction : closedAuctions) {
+            try {
+                // Xác định thời gian kết thúc phiên đấu giá
+                ZonedDateTime auctionEndTime = ZonedDateTime.of(
+                        auction.getEndDate().toInstant().atZone(systemZoneId).toLocalDate(),
+                        auction.getEndTime().toLocalTime(),
+                        systemZoneId
+                );
+
+                // Nếu phiên đấu giá đã kết thúc nhưng chưa xử lý, thực hiện hoàn tiền
+                if (ZonedDateTime.now(systemZoneId).isAfter(auctionEndTime)) {
                     log.info("PHIÊN ĐẤU GIÁ KẾT THÚC: " + auction.getAuctionId());
 
-                    // Lấy danh sách bid
+                    // Lấy danh sách các bid
                     List<Bid> bids = bidRepository.findByAuction_AuctionId(auction.getAuctionId());
-                    bids.sort(Comparator.comparing(Bid::getBidAmount).reversed());
+
+                    // Xác định người thắng cuộc
                     Bid winningBid = !bids.isEmpty() ? bids.get(0) : null;
 
-                    Wallet walletAuction = auction.getWallet();
-                    if (walletAuction == null) {
-                        log.error("Không tìm thấy ví cọc cho phiên đấu giá: " + auction.getAuctionId());
-                        continue;
-                    }
-
                     if (winningBid != null) {
-                        // Xử lý người thắng cuộc
-                        winningBid.setWinBid(true);
-                        bidRepository.save(winningBid);
-                        log.info("Người thắng đầu tiên: " + winningBid.getUser().getEmail());
+                        // Kiểm tra xem người thắng có thanh toán trong vòng 24 giờ không
+                        ZonedDateTime now = ZonedDateTime.now(systemZoneId);
+                        ZonedDateTime bidTime = ZonedDateTime.of(winningBid.getCreateAt(), systemZoneId);
+                        long hoursBetween = java.time.Duration.between(bidTime, now).toHours();
 
-                        emailService.sendWinnerNotification(winningBid.getUser().getEmail(), winningBid);
-
-                        // Kiểm tra trạng thái thanh toán
-                        Order order = orderRepository.findByAuction_AuctionId(auction.getAuctionId());
-                        if (order != null) {
-                            Transaction transaction = transactionRepository.findTransactionByOrder_OrderId(order.getOrderId()).orElse(null);
-
-                            if (transaction == null || !transaction.getTransactionStatus().equals(TransactionStatus.COMPLETED)) {
-                                LocalDateTime paymentDeadline = auctionEndTime.plusHours(24);
-
-                                if (LocalDateTime.now().isAfter(paymentDeadline)) {
-                                    // Cộng tiền cọc vào ví admin
-                                    Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN)
-                                            .orElseThrow(() -> new IllegalStateException("Không tìm thấy ví admin"));
-                                    double depositAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice()) / 100;
-                                    adminWallet.setBalance(adminWallet.getBalance() + depositAmount);
-                                    walletRepository.save(adminWallet);
-                                    log.info("Tiền cọc được chuyển vào ví admin: " + depositAmount);
-
-                                    // Hoàn tiền cho người thua
-                                    List<Bid> losingBids = bidRepository.findByAuction_AuctionIdAndWinBidFalse(auction.getAuctionId());
-                                    for (Bid losingBid : losingBids) {
-                                        try {
-                                            Wallet userWallet = walletRepository.findWalletByUserId(losingBid.getUser().getId()).orElse(null);
-                                            if (userWallet == null) {
-                                                log.error("Không tìm thấy ví cho người dùng: " + losingBid.getUser().getEmail());
-                                                continue;
-                                            }
-                                            double refundAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice()) / 100;
-                                            userWallet.setBalance(userWallet.getBalance() + refundAmount);
-                                            walletRepository.save(userWallet);
-
-                                            Transaction transactionRefund = Transaction.builder()
-                                                    .recipient(userWallet.getUser().getFullName())
-                                                    .commissionRate(0)
-                                                    .description("Hoàn tiền sau phiên đấu giá")
-                                                    .commissionAmount(0)
-                                                    .transactionType(TransactionType.REFUND)
-                                                    .transactionStatus(TransactionStatus.COMPLETED)
-                                                    .sender("Hệ thống phiên đấu giá " + auction.getAuctionId())
-                                                    .wallet(userWallet)
-                                                    .build();
-                                            transactionRepository.save(transactionRefund);
-                                            log.info("Hoàn tiền: " + refundAmount + " vào ví người dùng: " + losingBid.getUser().getEmail());
-
-                                            emailService.sendResultForAuction(losingBid.getUser().getEmail(), winningBid);
-                                        } catch (Exception ex) {
-                                            log.error("Lỗi khi hoàn tiền cho người dùng: " + losingBid.getUser().getEmail(), ex);
-                                        }
-                                    }
-                                } else {
-                                    log.info("Người thắng đầu tiên vẫn còn thời gian để thanh toán: " + auction.getAuctionId());
-                                }
-                            }
+                        if (hoursBetween <= 24) {
+                            // Người thắng đã thanh toán trong vòng 24 giờ
+                            log.info("Người thắng đã thanh toán trong vòng 24 giờ: " + winningBid.getUser().getEmail());
+                            processDepositRefund(auction, bids); // Xử lý hoàn cọc
                         } else {
-                            log.warn("Không tìm thấy đơn hàng cho phiên đấu giá: " + auction.getAuctionId());
-                            auction.setStatus(AuctionStatus.CANCELLED);
-                            auctionRepository.save(auction);
-                            log.info("Phiên đấu giá bị hủy do không có đơn hàng.");
+                            // Người thắng không thanh toán trong 24 giờ, chuyển quyền sở hữu cho người thắng tiếp theo
+                            log.info("Người thắng không thanh toán trong vòng 24 giờ, chuyển quyền sở hữu cho người thắng tiếp theo.");
+                            if (bids.size() > 1) {
+                                Bid secondPlaceBid = bids.get(1); // Người thắng thứ hai
+                                auctionRepository.save(auction); // Lưu lại thay đổi trong phiên đấu giá
+
+                                // Xử lý hoàn cọc cho người thua
+                                processDepositRefund(auction, bids); // Xử lý hoàn cọc cho tất cả người thua
+                                log.info("Người thắng thứ hai đã được xác nhận: " + secondPlaceBid.getUser().getEmail());
+                            } else {
+                                // Nếu không có người thắng thứ hai, không thực hiện gì
+                                log.info("Không có người thắng thứ hai để chuyển quyền sở hữu.");
+                            }
+
                         }
-                    } else {
-                        auction.setStatus(AuctionStatus.CANCELLED);
-                        auctionRepository.save(auction);
-                        log.info("Phiên đấu giá bị hủy do không có người đặt giá.");
                     }
                 }
             } catch (Exception ex) {
                 log.error("Lỗi khi xử lý phiên đấu giá ID: " + auction.getAuctionId(), ex);
             }
         }
+    }
+
+
+
+
+    private void processDepositRefund(Auction auction, List<Bid> bids) {
+        try {
+            // Sắp xếp danh sách bids theo số tiền đặt giá giảm dần
+            bids.sort(Comparator.comparing(Bid::getBidAmount).reversed());
+
+            // Xác định người thắng cuộc
+            Bid winningBid = !bids.isEmpty() ? bids.get(0) : null;
+
+            if (winningBid != null) {
+                // Nếu có người thắng, giữ cọc cho người thắng
+                log.info("Giữ lại cọc cho người thắng: " + winningBid.getUser().getEmail());
+                emailService.sendWinnerNotification(winningBid.getUser().getEmail(), winningBid);
+            }
+
+            // Duyệt qua tất cả các bid, hoàn cọc cho người thua
+            for (Bid bid : bids) {
+                Wallet userWallet = walletRepository.findWalletByUserId(bid.getUser().getId())
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + bid.getUser().getEmail()));
+
+                // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
+                Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatus(
+                        userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED);
+
+                if (existingRefund.isPresent()) {
+                    log.info("Đã có giao dịch hoàn cọc cho user: " + bid.getUser().getEmail() + ", sẽ không thực hiện lại.");
+                    continue; // Bỏ qua nếu đã hoàn cọc cho người này
+                }
+
+                // Tính số tiền đặt cọc
+                double depositAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice()) / 100;
+
+                if (winningBid != null && bid.equals(winningBid)) {
+                    // Giữ lại cọc cho người thắng
+                    log.info("Giữ lại cọc cho người thắng: " + bid.getUser().getEmail());
+                    emailService.sendWinnerNotification(bid.getUser().getEmail(), winningBid);
+                } else {
+                    // Hoàn cọc cho người thua
+                    userWallet.setBalance(userWallet.getBalance() + depositAmount);
+                    walletRepository.save(userWallet);
+
+                    // Tạo giao dịch hoàn tiền
+                    Transaction refundTransaction = Transaction.builder()
+                            .wallet(userWallet)
+                            .transactionStatus(TransactionStatus.COMPLETED)
+                            .description("Hoàn cọc cho người thua cuộc")
+                            .transactionType(TransactionType.REFUND)
+                            .recipient(userWallet.getUser().getFullName())
+                            .sender("SYSTEM")
+                            .transactionWalletCode(random())
+                            .build();
+                    transactionRepository.save(refundTransaction);
+
+                    log.info("Hoàn cọc cho user: " + bid.getUser().getEmail() + ", Số tiền: " + depositAmount);
+                    emailService.sendResultForAuction(bid.getUser().getEmail(), null);
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Lỗi khi xử lý hoàn cọc cho phiên đấu giá ID: " + auction.getAuctionId(), ex);
+        }
+    }
+
+
+
+
+    private long random() {
+        return (long) (Math.random() * 900000) + 100000; // Tạo số trong khoảng [100000, 999999]
     }
 
 
