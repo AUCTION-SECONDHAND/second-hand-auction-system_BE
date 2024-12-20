@@ -21,11 +21,12 @@ spring:
     name: second-hand-auction-system_BE
   datasource:
     # Duc Anh
-    url: jdbc:mysql://root:uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl@junction.proxy.rlwy.net:45319/railway?useSSL=true
-#    url: jdbc:mysql://localhost:3306/secondhandauction
+    #url: jdbc:mysql://root:uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl@junction.proxy.rlwy.net:45319/railway?useSSL=true
+    url: jdbc:mysql://localhost:3306/secondhandauction
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl
+    #password: uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl
+    password: 12345
   task:
     scheduling:
       pool:
@@ -41,10 +42,12 @@ spring:
       dialect: org.hibernate.dialect.MySQL8Dialect
       format_sql: true
   jackson:
-    time-zone: UTC
+    #time-zone: UTC
+    time-zone: Asia/Ho_Chi_Minh
   logging:
     level:
       org.springframework.security: DEBUG
+
 
   mail:
     host: smtp.gmail.com
