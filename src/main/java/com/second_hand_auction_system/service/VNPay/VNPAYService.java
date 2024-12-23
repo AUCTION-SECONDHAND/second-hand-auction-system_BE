@@ -462,7 +462,8 @@ public class VNPAYService implements VNPaySerivce {
             walletRepository.save(wallet1);
             transaction1 = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT)
-
+                    .oldAmount(0)
+                    .netAmount(amount)
                     .description(orderInfo)
                     .amount(0)
                     .description(description)
@@ -477,7 +478,8 @@ public class VNPAYService implements VNPaySerivce {
         } else {
             transaction1 = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT)
-
+                    .oldAmount(walletCustomer.getBalance())
+                    .netAmount(walletCustomer.getBalance() + amount)
                     .description(orderInfo)
                     .amount(amount)
                     .wallet(walletCustomer)

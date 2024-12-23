@@ -32,6 +32,12 @@ public class Transaction extends BaseEntity {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "old_Amount" )
+    private double oldAmount;
+
+    @Column(name = "net_Amount")
+    private double netAmount;
+
     @OneToOne
     @JoinColumn(name = "order_id")
     private Order order;
@@ -51,6 +57,7 @@ public class Transaction extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id")
     private Wallet wallet;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "transaction_type")

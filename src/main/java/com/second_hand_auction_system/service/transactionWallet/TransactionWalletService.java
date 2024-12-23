@@ -159,6 +159,8 @@ public class TransactionWalletService implements ITransactionWalletService {
                                 .transactionId(transaction.getTransactionWalletId())
                                 .amount(transaction.getAmount())
                                 .transactionWalletCode(transaction.getTransactionWalletCode())
+                                .oldAmount((long) transaction.getOldAmount())
+                                .netAmount((long) transaction.getNetAmount())
                                 .transactionType(transaction.getTransactionType())
                                 .transactionStatus(transaction.getTransactionStatus())
                                 .senderName(transaction.getSender())
@@ -168,7 +170,7 @@ public class TransactionWalletService implements ITransactionWalletService {
                                 .build())
                 .collect(Collectors.toList());
 
-        // Chuẩn bị phản hồi
+
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("data", transactionWallets); // Sử dụng danh sách đã ánh xạ
         responseData.put("totalPages", transactionWalletsPage.getTotalPages());
