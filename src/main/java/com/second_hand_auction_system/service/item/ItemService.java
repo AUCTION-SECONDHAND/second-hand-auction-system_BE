@@ -19,6 +19,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -100,24 +101,94 @@ public class ItemService implements IItemService {
         itemRepository.save(item);
     }
 
+
+//    @Override
+//    public void updateItem(int itemId, ItemDto itemDto) throws Exception {
+//        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+//                .getRequest().getHeader("Authorization");
+//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//            throw new Exception("Unauthorized");
+//        }
+//
+//        String token = authHeader.substring(7);
+//        String userEmail = jwtService.extractUserEmail(token);
+//        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+//        if (requester == null) {
+//            throw new Exception("User not found");
+//        }
+//
+//        Item itemExist = itemRepository.findById(itemId)
+//                .orElseThrow(() -> new DataNotFoundException("Item not found"));
+//
+//        SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
+//                .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
+//
+//        // Cập nhật thông tin item
+//        modelMapper.map(itemDto, itemExist);
+//        itemExist.setSubCategory(subCategory);
+//        itemExist.setUser(requester);
+//        itemExist.setItemStatus(ItemStatus.PENDING);
+//        itemExist.setCreateBy(requester.getUsername());
+//        itemExist.setUpdateBy(requester.getUsername());
+//
+//        // Kiểm tra imgItem có null hay không trước khi gọi size()
+//        if (itemDto.getImgItem() == null) {
+//            itemDto.setImgItem(new ArrayList<>());  // Khởi tạo một danh sách rỗng nếu imgItem là null
+//        }
+//
+//        // Kiểm tra số lượng ảnh, nếu quá 5 ảnh thì throw exception
+//        if (itemDto.getImgItem().size() > 5) {
+//            throw new Exception("Cannot upload more than 5 images.");
+//        }
+//
+//        // Danh sách ảnh hiện tại trong DB
+//        List<ImageItem> existingImages = new ArrayList<>(itemExist.getImageItems());
+//        List<ImageItem> imageItems = new ArrayList<>();
+//
+//        // Lặp qua ảnh và tạo các ImageItem
+//        for (int i = 0; i < itemDto.getImgItem().size(); i++) {
+//            ImgItemDto imgItemDto = itemDto.getImgItem().get(i);
+//            ImageItem imageItem = new ImageItem();
+//            imageItem.setImageUrl(imgItemDto.getImageUrl());
+//            imageItem.setItem(itemExist);  // Thiết lập liên kết với item
+//
+//            imageItems.add(imageItem);
+//
+//            // Đặt ảnh đầu tiên làm thumbnail
+//            if (i == 0) {
+//                itemExist.setThumbnail(imgItemDto.getImageUrl());
+//            }
+//        }
+//        // Lưu tất cả ảnh vào cơ sở dữ liệu
+//        imageItemRepository.saveAll(imageItems);
+//        itemExist.setImageItems(imageItems);  // Cập nhật ảnh vào item
+//
+//        // Lưu item với ảnh đã cập nhật
+//        itemRepository.save(itemExist);
+//    }
+
+
     @Override
     public void updateItem(int itemId, ItemDto itemDto) throws Exception {
+
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest().getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Unauthorized");
+        }
+
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+        var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            throw new Exception("User not found");
+        }
         Item itemExist = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
         SubCategory subCategory = subCategoryRepository.findById(itemDto.getScId())
                 .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
 //        User userExist = userRepository.findById(itemDto.getUserId())
 //                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + itemDto.getUserId()));
-        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new Exception("Unauthorized");
-        }
-        String token = authHeader.substring(7);
-        String userEmail = jwtService.extractUserEmail(token);
-        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
-        if (requester == null) {
-            throw new Exception("User not found");
-        }
         modelMapper.map(itemDto, itemExist);
         itemExist.setSubCategory(subCategory);
         itemExist.setUser(requester);
@@ -130,8 +201,52 @@ public class ItemService implements IItemService {
     public void deleteItem(int itemId) throws Exception {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
+        if (item.getItemStatus().equals(ItemStatus.ACCEPTED) || item.getItemStatus().equals(ItemStatus.PENDING_AUCTION)) {
+            throw new Exception("Sản phẩm này đã và đang được phê duyệt");
+        }
         item.setItemStatus(ItemStatus.INACTIVE);
         itemRepository.save(item);
+    }
+
+    @Override
+    public void updateImageItem(int itemId, List<ImgItemDto> imgItemDto) throws Exception {
+        Item itemExisting = itemRepository.findById(itemId)
+                .orElseThrow(() -> new DataNotFoundException("Item not found"));
+        List<ImageItem> existingProductImages = imageItemRepository.findByItem_ItemId(itemId);
+        int currentImageCount = existingProductImages.size();
+        int maxImageCount = 5;
+
+        // Check if the total number of images after adding new ones exceeds the max limit
+        int newImageCount = (int) imgItemDto.stream().filter(dto -> dto.getId() == 0).count();
+        if (currentImageCount + newImageCount > maxImageCount) {
+            throw new DataNotFoundException("Cannot add more images. Maximum limit of 5 images reached.");
+        }
+
+        for (ImgItemDto imageDto : imgItemDto) {
+            ImageItem productImage;
+
+            if (imageDto.getId() == 0) {
+                // Create new ProductImages entity
+                productImage = new ImageItem();
+            } else {
+                // Update existing ProductImages entity
+                productImage = imageItemRepository.findById(imageDto.getId())
+                        .orElseThrow(() -> new DataNotFoundException("Image not found with id: " + imageDto.getId()));
+            }
+
+            // Map the DTO to the product image entity
+            productImage.setImageUrl(imageDto.getImageUrl());
+            productImage.setItem(itemExisting);
+            imageItemRepository.save(productImage);
+        }
+
+        // After saving images, set the first image as the thumbnail
+        List<ImageItem> updatedProductImages = imageItemRepository.findByItem_ItemId(itemId);
+        if (!updatedProductImages.isEmpty()) {
+            String firstImageUrl = updatedProductImages.get(0).getImageUrl();
+            itemExisting.setThumbnail(firstImageUrl);
+            itemRepository.save(itemExisting);
+        }
     }
 
     @Override
@@ -175,68 +290,71 @@ public class ItemService implements IItemService {
 
     @Override
     public Page<AuctionItemResponse> getItem(String keyword, Double minPrice, Double maxPrice, PageRequest pageRequest, List<Integer> subCategoryIds) throws Exception {
-        Page<Item> items;
-        items = itemRepository.searchItems(
-                keyword, minPrice, maxPrice, subCategoryIds, pageRequest
-        );
+        List<AuctionStatus> statuses = Arrays.asList(AuctionStatus.OPEN, AuctionStatus.PENDING);
+        Page<Item> items = itemRepository.searchItems(keyword, minPrice, maxPrice, subCategoryIds, statuses, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
+
     @Override
-    public ItemDetailResponse getItemById(int itemId) throws Exception {
-        // Giải mã token lấy thông tin userId nếu tồn tại
-        String token = null;
-        Integer userId = null;
-        try {
-            token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
-                    .getRequest().getHeader("Authorization");
-            if (token != null && token.startsWith("Bearer ")) {
-                userId = extractUserIdFromToken(token.substring(7));
-            }
-        } catch (Exception e) {
-            // Token không tồn tại hoặc không hợp lệ
-            System.out.println("Token is missing or invalid: " + e.getMessage());
+    public List<ImageItemResponse> getImageItem(int itemId) throws Exception {
+        Item item = itemRepository.findById(itemId).orElseThrow(() -> new DataNotFoundException("Item not found"));
+        List<ImageItem> imageItems = imageItemRepository.findByItem_ItemId(itemId);
+        return imageItems.stream()
+                .map(imageItem -> ImageItemResponse.builder()
+                        .idImage(imageItem.getImageItemId())
+                        .image(imageItem.getImageUrl())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public ItemDetailResponse getItemById(Integer itemId) throws Exception {
+        // Lấy token từ Authorization header
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        String authHeader = attributes != null ? attributes.getRequest().getHeader("Authorization") : null;
+        String userEmail = null;
+        User requester = null;
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            userEmail = jwtService.extractUserEmail(token);
+            requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
         }
 
-        // Lấy thông tin item từ database
+        // Lấy thông tin Item
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
 
-        // Lấy số lượng người tham gia đấu giá
         long numberOfRegistrations = 0;
         if (item.getAuction() != null) {
             numberOfRegistrations = auctionRegistrationRepository.countRegistrationsByAuctionId(item.getAuction().getAuctionId());
         }
 
-        // Convert dữ liệu item sang response
+        // Chuyển đổi dữ liệu Item sang Response
         ItemDetailResponse itemDetailResponse = auctionItemConvert.toAuctionDetailItemResponse(item);
         itemDetailResponse.setNumberParticipant((int) numberOfRegistrations);
 
-        // Nếu userId tồn tại, kiểm tra thêm thông tin user
-        if (userId != null && item.getAuction() != null) {
-            // Kiểm tra xem user đã đặt bid hay chưa
-            boolean userHasBid = bidRepository.existsByUserIdAndAuction_AuctionId(userId, item.getAuction().getAuctionId());
+        // Kiểm tra xem user đã đặt bid hay chưa và lấy bidAmount nếu có
+        Integer checkBid = null; // Mặc định là null
+        if (requester != null && requester.getId() != null && item.getAuction() != null) {
+            if (item.getAuction().getAuctionType().getAuctionTypeId() == 3) {
+                Bid userBid = bidRepository.findByUserIdAndAuction_AuctionId(
+                        requester.getId(),
+                        item.getAuction().getAuctionId()
+                ).orElse(null);
 
-            // Lấy thông tin User và Auction từ database
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new DataNotFoundException("User not found"));
-            Auction auction = auctionRepository.findById(item.getAuction().getAuctionId())
-                    .orElseThrow(() -> new DataNotFoundException("Auction not found"));
-
-            // Lấy Bid và truyền số lượng bid nếu tồn tại hoặc mặc định là 0
-            Integer bidAmount = bidRepository.findByUserAndAuction(user, auction)
-                    .map(Bid::getBidAmount) // Lấy thông tin số lượng bid nếu tồn tại
-                    .orElse(0); // Nếu không có bid thì truyền 0
-
-            itemDetailResponse.setBidAmountUserToken(bidAmount);
-        } else {
-            // Nếu không có token, mặc định bidAmountUserToken là null hoặc 0
-            itemDetailResponse.setBidAmountUserToken(0);
+                if (userBid != null) {
+                    checkBid = userBid.getBidAmount(); // Lấy bidAmount của user
+                }
+            }
         }
+
+        // Gán kết quả vào trường checkBid
+        itemDetailResponse.setCheckBid(checkBid);
 
         return itemDetailResponse;
     }
-
 
 
     @Override
@@ -247,9 +365,11 @@ public class ItemService implements IItemService {
         if (userId == null) {
             throw new Exception("User not found");
         }
-        Page<Item> items = itemRepository.findWinningItemsByUserIdAndAuctionStatus(userId, pageRequest);
+        Page<Item> items = itemRepository.findItemsByUserId(userId, pageRequest);
+
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
+
 
     @Override
     public ResponseEntity<?> getItemAuctionCompleted(int page, int limit) {
@@ -355,6 +475,7 @@ public class ItemService implements IItemService {
                         .itemCondition(String.valueOf(item.getItemCondition()))
                         .itemDescription(item.getItemDescription())
                         .thumbnail(item.getThumbnail())
+                        .priceBuyNow(item.getPriceBuyNow())
                         .itemStatus(item.getItemStatus())
                         .create_at(item.getCreateAt())
                         .update_at(item.getUpdateAt())
@@ -423,7 +544,7 @@ public class ItemService implements IItemService {
 
     @Override
     public Page<AuctionItemResponse> getSimilarItem(Integer mainCategoryId, PageRequest pageRequest) throws Exception {
-        Page<Item> items = itemRepository.findAllBySubCategory_SubCategoryId(mainCategoryId, pageRequest);
+        Page<Item> items = itemRepository.findAllBySubCategory_SubCategoryIdAndAuction_Status(mainCategoryId, AuctionStatus.OPEN, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 

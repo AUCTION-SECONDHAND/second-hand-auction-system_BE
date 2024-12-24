@@ -22,10 +22,12 @@ public class AuctionItemResponse extends BaseResponse {
     private String thumbnail;
 
     private ItemStatus itemStatus;
+    private Double priceBuyNow;
 
     private ItemAuctionResponse auction;
 
     private SubCategoryItemResponse scId;
 
     private AuctionTypeResponse auctionTypeId;
+    private Double winBid;
 }

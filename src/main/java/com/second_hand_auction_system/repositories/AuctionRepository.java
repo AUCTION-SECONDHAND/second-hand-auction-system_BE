@@ -31,5 +31,5 @@ public interface AuctionRepository extends JpaRepository<Auction, Integer> {
     List<Object[]> countAuctionsByMonth();
 
 
-
+    List<Auction> findByStatus(AuctionStatus auctionStatus);
 }

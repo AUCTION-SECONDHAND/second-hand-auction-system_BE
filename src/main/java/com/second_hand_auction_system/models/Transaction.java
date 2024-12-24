@@ -17,7 +17,7 @@ public class Transaction extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer transactionWalletId;
 
-    @Column(name = "transaction_code", unique = true)
+    @Column(name = "transaction_code")
     private long transactionWalletCode;
 
     @Column(name = "amount")
@@ -31,6 +31,12 @@ public class Transaction extends BaseEntity {
 
     @Column(name = "description")
     private String description;
+
+    @Column(name = "old_Amount" )
+    private double oldAmount;
+
+    @Column(name = "net_Amount")
+    private double netAmount;
 
     @OneToOne
     @JoinColumn(name = "order_id")
@@ -51,6 +57,7 @@ public class Transaction extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id")
     private Wallet wallet;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "transaction_type")

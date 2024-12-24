@@ -46,7 +46,7 @@ public class AuctionController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Tạo đấu giá thành công")
                         .build()
         );
     }
@@ -67,7 +67,7 @@ public class AuctionController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Cập nhật đấu giá thành công")
                         .build()
         );
     }
@@ -80,7 +80,7 @@ public class AuctionController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Xóa thành công")
                         .build()
         );
     }
@@ -91,6 +91,11 @@ public class AuctionController {
 //            @RequestParam(defaultValue = "10") int size) {
 //        return auctionService.getAllAuctions(page,size);
 //    }
+
+    @PutMapping("/update/{auctionId}")
+    public ResponseEntity<?> updateAuction(@PathVariable Integer auctionId){
+        return auctionService.updateStatus(auctionId);
+    }
 
     @GetMapping
     public ResponseEntity<?> getAuctions(){
@@ -112,6 +117,7 @@ public class AuctionController {
     public ResponseEntity<?> countAuctionsCreatedMonth() {
         return auctionService.countAuctionsByMonth();
     }
+
 
 
 }

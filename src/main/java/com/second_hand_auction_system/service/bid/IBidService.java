@@ -11,8 +11,8 @@ import java.util.List;
 public interface IBidService {
 
     ResponseEntity<?> createBid(BidRequest bidRequest) throws Exception;
-    ResponseEntity<?> createBidSealedBid(BidRequest bidRequest) throws Exception;
 
+    ResponseEntity<?> createBidSealedBid(BidRequest bidRequest) throws Exception;
 
     ResponseEntity<?> updateBid(Integer bidId, BidRequest bidDto) throws Exception;
 
@@ -24,7 +24,7 @@ public interface IBidService {
 
     ResponseEntity<?> findWinnerAuction(int auctionId);
 
-    ResponseEntity<?> getAllBids(Integer auctionId,int limit, int page);
+    ResponseEntity<?> getAllBids(Integer auctionId, int limit, int page);
 
     ResponseEntity<?> getInformationBid(Integer auctionId);
 

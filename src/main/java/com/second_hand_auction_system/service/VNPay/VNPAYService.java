@@ -335,7 +335,7 @@ public class VNPAYService implements VNPaySerivce {
         String vnp_SecureHash = VNPayConfig.hmacSHA512(VNPayConfig.secretKey, hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
         String paymentUrl = VNPayConfig.vnp_PayUrl + "?" + queryUrl;
-        String transactionCode = code();
+
 //        TransactionType transactionType = TransactionType.builder()
 ////                .order(order)
 ////                .transactionType(com.second_hand_auction_system.utils.TransactionType.TRANSFER)
@@ -447,7 +447,6 @@ public class VNPAYService implements VNPaySerivce {
         String vnp_SecureHash = VNPayConfig.hmacSHA512(VNPayConfig.secretKey, hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
         String paymentUrl = VNPayConfig.vnp_PayUrl + "?" + queryUrl;
-        String transactionCode = code();
         var walletAdmin = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
         assert walletAdmin != null;
         var walletCustomer = walletRepository.findByUserId(requester.getId()).orElse(null);
@@ -463,7 +462,8 @@ public class VNPAYService implements VNPaySerivce {
             walletRepository.save(wallet1);
             transaction1 = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT)
-                    .transactionWalletCode(Long.parseLong(transactionCode))
+                    .oldAmount(0)
+                    .netAmount(amount)
                     .description(orderInfo)
                     .amount(0)
                     .description(description)
@@ -478,7 +478,8 @@ public class VNPAYService implements VNPaySerivce {
         } else {
             transaction1 = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT)
-                    .transactionWalletCode(Long.parseLong(transactionCode))
+                    .oldAmount(walletCustomer.getBalance())
+                    .netAmount(walletCustomer.getBalance() + amount)
                     .description(orderInfo)
                     .amount(amount)
                     .wallet(walletCustomer)

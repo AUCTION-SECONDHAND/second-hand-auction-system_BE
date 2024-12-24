@@ -30,9 +30,6 @@ public class AddressService implements IAddressService {
     private final EmailService emailService;
     @Override
     public AddressResponse createAddress(AddressDto addressDto) throws Exception {
-
-
-
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");

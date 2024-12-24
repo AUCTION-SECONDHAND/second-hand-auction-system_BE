@@ -47,7 +47,7 @@ public class SubCategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Tạo nhật danh mục phụ thành công")
                         .build()
         );
     }
@@ -74,7 +74,7 @@ public class SubCategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Cập nhật danh mục phụ thành công")
                         .build()
         );
     }
@@ -87,7 +87,7 @@ public class SubCategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Xóa nhật danh mục phụ thành công")
                         .build()
         );
     }
@@ -98,7 +98,7 @@ public class SubCategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(subCategoryResponses)
                         .build()
         );

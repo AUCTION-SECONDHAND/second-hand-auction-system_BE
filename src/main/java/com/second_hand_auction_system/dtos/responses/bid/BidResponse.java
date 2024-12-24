@@ -18,4 +18,5 @@ public class BidResponse {
     private Integer userId;
     private Integer auctionId;
     private String username;
+    private String email;
 }

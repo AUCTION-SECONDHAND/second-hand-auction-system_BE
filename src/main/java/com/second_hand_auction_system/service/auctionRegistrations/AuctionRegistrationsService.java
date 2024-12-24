@@ -91,7 +91,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .build());
         }
 
-        if (auctionExist.getStatus().equals(AuctionStatus.OPEN)) {
+        if (auctionExist.getStatus().equals(AuctionStatus.PENDING)) {
             // Kiểm tra xem người dùng đã đăng ký phiên này chưa
             Optional<AuctionRegistration> existingRegistration = auctionRegistrationsRepository
                     .findByAuction_AuctionIdAndUsers_Id(auctionRegistrationsDto.getAuction(), requester.getId());
@@ -104,15 +104,15 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                         .build());
             }
 
-            // Tính số tiền cọc 10% giá khởi điểm
-            double depositAmount = 0.1 * auctionExist.getStartPrice();
+            // Tính số tiền cọc bằng giá tiền mong muốn x phần trăm cọc
+            double depositAmount = (auctionExist.getPercentDeposit() * auctionExist.getBuyNowPrice()/100);
 
             // Kiểm tra số dư ví có đủ cho tiền cọc không
             if (userWallet.getBalance() < depositAmount) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                         .status(HttpStatus.BAD_REQUEST)
                         .data(null)
-                        .message("You do not have enough money in your wallet for the deposit amount")
+                        .message("Số dư ví hiện tại không đủ để thực hiện giao dịch. Vui lòng nạp thêm tiền vào ví.")
                         .build());
             }
 
@@ -147,9 +147,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 auctionRegistrationUser.setUpdateAt(LocalDateTime.now());
                 registrationUserRepository.save(auctionRegistrationUser);
             }
-//            double commissionRate = 0.05;
-//            double commissionAmount = depositAmount * commissionRate;
-            //Transaction của ví cọc
+
             Transaction transactionWallet = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
                     .amount(+(long) depositAmount)
@@ -166,7 +164,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
                     .amount(-(long) depositAmount)
                     .transactionStatus(TransactionStatus.COMPLETED)
-                    .recipient("SYSTEM")
+                    .recipient("Hệ thống đấu giá phiên" + auctionExist.getAuctionId())
                     .sender(requester.getFullName())
                     .commissionAmount(0)
                     .commissionRate(0)
@@ -190,8 +188,9 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
 
     private static long generateTransactionCode() {
         SecureRandom secureRandom = new SecureRandom();
-        return 100000 + secureRandom.nextInt(900000);
+        return 10000000L + secureRandom.nextInt(90000000); // Random từ 10000000 đến 99999999
     }
+
 
 
     @Override

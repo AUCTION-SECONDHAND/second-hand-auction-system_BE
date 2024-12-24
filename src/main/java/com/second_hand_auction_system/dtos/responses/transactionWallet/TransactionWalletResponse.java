@@ -24,6 +24,10 @@ public class TransactionWalletResponse {
 
     private long transactionWalletCode;
 
+    private long netAmount;
+
+    private long oldAmount;
+
     private TransactionStatus transactionStatus;
 
     private String senderName;

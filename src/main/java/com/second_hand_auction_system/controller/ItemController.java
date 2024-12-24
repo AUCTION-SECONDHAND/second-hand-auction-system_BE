@@ -1,10 +1,12 @@
 package com.second_hand_auction_system.controller;
 
+import com.second_hand_auction_system.dtos.request.item.ImgItemDto;
 import com.second_hand_auction_system.dtos.request.item.ItemApprove;
 import com.second_hand_auction_system.dtos.request.item.ItemDto;
 import com.second_hand_auction_system.dtos.responses.ResponseListObject;
 import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
+import com.second_hand_auction_system.dtos.responses.item.ImageItemResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemDetailResponse;
 import com.second_hand_auction_system.dtos.responses.item.ItemResponse;
 import com.second_hand_auction_system.service.item.IItemService;
@@ -12,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -49,7 +52,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Tạo sản phẩm thành công")
                         .build()
         );
     }
@@ -76,7 +79,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Cập nhật sản phẩm thành công")
                         .build()
         );
     }
@@ -103,7 +106,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Phê duyệt thành công")
                         .build()
         );
     }
@@ -116,7 +119,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Xóa thành công")
                         .build()
         );
     }
@@ -127,7 +130,21 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
+                        .data(itemResponseList)
+                        .build()
+        );
+    }
+
+    @GetMapping("image-item/{id}")
+    public ResponseEntity<?> getTop10FeaturedItem(
+            @PathVariable Integer id
+    ) throws Exception {
+        List<ImageItemResponse> itemResponseList = itemService.getImageItem(id);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("thành công")
                         .data(itemResponseList)
                         .build()
         );
@@ -159,7 +176,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -184,7 +201,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -208,7 +225,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -238,7 +255,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
@@ -250,7 +267,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(itemDetailResponse)
                         .build()
         );
@@ -258,29 +275,32 @@ public class ItemController {
 
     @GetMapping("/auction-process/user")
     public ResponseEntity<?> getAuctionProcessByUser(
-            //@RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "limit", defaultValue = "10") int limit
     ) throws Exception {
-        PageRequest pageRequest = PageRequest.of(page, limit);
-        //, Sort.by("id").descending()
+        // Sắp xếp theo trường createdDate theo thứ tự giảm dần (sản phẩm mới lên đầu)
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Order.desc("createAt")));
+        // Lấy kết quả từ service
         Page<AuctionItemResponse> auctionItemResponses = itemService.getAuctionProcess(pageRequest);
         int totalPages = auctionItemResponses.getTotalPages();
         Long totalOrder = auctionItemResponses.getTotalElements();
         List<AuctionItemResponse> itemResponseList = auctionItemResponses.getContent();
+        // Tạo đối tượng ResponseListObject để trả kết quả
         ResponseListObject<List<AuctionItemResponse>> responseListObject = ResponseListObject.<List<AuctionItemResponse>>builder()
                 .data(itemResponseList)
                 .totalElements(totalOrder)
                 .totalPages(totalPages)
                 .build();
+        // Trả về response kết quả
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
                         .build()
         );
     }
+
 
     @GetMapping("/auction-completed/user")
     public ResponseEntity<?> getAuctionCompleted(@RequestParam(value = "page", defaultValue = "0") int page,
@@ -302,7 +322,7 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(auctionItemResponse)
                         .build()
         );
@@ -360,8 +380,36 @@ public class ItemController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(responseListObject)
+                        .build()
+        );
+    }
+
+
+    @PutMapping("/image-item/{itemId}")
+    public ResponseEntity<?> updateImageItem(
+            @PathVariable Integer itemId,
+            @Valid @RequestBody List<ImgItemDto> imgItemDtos,
+            BindingResult result
+    ) throws Exception {
+        if (result.hasErrors()) {
+            List<String> errorMessages = result.getFieldErrors()
+                    .stream()
+                    .map(FieldError::getDefaultMessage)
+                    .toList();
+            return ResponseEntity.badRequest().body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .message(String.valueOf(errorMessages))
+                            .build()
+            );
+        }
+        itemService.updateImageItem(itemId, imgItemDtos);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .message("thành công")
                         .build()
         );
     }

@@ -16,6 +16,8 @@ public class ImgItemDto {
 //    @GeneratedValue(strategy = GenerationType.IDENTITY)
 //    private Integer imageItemId;
 
+    private int id;
+
     @JsonProperty("image_url")
     private String imageUrl;
 

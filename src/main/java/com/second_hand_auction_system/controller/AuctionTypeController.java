@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/auctionType")
+    @RequestMapping("/api/v1/auctionType")
 @RequiredArgsConstructor
 public class AuctionTypeController {
     private final IAuctionTypeService iAuctionTypeService;
@@ -54,7 +54,7 @@ public class AuctionTypeController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Thành công")
                         .data(auctionTypeResponses)
                         .build()
         );

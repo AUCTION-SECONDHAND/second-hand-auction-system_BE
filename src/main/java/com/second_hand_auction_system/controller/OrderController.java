@@ -32,7 +32,7 @@ public class OrderController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Cập nhật đơn hàng thành công")
                         .build()
         );
     }
@@ -71,7 +71,7 @@ public class OrderController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("thành công")
                         .data(orderDetailResponse)
                         .build()
         );
@@ -81,6 +81,12 @@ public class OrderController {
     public ResponseEntity<?> getOrderStatisticsByMonth() {
         return orderService.getOrderStatisticsByMonth();
     }
+
+    @GetMapping("/getTotalMoneyByMonth")
+    public ResponseEntity<?> getTotalMoneyByMonth() {
+        return orderService.getTotalMoney();
+    }
+
 
 
 }

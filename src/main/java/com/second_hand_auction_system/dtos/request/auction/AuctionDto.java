@@ -5,9 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.utils.AuctionStatus;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.sql.Time;
@@ -60,18 +58,15 @@ public class AuctionDto {
     @Size(max = 300, message = "Comment should not exceed 300 characters")
     private String comment;
 
-//    @JsonProperty("status")
-//    @NotNull(message = "Status is required")
-//    private AuctionStatus status;
+    @JsonProperty("number_participant")
+    @Min(value = 2, message = "The number of participants must be at least 2.")
+    @Max(value = 100, message = "The number of participants cannot exceed 100.")
+    private int numberParticipant;
 
-//    @JsonProperty("approved_by")
-//    private String approveBy;
-
-//    @JsonProperty("approved_at")
-//    private Date approveAt;
-
-//    @JsonProperty("created_by")
-//    private String createBy;
+    @JsonProperty("percent_deposit")
+    @Min(value = 10, message = "Percent deposit must be at least 10%.")
+    @Max(value = 100, message = "Percent deposit cannot exceed 100%.")
+    private double percentDeposit;
 
     @JsonProperty("item")
     @NotNull(message = "Item is required")

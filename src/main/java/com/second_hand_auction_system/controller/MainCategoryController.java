@@ -40,7 +40,7 @@ public class MainCategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Tạo danh mục thành công")
                         .build()
         );
     }
@@ -63,7 +63,7 @@ public class MainCategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Cập nhật thành công")
                         .build()
         );
     }
@@ -76,7 +76,7 @@ public class MainCategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Success")
+                        .message("Xóa danh mục thành công")
                         .build()
         );
     }
@@ -88,7 +88,7 @@ public class MainCategoryController {
             return ResponseEntity.ok(
                     ResponseObject.builder()
                             .status(HttpStatus.OK)
-                            .message("Successfully")
+                            .message("thành công")
                             .data(mainCategoryResponses)
                             .build()
             );
@@ -96,7 +96,7 @@ public class MainCategoryController {
             return ResponseEntity.ok(
                     ResponseObject.builder()
                             .status(HttpStatus.BAD_REQUEST)
-                            .message("Error product " + e.getMessage())
+                            .message("Lỗi " + e.getMessage())
                             //.error(e.getMessage())
                             .build()
             );
@@ -111,7 +111,7 @@ public class MainCategoryController {
             return ResponseEntity.ok(
                     ResponseObject.builder()
                             .status(HttpStatus.OK)
-                            .message("Successfully")
+                            .message("thành công")
                             .data(mainCategoryResponses)
                             .build()
             );
@@ -119,7 +119,7 @@ public class MainCategoryController {
             return ResponseEntity.ok(
                     ResponseObject.builder()
                             .status(HttpStatus.BAD_REQUEST)
-                            .message("Error product " + e.getMessage())
+                            .message("Lỗi " + e.getMessage())
                             //.error(e.getMessage())
                             .build()
             );

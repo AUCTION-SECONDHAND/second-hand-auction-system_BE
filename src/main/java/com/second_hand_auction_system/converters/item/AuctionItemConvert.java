@@ -5,23 +5,33 @@ import com.second_hand_auction_system.dtos.responses.auctionType.AuctionTypeResp
 import com.second_hand_auction_system.dtos.responses.item.*;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
 import com.second_hand_auction_system.models.*;
+import com.second_hand_auction_system.repositories.BidRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class AuctionItemConvert {
     private final ModelMapper modelMapper;
+    private final BidRepository bidRepository;
 
     public AuctionItemResponse toAuctionItemResponse(Item item) {
         // Ánh xạ Auction nếu tồn tại
         ItemAuctionResponse auctionResponse = null;
         if (item.getAuction() != null) {
             Auction auction = item.getAuction();
+
+            Optional<Bid> bidOptional = bidRepository.findByAuction_AuctionIdAndWinBidTrue(auction.getAuctionId());
+            Integer winBidAmount = null;
+            if (bidOptional.isPresent()) {
+                winBidAmount = bidOptional.get().getBidAmount();
+            }
+
             auctionResponse = ItemAuctionResponse.builder()
                     .auctionId(auction.getAuctionId())
                     .startTime(auction.getStartTime())
@@ -32,8 +42,9 @@ public class AuctionItemConvert {
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
+                    .percentDeposit(auction.getPercentDeposit())
                     .buyNowPrice(auction.getBuyNowPrice())
-
+                    .winBid(winBidAmount)
                     .build();
         }
 
@@ -63,6 +74,7 @@ public class AuctionItemConvert {
                 .itemName(item.getItemName())
                 .itemDescription(item.getItemDescription())
                 .itemStatus(item.getItemStatus())
+                .priceBuyNow(item.getPriceBuyNow())
                 .auction(auctionResponse)
                 .scId(subCategoryResponse)
                 .auctionTypeId(auctionTypeResponse)
@@ -89,6 +101,7 @@ public class AuctionItemConvert {
                     .startPrice(auction.getStartPrice())
                     .approveAt(auction.getApproveAt())
                     .createBy(auction.getCreateBy())
+                    .percentDeposit(auction.getPercentDeposit())
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
@@ -124,10 +137,16 @@ public class AuctionItemConvert {
                 .thumbnail(item.getThumbnail())
                 .itemName(item.getItemName())
                 .itemDescription(item.getItemDescription())
+                .itemCondition(item.getItemCondition())
                 .itemStatus(item.getItemStatus())
+                .priceBuyNow(item.getPriceBuyNow())
+                .reason(item.getReason())
                 .auction(auctionResponse)
+                .priceBuyNow(item.getPriceBuyNow())
                 .scId(subCategoryResponse)
                 .images(imageResponses)
+                .itemDocument(item.getItemDocument())
+                .priceStepItem(item.getPriceStepItem())
                 .auctionType(auctionTypeResponse)
                 .numberParticipant(0)
                 .build();
@@ -171,7 +190,6 @@ public class AuctionItemConvert {
                     .build();
         }
 
-        ItemSpecificResponse itemSpecificResponse = null;
         List<ImageItemResponse> imageResponses = item.getImageItems().stream()
                 .map(image -> ImageItemResponse.builder()
                         .idImage(image.getImageItemId())
@@ -185,10 +203,13 @@ public class AuctionItemConvert {
                 .itemName(item.getItemName())
                 .itemDescription(item.getItemDescription())
                 .itemStatus(item.getItemStatus())
+                .priceBuyNow(item.getPriceBuyNow())
                 .auction(auctionResponse)
                 .auctionTypeResponse(auctionTypeResponse)
                 .scId(subCategoryResponse)
                 .imageItemResponse(imageResponses)
+                .itemDocument(item.getItemDocument())
+                .priceStepItem(item.getPriceStepItem())
                 .createBy(item.getCreateBy())
                 .createAt(String.valueOf(item.getCreateAt()))
                 .updateAt(String.valueOf(item.getUpdateAt()))

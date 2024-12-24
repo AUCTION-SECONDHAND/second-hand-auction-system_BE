@@ -24,6 +24,8 @@ public class AuctionRegistrationsConverter {
                     .startPrice(auction.getStartPrice())
                     .approveAt(auction.getApproveAt())
                     .createBy(auction.getCreateBy())
+                    .buyNowPrice(auction.getBuyNowPrice())
+                    .percentDeposit(auction.getPercentDeposit())
                     .startDate(auction.getStartDate())
                     .endDate(auction.getEndDate())
                     .status(auction.getStatus())
