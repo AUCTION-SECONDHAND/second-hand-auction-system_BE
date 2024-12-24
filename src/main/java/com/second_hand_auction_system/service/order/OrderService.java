@@ -330,6 +330,7 @@ public class OrderService implements IOrderService {
                     response.setEmail(order.getEmail());
                     response.setPhoneNumber(order.getPhoneNumber());
                     response.setNote(order.getNote());
+                    response.setOrderCode(order.getOrderCode());
                     Item item = order.getItem(); // Giả sử order.getItem() trả về Item
                     if (item != null) {
                         response.setItem(ItemBriefResponseOrder.builder()
