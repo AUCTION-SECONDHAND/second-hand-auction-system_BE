@@ -129,7 +129,7 @@ public class SellerInformationService implements ISellerInformationService {
 
     @Override
     public SellerInformationResponse getSellerInformationByAuctionId(Integer auctionId) throws Exception {
-        Item item = itemRepository.findByAuction_AuctionId(auctionId);
+        Item item = itemRepository.findByAuctions_AuctionId(auctionId);
         if (item == null) {
             throw new NoSuchElementException("Item not found for auctionId: " + auctionId);
         }

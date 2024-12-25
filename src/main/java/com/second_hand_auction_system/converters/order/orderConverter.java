@@ -25,8 +25,8 @@ public class orderConverter {
                 .collect(Collectors.toList());
 
         ItemAuctionResponse auctionResponse = null;
-        if (order.getItem().getAuction() != null) {
-            Auction auction = order.getItem().getAuction();
+        if (order.getItem().getAuctions() != null) {
+            Auction auction = (Auction) order.getItem().getAuctions();
             auctionResponse = ItemAuctionResponse.builder()
                     .auctionId(auction.getAuctionId())
                     .startTime(auction.getStartTime())
@@ -60,7 +60,7 @@ public class orderConverter {
                     .itemName(item.getItemName())
                     .itemDescription(item.getItemDescription())
                     .itemStatus(item.getItemStatus())
-                    .auction(auctionResponse)
+                    .auction((List<ItemAuctionResponse>) auctionResponse)
                     .scId(subCategoryResponse)
                     .images(imageResponses)
                     .build();

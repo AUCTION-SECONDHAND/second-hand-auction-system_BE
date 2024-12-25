@@ -10,6 +10,8 @@ import com.second_hand_auction_system.models.Item;
 import com.second_hand_auction_system.models.SubCategory;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class AuctionRegistrationsConverter {
     public AuctionRegistrationsResponse toAuctionRegistrationsResponse(AuctionRegistration auctionRegistration) {
@@ -49,7 +51,7 @@ public class AuctionRegistrationsConverter {
                     .itemDescription(item.getItemDescription())
                     .thumbnail(item.getThumbnail())
                     .itemStatus(item.getItemStatus())
-                    .auction(auctionResponse)
+                    .auction((List<ItemAuctionResponse>) auctionResponse)
                     .scId(subCategoryResponse)
                     .build();
         }

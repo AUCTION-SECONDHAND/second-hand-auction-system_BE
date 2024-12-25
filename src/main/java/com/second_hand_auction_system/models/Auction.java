@@ -73,7 +73,7 @@ public class Auction extends BaseEntity{
     @Column(name = "create_by")
     private String createBy;
 
-    @OneToOne
+    @ManyToOne // Điều chỉnh mối quan hệ từ @OneToOne sang @ManyToOne
     @JoinColumn(name = "item_id")
     private Item item;
 

@@ -345,58 +345,58 @@ public class AuctionService implements IAuctionService {
 
 
 
-    @Scheduled(fixedDelay = 1200000, zone = "Asia/Ho_Chi_Minh")
-    @Transactional
-    public void processAuctionCompletion() {
-        ZoneId systemZoneId = ZoneId.systemDefault();
-        // Chỉ lấy các phiên đấu giá đã kết thúc (CLOSED)
-        List<Auction> closedAuctions = auctionRepository.findByStatus(AuctionStatus.CLOSED);
-        for (Auction auction : closedAuctions) {
-            try {
-                // Xác định thời gian kết thúc phiên đấu giá
-                ZonedDateTime auctionEndTime = ZonedDateTime.of(
-                        auction.getEndDate().toInstant().atZone(systemZoneId).toLocalDate(),
-                        auction.getEndTime().toLocalTime(),
-                        systemZoneId
-                );
-                // Nếu phiên đấu giá đã kết thúc nhưng chưa xử lý, thực hiện hoàn tiền
-                if (ZonedDateTime.now(systemZoneId).isAfter(auctionEndTime)) {
-                    log.info("PHIÊN ĐẤU GIÁ KẾT THÚC: {}", auction.getAuctionId());
-                    // Lấy danh sách các bid
-                    List<Bid> bids = bidRepository.findByAuction_AuctionId(auction.getAuctionId());
-                    // Xác định người thắng cuộc
-                    Bid winningBid = !bids.isEmpty() ? bids.get(0) : null;
-                    if (winningBid != null) {
-                        // Kiểm tra xem người thắng có thanh toán trong vòng 24 giờ không
-                        ZonedDateTime now = ZonedDateTime.now(systemZoneId);
-                        ZonedDateTime bidTime = ZonedDateTime.of(winningBid.getCreateAt(), systemZoneId);
-                        long hoursBetween = java.time.Duration.between(bidTime, now).toHours();
-                        if (hoursBetween <= 2) {
-                            log.info("Người thắng đã thanh toán trong vòng 5 phút: {}", winningBid.getUser().getEmail());
-                            processDepositRefund(auction, bids); // Xử lý hoàn cọc
-                        } else {
-                            // Người thắng không thanh toán trong 24 giờ, chuyển quyền sở hữu cho người thắng tiếp theo
-                            log.info("Người thắng không thanh toán trong vòng 24 giờ, chuyển quyền sở hữu cho người thắng tiếp theo.");
-                            if (bids.size() > 1) {
-                                Bid secondPlaceBid = bids.get(1); // Người thắng thứ hai
-                                auctionRepository.save(auction); // Lưu lại thay đổi trong phiên đấu giá
-
-                                // Xử lý hoàn cọc cho người thua
-                                processDepositRefund(auction, bids); // Xử lý hoàn cọc cho tất cả người thua
-                                log.info("Người thắng thứ hai đã được xác nhận: {}", secondPlaceBid.getUser().getEmail());
-                            } else {
-                                // Nếu không có người thắng thứ hai, không thực hiện gì
-                                log.info("Không có người thắng thứ hai để chuyển quyền sở hữu.");
-                            }
-
-                        }
-                    }
-                }
-            } catch (Exception ex) {
-                log.error("Lỗi khi xử lý phiên đấu giá ID: " + auction.getAuctionId(), ex);
-            }
-        }
-    }
+//    @Scheduled(fixedDelay = 1200000, zone = "Asia/Ho_Chi_Minh")
+//    @Transactional
+//    public void processAuctionCompletion() {
+//        ZoneId systemZoneId = ZoneId.systemDefault();
+//        // Chỉ lấy các phiên đấu giá đã kết thúc (CLOSED)
+//        List<Auction> closedAuctions = auctionRepository.findByStatus(AuctionStatus.CLOSED);
+//        for (Auction auction : closedAuctions) {
+//            try {
+//                // Xác định thời gian kết thúc phiên đấu giá
+//                ZonedDateTime auctionEndTime = ZonedDateTime.of(
+//                        auction.getEndDate().toInstant().atZone(systemZoneId).toLocalDate(),
+//                        auction.getEndTime().toLocalTime(),
+//                        systemZoneId
+//                );
+//                // Nếu phiên đấu giá đã kết thúc nhưng chưa xử lý, thực hiện hoàn tiền
+//                if (ZonedDateTime.now(systemZoneId).isAfter(auctionEndTime)) {
+//                    log.info("PHIÊN ĐẤU GIÁ KẾT THÚC: {}", auction.getAuctionId());
+//                    // Lấy danh sách các bid
+//                    List<Bid> bids = bidRepository.findByAuction_AuctionId(auction.getAuctionId());
+//                    // Xác định người thắng cuộc
+//                    Bid winningBid = !bids.isEmpty() ? bids.get(0) : null;
+//                    if (winningBid != null) {
+//                        // Kiểm tra xem người thắng có thanh toán trong vòng 24 giờ không
+//                        ZonedDateTime now = ZonedDateTime.now(systemZoneId);
+//                        ZonedDateTime bidTime = ZonedDateTime.of(winningBid.getCreateAt(), systemZoneId);
+//                        long hoursBetween = java.time.Duration.between(bidTime, now).toHours();
+//                        if (hoursBetween <= 2) {
+//                            log.info("Người thắng đã thanh toán trong vòng 5 phút: {}", winningBid.getUser().getEmail());
+//                            processDepositRefund(auction, bids); // Xử lý hoàn cọc
+//                        } else {
+//                            // Người thắng không thanh toán trong 24 giờ, chuyển quyền sở hữu cho người thắng tiếp theo
+//                            log.info("Người thắng không thanh toán trong vòng 24 giờ, chuyển quyền sở hữu cho người thắng tiếp theo.");
+//                            if (bids.size() > 1) {
+//                                Bid secondPlaceBid = bids.get(1); // Người thắng thứ hai
+//                                auctionRepository.save(auction); // Lưu lại thay đổi trong phiên đấu giá
+//
+//                                // Xử lý hoàn cọc cho người thua
+//                                processDepositRefund(auction, bids); // Xử lý hoàn cọc cho tất cả người thua
+//                                log.info("Người thắng thứ hai đã được xác nhận: {}", secondPlaceBid.getUser().getEmail());
+//                            } else {
+//                                // Nếu không có người thắng thứ hai, không thực hiện gì
+//                                log.info("Không có người thắng thứ hai để chuyển quyền sở hữu.");
+//                            }
+//
+//                        }
+//                    }
+//                }
+//            } catch (Exception ex) {
+//                log.error("Lỗi khi xử lý phiên đấu giá ID: " + auction.getAuctionId(), ex);
+//            }
+//        }
+//    }
 
 
 

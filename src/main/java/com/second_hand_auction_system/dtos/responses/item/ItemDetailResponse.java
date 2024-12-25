@@ -42,7 +42,7 @@ public class ItemDetailResponse {
     private String reason;
     private ItemCondition itemCondition;
 
-    private ItemAuctionResponse auction;
+    private List<ItemAuctionResponse> auction;
 
     private SubCategoryItemResponse scId;
 

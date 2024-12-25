@@ -291,7 +291,7 @@ public class ItemService implements IItemService {
     @Override
     public Page<AuctionItemResponse> getItem(String keyword, Double minPrice, Double maxPrice, PageRequest pageRequest, List<Integer> subCategoryIds) throws Exception {
         List<AuctionStatus> statuses = Arrays.asList(AuctionStatus.OPEN, AuctionStatus.PENDING);
-        Page<Item> items = itemRepository.searchItems(keyword, minPrice, maxPrice, subCategoryIds, statuses, pageRequest);
+        Page<Item> items = itemRepository.searchItems(keyword,minPrice,maxPrice,subCategoryIds,statuses,pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 
@@ -327,8 +327,16 @@ public class ItemService implements IItemService {
                 .orElseThrow(() -> new DataNotFoundException("Item not found"));
 
         long numberOfRegistrations = 0;
-        if (item.getAuction() != null) {
-            numberOfRegistrations = auctionRegistrationRepository.countRegistrationsByAuctionId(item.getAuction().getAuctionId());
+        if (item.getAuctions() != null && !item.getAuctions().isEmpty()) {
+            // Tìm phiên đấu giá bằng itemId
+            Auction auction = item.getAuctions().stream()
+                    .filter(a -> a.getAuctionId().equals(itemId))  // Giả sử itemId là auctionId
+                    .findFirst()
+                    .orElse(null);
+
+            if (auction != null) {
+                numberOfRegistrations = auctionRegistrationRepository.countRegistrationsByAuctionId(auction.getAuctionId());
+            }
         }
 
         // Chuyển đổi dữ liệu Item sang Response
@@ -337,15 +345,23 @@ public class ItemService implements IItemService {
 
         // Kiểm tra xem user đã đặt bid hay chưa và lấy bidAmount nếu có
         Integer checkBid = null; // Mặc định là null
-        if (requester != null && requester.getId() != null && item.getAuction() != null) {
-            if (item.getAuction().getAuctionType().getAuctionTypeId() == 3) {
-                Bid userBid = bidRepository.findByUserIdAndAuction_AuctionId(
-                        requester.getId(),
-                        item.getAuction().getAuctionId()
-                ).orElse(null);
-
-                if (userBid != null) {
-                    checkBid = userBid.getBidAmount(); // Lấy bidAmount của user
+        if (requester != null && requester.getId() != null && item.getAuctions() != null) {
+//            if (item.getAuctions().getAuctionType().getAuctionTypeId() == 3) {
+//                Bid userBid = bidRepository.findByUserIdAndAuction_AuctionId(
+//                        requester.getId(),
+//                        item.getAuction().getAuctionId()
+//                ).orElse(null);
+//
+//                if (userBid != null) {
+//                    checkBid = userBid.getBidAmount(); // Lấy bidAmount của user
+//                }
+//            }
+            for(Auction auction :item.getAuctions()){
+                if(auction.getAuctionType().getAuctionTypeId() == 3){
+                    Bid userBid = bidRepository.findByUserIdAndAuction_AuctionId(requester.getId(), auction.getAuctionId()).orElseThrow(null);
+                    if(userBid != null){
+                        checkBid = userBid.getBidAmount();
+                    }
                 }
             }
         }
@@ -397,7 +413,7 @@ public class ItemService implements IItemService {
                     .build());
         }
 
-        Page<Item> items = itemRepository.findAllByUserIdAndAuctionStatus(requester.getId(), AuctionStatus.CLOSED, pageable);
+        Page<Item> items = itemRepository.findAllByUserIdAndAuctionsStatus(requester.getId(), AuctionStatus.CLOSED, pageable);
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("items", items.map(auctionItemConvert::toAuctionItemResponse).getContent());
         responseData.put("totalPages", items.getTotalPages());
@@ -544,7 +560,7 @@ public class ItemService implements IItemService {
 
     @Override
     public Page<AuctionItemResponse> getSimilarItem(Integer mainCategoryId, PageRequest pageRequest) throws Exception {
-        Page<Item> items = itemRepository.findAllBySubCategory_SubCategoryIdAndAuction_Status(mainCategoryId, AuctionStatus.OPEN, pageRequest);
+        Page<Item> items = itemRepository.findAllBySubCategory_SubCategoryIdAndAuctions_Status(mainCategoryId, AuctionStatus.OPEN, pageRequest);
         return items.map(auctionItemConvert::toAuctionItemResponse);
     }
 

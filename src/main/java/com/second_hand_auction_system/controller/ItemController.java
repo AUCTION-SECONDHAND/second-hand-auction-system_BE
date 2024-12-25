@@ -21,6 +21,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -238,11 +239,13 @@ public class ItemController {
             @RequestParam(value = "maxPrice", required = false) Double maxPrice,
             @RequestParam(value = "scIds", required = false) String scIds,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "limit", defaultValue = "10") int limit
+            @RequestParam(value = "limit", defaultValue = "10") int limit,
+            @RequestParam(value = "sortBy", defaultValue = "createAt") String sortBy,
+            @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection
     ) throws Exception {
         List<Integer> parsedScIds = parseIds(scIds);
-        PageRequest pageRequest = PageRequest.of(page, limit);
-        //, Sort.by("id").descending()
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by(direction, sortBy));
         Page<AuctionItemResponse> itemResponseList = itemService.getItem(keyword, minPrice, maxPrice, pageRequest, parsedScIds);
         int totalPages = itemResponseList.getTotalPages();
         Long totalOrder = itemResponseList.getTotalElements();
@@ -252,6 +255,7 @@ public class ItemController {
                 .totalElements(totalOrder)
                 .totalPages(totalPages)
                 .build();
+
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
@@ -311,10 +315,20 @@ public class ItemController {
 
     private List<Integer> parseIds(String ids) {
         if (ids == null || ids.isEmpty()) {
-            return null;
+            return new ArrayList<>();
         }
-        return Arrays.stream(ids.split(",")).map(Integer::parseInt).collect(Collectors.toList());
+
+        try {
+            return Arrays.stream(ids.split(","))
+                    .map(String::trim) // Loại bỏ khoảng trắng thừa xung quanh mỗi ID
+                    .map(Integer::parseInt) // Chuyển đổi mỗi phần tử thành Integer
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            // Nếu có lỗi khi chuyển đổi chuỗi thành Integer, bạn có thể log hoặc xử lý ngoại lệ
+            throw new IllegalArgumentException("Invalid format for one or more IDs: " + ids, e);
+        }
     }
+
 
     @GetMapping("/auction-process/{id}")
     public ResponseEntity<?> getItemAuctionProcess(@PathVariable Integer id) throws Exception {

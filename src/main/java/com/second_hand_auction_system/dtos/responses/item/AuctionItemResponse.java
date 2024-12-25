@@ -7,6 +7,8 @@ import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItem
 import com.second_hand_auction_system.utils.ItemStatus;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -22,9 +24,10 @@ public class AuctionItemResponse extends BaseResponse {
     private String thumbnail;
 
     private ItemStatus itemStatus;
+
     private Double priceBuyNow;
 
-    private ItemAuctionResponse auction;
+    private List<ItemAuctionResponse> auction;
 
     private SubCategoryItemResponse scId;
 
