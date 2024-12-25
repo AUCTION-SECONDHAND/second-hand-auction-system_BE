@@ -3,8 +3,10 @@ package com.second_hand_auction_system.service.auctionRegistrations;
 import com.second_hand_auction_system.dtos.request.auctionRegistrations.AuctionRegistrationsDto;
 import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
 import com.second_hand_auction_system.dtos.responses.auctionRegistrations.CheckStatusAuctionRegisterResponse;
+import com.second_hand_auction_system.models.AuctionRegistration;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -23,4 +25,6 @@ public interface IAuctionRegistrationsService {
     CheckStatusAuctionRegisterResponse getRegistrationsByUserIdAnhAuctionId(Integer auctionId) throws Exception;
 
     Map<String, Object> checkUserInAuction(Integer auctionId) throws Exception;
+     Page<AuctionRegistrationsResponse> findUsersRegisteredByAuctionId(Integer auctionId, Pageable pageable) throws Exception ;
+
 }

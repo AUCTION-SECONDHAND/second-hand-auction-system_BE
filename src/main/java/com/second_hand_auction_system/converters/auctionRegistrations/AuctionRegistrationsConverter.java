@@ -4,10 +4,7 @@ import com.second_hand_auction_system.dtos.responses.auction.ItemAuctionResponse
 import com.second_hand_auction_system.dtos.responses.auctionRegistrations.AuctionRegistrationsResponse;
 import com.second_hand_auction_system.dtos.responses.item.AuctionItemResponse;
 import com.second_hand_auction_system.dtos.responses.subCategory.SubCategoryItemResponse;
-import com.second_hand_auction_system.models.Auction;
-import com.second_hand_auction_system.models.AuctionRegistration;
-import com.second_hand_auction_system.models.Item;
-import com.second_hand_auction_system.models.SubCategory;
+import com.second_hand_auction_system.models.*;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -62,4 +59,19 @@ public class AuctionRegistrationsConverter {
                 .auctionItem(auctionItemResponse)
                 .build();
     }
+
+    public AuctionRegistrationsResponse toDetailedResponse(AuctionRegistration auctionRegistration) {
+        User user = auctionRegistration.getUsers().isEmpty() ? null : auctionRegistration.getUsers().get(0);
+
+        return AuctionRegistrationsResponse.builder()
+                .auctionRegistrationId(auctionRegistration.getAuctionRegistrationId())
+                .depositeAmount(auctionRegistration.getDepositeAmount())
+                .registration(auctionRegistration.getRegistration())
+                .createdDate(auctionRegistration.getCreateAt()) // Set createdDate from auctionRegistration
+                .userName(user != null ? user.getFullName() : "Unknown") // Set user name
+                .build();
+    }
+
+
+
 }
