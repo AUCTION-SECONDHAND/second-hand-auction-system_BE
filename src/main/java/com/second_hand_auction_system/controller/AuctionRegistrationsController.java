@@ -149,8 +149,10 @@ public class AuctionRegistrationsController {
     @GetMapping("/users/auction/{auctionId}")
     public ResponseEntity<Page<AuctionRegistrationsResponse>> getUsersRegisteredByAuctionId(
             @PathVariable Integer auctionId,
-            Pageable pageable) {
+            @RequestParam(defaultValue = "10") int size,  // Đặt mặc định là 10
+            @RequestParam(defaultValue = "0") int page) {  // Đặt mặc định trang là 0
         try {
+            Pageable pageable = PageRequest.of(page, size);  // Sử dụng giá trị page và size
             // Lấy danh sách các user đã đăng ký từ service với phân trang
             Page<AuctionRegistrationsResponse> usersRegistered = auctionRegistrationsService.findUsersRegisteredByAuctionId(auctionId, pageable);
 
@@ -161,5 +163,6 @@ public class AuctionRegistrationsController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 }
