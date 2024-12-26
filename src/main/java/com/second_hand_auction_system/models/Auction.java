@@ -77,6 +77,10 @@ public class Auction extends BaseEntity{
     @JoinColumn(name = "item_id")
     private Item item;
 
+//    @ManyToOne
+//    @JoinColumn(name = "item_id")
+//    private Item item;
+
     @ManyToOne
     @JoinColumn(name = "auction_type_id")
     private AuctionType auctionType;

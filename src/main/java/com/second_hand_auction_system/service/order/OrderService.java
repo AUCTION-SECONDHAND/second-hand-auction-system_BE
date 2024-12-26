@@ -149,7 +149,7 @@ public class OrderService implements IOrderService {
                     log.warn("Insufficient wallet balance or wallet not found for user: " + requester.getId());
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                             .status(HttpStatus.BAD_REQUEST)
-                            .message("So dư tài khoản của bạn không đủ.Vui lòng nạp thêm để thanh toán đơn hàng")
+                            .message("Số dư tài khoản của bạn không đủ.Vui lòng nạp thêm để thanh toán đơn hàng")
                             .data(null)
                             .build());
                 }
