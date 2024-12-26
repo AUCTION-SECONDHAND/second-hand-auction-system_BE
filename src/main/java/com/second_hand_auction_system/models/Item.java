@@ -65,6 +65,44 @@ public class Item extends BaseEntity{
     @OneToOne(mappedBy = "item",cascade = CascadeType.ALL,optional = true)
     private Auction auction;
 
+    @Column(name = "imei")
+    private String imei;
+
+    @Column(name = "storage")
+    private String storage;
+
+    @Column(name = "color")
+    private String color;
+
+    @Column(name = "battery_health")
+    private Double batteryHealth;
+
+    @Column(name = "os_version")
+    private String osVersion;
+
+    @Column(name = "icloud_status")
+    private String icloudStatus;
+
+    @Column(name = "body_condition")
+    private String bodyCondition;
+
+    @Column(name = "screen_condition")
+    private String screenCondition;
+
+    @Column(name = "camera_condition")
+    private String cameraCondition;
+
+    @Column(name = "port_condition")
+    private String portCondition;
+
+    @Column(name = "button_condition")
+    private String buttonCondition;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "item_specification_id", referencedColumnName = "itemSpecificationId", nullable = false)
+    private ItemSpecification itemSpecification;
+
+
 
     @ManyToOne
     @JoinColumn(name = "sub_category_id")
