@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -145,14 +146,23 @@ public class AuctionRegistrationsController {
     }
 
 
-//    @GetMapping("/checkUser/{auctionId}")
-//    public ResponseEntity<Map<String, Object>> checkUserInAuction(@PathVariable Integer auctionId) {
-//        try {
-//            Map<String, Object> response = auctionRegistrationsService.checkUserInAuction(auctionId);
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(401).body(null); // Trả về null trong thân dữ liệu nếu có lỗi
-//        }
-//    }
+    @GetMapping("/users/auction/{auctionId}")
+    public ResponseEntity<Page<AuctionRegistrationsResponse>> getUsersRegisteredByAuctionId(
+            @PathVariable Integer auctionId,
+            @RequestParam(defaultValue = "10") int size,  // Đặt mặc định là 10
+            @RequestParam(defaultValue = "0") int page) {  // Đặt mặc định trang là 0
+        try {
+            Pageable pageable = PageRequest.of(page, size);  // Sử dụng giá trị page và size
+            // Lấy danh sách các user đã đăng ký từ service với phân trang
+            Page<AuctionRegistrationsResponse> usersRegistered = auctionRegistrationsService.findUsersRegisteredByAuctionId(auctionId, pageable);
+
+            // Trả về kết quả phân trang
+            return new ResponseEntity<>(usersRegistered, HttpStatus.OK);
+        } catch (Exception e) {
+            // Trả về lỗi nếu có ngoại lệ
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
 }

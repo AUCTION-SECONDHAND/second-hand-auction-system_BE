@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -209,6 +210,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         return auctionRegistrations.map(auctionRegistrationsConverter::toAuctionRegistrationsResponse);
     }
 
+
     @Override
     public Page<AuctionRegistrationsResponse> findAllAuctionRegistrationsByUserId(PageRequest pageRequest) throws Exception {
         String token = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
@@ -309,6 +311,19 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
 
         return response;
     }
+
+    @Override
+    public Page<AuctionRegistrationsResponse> findUsersRegisteredByAuctionId(Integer auctionId, Pageable pageable) throws Exception {
+        // Lấy các auction registrations theo auctionId và sắp xếp theo ngày tạo
+        Page<AuctionRegistration> auctionRegistrationsPage = auctionRegistrationsRepository.findByAuction_AuctionIdOrderByCreateAtDesc(auctionId, pageable);
+
+        // Chuyển đổi Page<AuctionRegistration> thành Page<AuctionRegistrationsResponse>
+        return auctionRegistrationsPage.map(auctionRegistration -> auctionRegistrationsConverter.toDetailedResponse(auctionRegistration));
+    }
+
+
+
+
 
 
     public Integer extractUserIdFromToken(String token) throws Exception {

@@ -29,5 +29,4 @@ public class MainCategory extends BaseEntity{
 
     @OneToMany(mappedBy = "mainCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<SubCategory> subCategories;
-
 }
