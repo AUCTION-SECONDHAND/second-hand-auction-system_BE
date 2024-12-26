@@ -99,9 +99,12 @@ public class Item extends BaseEntity{
     private String buttonCondition;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "item_specification_id", referencedColumnName = "itemSpecificationId", nullable = false)
+    @JoinColumn(name = "item_specification_id", referencedColumnName = "itemSpecificationId", nullable = true)
     private ItemSpecification itemSpecification;
 
+
+//    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+//    private List<Auction> auctions;
 
 
     @ManyToOne
