@@ -78,6 +78,7 @@ public class orderConverter {
                 .note(order.getNote())
                 .address(order.getAddress())
                 .item(itemDetailResponse)
+                .orderCode(order.getOrderCode())
                 .build();
     }
 }

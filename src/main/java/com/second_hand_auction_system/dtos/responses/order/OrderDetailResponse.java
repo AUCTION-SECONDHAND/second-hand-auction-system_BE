@@ -42,6 +42,8 @@ public class OrderDetailResponse {
 
     private ItemDetailResponse item;
 
+    private String orderCode;
+
     //private AuctionResponse auction;
 
     //private User user;

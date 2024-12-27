@@ -98,11 +98,11 @@ public class Item extends BaseEntity{
     @Column(name = "button_condition")
     private String buttonCondition;
 
-
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "item_specification_id",  nullable = false)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "item_specification_id", referencedColumnName = "itemSpecificationId", nullable = false)
     private ItemSpecification itemSpecification;
+
+
 
     @ManyToOne
     @JoinColumn(name = "sub_category_id")
