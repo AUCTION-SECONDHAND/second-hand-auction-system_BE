@@ -93,7 +93,7 @@ public class SecurityConfig {
                                 .requestMatchers(PUT, "/api/v1/transactionWallet/upload-evidence/**").permitAll()
                                 //auction
                                 .requestMatchers(POST, "/api/v1/auction-register/**").hasRole("BUYER")
-                                .requestMatchers(PUT,"/api/v1/auctions/update").permitAll()
+                                .requestMatchers(PUT, "/api/v1/auctions/update").permitAll()
                                 .requestMatchers(GET, "/api/v1/auctions/**").hasAnyRole("BUYER")
                                 .requestMatchers(POST, "api/v1/auction/**").hasRole("STAFF")
 
@@ -114,6 +114,8 @@ public class SecurityConfig {
                                 //notification
                                 //.requestMatchers(PUT,"/api/v1/notifications/**").hasAnyRole("ADMIN", "STAFF")
                                 .requestMatchers("/api/v1/notifications/**").permitAll()
+                                //Report
+                                .requestMatchers("/api/v1/report/**").permitAll()
                                 .anyRequest().authenticated()
 
 
