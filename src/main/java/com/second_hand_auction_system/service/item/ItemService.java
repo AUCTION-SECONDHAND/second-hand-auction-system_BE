@@ -46,7 +46,7 @@ public class ItemService implements IItemService {
     private final AuctionTypeRepository auctionTypeRepository;
     private final AuctionRegistrationsRepository auctionRegistrationRepository;
     private final BidRepository bidRepository;
-
+    private final ItemSpecificationRepository itemSpecificationRepository;
     @Override
     @Transactional
     public void addItem(ItemDto itemDto) throws Exception {
@@ -56,6 +56,7 @@ public class ItemService implements IItemService {
                 .orElseThrow(() -> new DataNotFoundException("SubCategory not found with id: " + itemDto.getScId()));
         AuctionType auctionTypeExisted = auctionTypeRepository.findById(itemDto.getAuctionType())
                 .orElseThrow(() -> new DataNotFoundException("AuctionType not found with id: " + itemDto.getAuctionType()));
+
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
@@ -72,7 +73,16 @@ public class ItemService implements IItemService {
         item.setUser(requester);
         item.setCreateBy(requester.getFullName());
         item.setUpdateBy(requester.getFullName());
-
+        ItemSpecification itemSpecification = ItemSpecification.builder()
+                .ram(itemDto.getRam())
+                .cpu(itemDto.getCpu())
+                .cameraSpecs(itemDto.getCameraSpecs())
+                .sensors(itemDto.getSensors())
+                .screenSize(itemDto.getScreenSize())
+                .connectivity(itemDto.getConnectivity())
+                .build();
+        itemSpecificationRepository.save(itemSpecification);
+        item.setItemSpecification(itemSpecification);
         if (itemDto.getImgItem() != null && !itemDto.getImgItem().isEmpty()) {
             List<ImgItemDto> imgItemDtos = itemDto.getImgItem();
             // Limit to 5 images
@@ -472,7 +482,6 @@ public class ItemService implements IItemService {
                         .itemId(item.getItemId())
                         .itemName(item.getItemName())
                         .createBy(item.getCreateBy())
-                        .itemCondition(String.valueOf(item.getItemCondition()))
                         .itemDescription(item.getItemDescription())
                         .thumbnail(item.getThumbnail())
                         .priceBuyNow(item.getPriceBuyNow())

@@ -261,6 +261,8 @@ public class TransactionWalletService implements ITransactionWalletService {
                                 .transactionType(transaction.getTransactionType())
                                 .transactionStatus(transaction.getTransactionStatus())
                                 .senderName(transaction.getSender())
+                                .netAmount((long) transaction.getNetAmount())
+                                .oldAmount((long) transaction.getOldAmount())
                                 .recipientName(transaction.getRecipient())
                                 .description(transaction.getDescription())
                                 .transactionDate(transaction.getCreateAt())

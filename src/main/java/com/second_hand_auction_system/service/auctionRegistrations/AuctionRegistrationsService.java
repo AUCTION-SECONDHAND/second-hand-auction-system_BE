@@ -149,23 +149,24 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                 registrationUserRepository.save(auctionRegistrationUser);
             }
 
-            Transaction transactionWallet = Transaction.builder()
-                    .transactionType(TransactionType.DEPOSIT_AUCTION)
-                    .amount(+(long) depositAmount)
-                    .transactionStatus(TransactionStatus.COMPLETED)
-                    .recipient("SYSTEM")
-                    .sender(requester.getFullName())
-                    .commissionAmount(0)
-                    .commissionRate(0)
-                    .transactionWalletCode(generateTransactionCode())
-                    .build();
-            transactionRepository.save(transactionWallet);
+//            Transaction transactionWallet = Transaction.builder()
+//                    .transactionType(TransactionType.DEPOSIT_AUCTION)
+//                    .amount(+(long) depositAmount)
+//                    .transactionStatus(TransactionStatus.COMPLETED)
+//                    .recipient("SYSTEM")
+//                    .sender(requester.getFullName())
+//                    .commissionAmount(0)
+//                    .commissionRate(0)
+//                    .transactionWalletCode(generateTransactionCode())
+//                    .build();
+//            transactionRepository.save(transactionWallet);
             //tracsaction cuar thang nap
             Transaction transactionUser = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
                     .amount(-(long) depositAmount)
                     .transactionStatus(TransactionStatus.COMPLETED)
                     .recipient("Hệ thống đấu giá phiên" + auctionExist.getAuctionId())
+                    .description("Nạp tiền cọc tham gia đấu giá ")
                     .sender(requester.getFullName())
                     .commissionAmount(0)
                     .commissionRate(0)

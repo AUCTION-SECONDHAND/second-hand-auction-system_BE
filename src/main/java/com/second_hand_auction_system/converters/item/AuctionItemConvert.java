@@ -137,7 +137,6 @@ public class AuctionItemConvert {
                 .thumbnail(item.getThumbnail())
                 .itemName(item.getItemName())
                 .itemDescription(item.getItemDescription())
-                .itemCondition(item.getItemCondition())
                 .itemStatus(item.getItemStatus())
                 .priceBuyNow(item.getPriceBuyNow())
                 .reason(item.getReason())
