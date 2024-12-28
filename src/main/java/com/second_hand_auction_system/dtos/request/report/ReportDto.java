@@ -16,9 +16,6 @@ import java.time.LocalDateTime;
 @Setter
 @Builder
 public class ReportDto {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer reportId;
 
     @Column(name = "evidence")
     private String evidence;
