@@ -129,7 +129,18 @@ public class AuctionItemConvert {
         }
 
         // Ánh xạ các thông tin cụ thể của item nếu có
-
+        ItemSpecificResponse itemSpecificResponse = null;
+        if(item.getItemSpecification() != null) {
+            ItemSpecification itemSpecification = item.getItemSpecification();
+            itemSpecificResponse = ItemSpecificResponse.builder()
+                    .cpu(itemSpecification.getCpu())
+                    .ram(itemSpecification.getRam())
+                    .itemSpecificationId(itemSpecification.getItemSpecificationId())
+                    .sensors(itemSpecification.getSensors())
+                    .screenSize(itemSpecification.getScreenSize())
+                    .cameraSpecs(itemSpecification.getCameraSpecs())
+                    .build();
+        }
 
         // Trả về ItemDetailResponse đã được ánh xạ
         return ItemDetailResponse.builder()
@@ -141,8 +152,20 @@ public class AuctionItemConvert {
                 .priceBuyNow(item.getPriceBuyNow())
                 .reason(item.getReason())
                 .auction(auctionResponse)
+                .imei(item.getImei())
+                .color(item.getColor())
+                .batteryHealth(item.getBatteryHealth())
+                .bodyCondition(item.getBodyCondition())
+                .buttonCondition(item.getButtonCondition())
+                .cameraCondition(item.getCameraCondition())
+                .osVersion(item.getOsVersion())
+                .portCondition(item.getPortCondition())
+                .screenCondition(item.getScreenCondition())
+                .storage(item.getStorage())
+                .icloudStatus(item.getIcloudStatus())
                 .priceBuyNow(item.getPriceBuyNow())
                 .scId(subCategoryResponse)
+                .itemSpecific(itemSpecificResponse)
                 .images(imageResponses)
                 .itemDocument(item.getItemDocument())
                 .priceStepItem(item.getPriceStepItem())

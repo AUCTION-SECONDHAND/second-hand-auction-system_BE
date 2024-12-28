@@ -25,13 +25,12 @@ public class ItemDto {
     private String itemName;
 
     @NotBlank(message = "Item description is required")
-    @Size(min = 10, max = 500, message = "Item description must be between 10 and 500 characters")  // Có thể mở lại phần kiểm tra độ dài
     @JsonProperty("item_description")
     private String itemDescription;
 
-    @NotNull(message = "Item condition is required")
-    @JsonProperty("item_condition")
-    private ItemCondition itemCondition;
+//    @NotNull(message = "Item condition is required")
+//    @JsonProperty("item_condition")
+//    private ItemCondition itemCondition;
 
     @JsonProperty("price_step_item")
     @NotNull(message = "Price step item cannot be null")

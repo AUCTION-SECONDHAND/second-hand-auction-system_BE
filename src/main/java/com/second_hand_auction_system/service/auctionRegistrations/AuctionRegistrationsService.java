@@ -164,6 +164,8 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             Transaction transactionUser = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
                     .amount(-(long) depositAmount)
+                    .netAmount((requester.getWallet().getBalance())-depositAmount)
+                    .oldAmount(userWallet.getBalance())
                     .transactionStatus(TransactionStatus.COMPLETED)
                     .recipient("Hệ thống đấu giá phiên" + auctionExist.getAuctionId())
                     .description("Nạp tiền cọc tham gia đấu giá ")

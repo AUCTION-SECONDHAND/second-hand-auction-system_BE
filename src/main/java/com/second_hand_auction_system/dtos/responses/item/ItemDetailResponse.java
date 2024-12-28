@@ -40,7 +40,38 @@ public class ItemDetailResponse {
     private Double priceBuyNow;
 
     private String reason;
-    private ItemCondition itemCondition;
+
+    private String imei;
+
+
+    private String storage;
+
+
+    private String color;
+
+
+    private Double batteryHealth;
+
+
+    private String osVersion;
+
+
+    private String icloudStatus;
+
+
+    private String bodyCondition;
+
+
+    private String screenCondition;
+
+
+    private String cameraCondition;
+
+
+    private String portCondition;
+
+
+    private String buttonCondition;
 
     private ItemAuctionResponse auction;
 

@@ -1,6 +1,8 @@
 package com.second_hand_auction_system.dtos.responses.item;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Column;
 import lombok.*;
 
 import java.util.Date;
@@ -11,21 +13,25 @@ import java.util.Date;
 @Setter
 @Builder
 public class ItemSpecificResponse {
-    private double percent;
-    private Integer itemSpecId;
-    private String type;
+    @JsonProperty("item_spec_Id")
+    private Integer itemSpecificationId;
 
-    private String color;
+    @JsonProperty("cpu")
+    private String cpu;
 
-    private double weight;
+    @JsonProperty("ram")
+    private String ram;
 
-    private String dimension;
+    @JsonProperty("screen_size")
+    private String screenSize;
 
-    private String original;
+    @JsonProperty("camera_specs")
+    private String cameraSpecs;
 
-    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
-    private Date manufactureDate;
+    @JsonProperty("connectivity")
+    private String connectivity;
 
-    private String material;
+    @JsonProperty("sensors")
+    private String sensors;
 
 }
