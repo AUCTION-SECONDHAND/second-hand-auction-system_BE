@@ -67,6 +67,20 @@ public class AuctionItemConvert {
                     .build();
         }
 
+
+        ItemSpecificationResponse itemSpecificationResponse = null;
+        if (item.getItemSpecification() != null) {
+            ItemSpecification itemSpecification = item.getItemSpecification();
+            itemSpecificationResponse = ItemSpecificationResponse.builder()
+                    .cpu(itemSpecification.getCpu())
+                    .ram(itemSpecification.getRam())
+                    .screenSize(itemSpecification.getScreenSize())
+                    .cameraSpecs(itemSpecification.getCameraSpecs())
+                    .connectivity(itemSpecification.getConnectivity())
+                    .sensors(itemSpecification.getSensors())
+                    .build();
+        }
+
         // Trả về AuctionItemResponse đã được ánh xạ
         return AuctionItemResponse.builder()
                 .itemId(item.getItemId())
@@ -78,8 +92,26 @@ public class AuctionItemConvert {
                 .auction(auctionResponse)
                 .scId(subCategoryResponse)
                 .auctionTypeId(auctionTypeResponse)
+                .batteryHealth(item.getBatteryHealth())
+                .osVersion(item.getOsVersion())
+                .icloudStatus(item.getIcloudStatus())
+                .bodyCondition(item.getBodyCondition())
+                .screenCondition(item.getScreenCondition())
+                .cameraCondition(item.getCameraCondition())
+                .portCondition(item.getPortCondition())
+                .buttonCondition(item.getButtonCondition())
+                .itemSpecification(itemSpecificationResponse)
                 .build();
     }
+
+
+
+
+
+
+
+
+
 
     public ItemDetailResponse toAuctionDetailItemResponse(Item item) {
         // Ánh xạ danh sách ảnh

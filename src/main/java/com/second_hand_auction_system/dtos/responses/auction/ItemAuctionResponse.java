@@ -64,4 +64,6 @@ public class ItemAuctionResponse {
 
     private Integer winBid;
 
+
+
 }

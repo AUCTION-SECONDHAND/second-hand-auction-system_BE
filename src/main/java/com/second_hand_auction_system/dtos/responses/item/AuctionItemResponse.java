@@ -30,4 +30,17 @@ public class AuctionItemResponse extends BaseResponse {
 
     private AuctionTypeResponse auctionTypeId;
     private Double winBid;
+
+    private Double batteryHealth;
+    private String osVersion;
+    private String icloudStatus;
+    private String bodyCondition;
+    private String screenCondition;
+    private String cameraCondition;
+    private String portCondition;
+    private String buttonCondition;
+
+
+    private ItemSpecificationResponse itemSpecification;
+
 }
