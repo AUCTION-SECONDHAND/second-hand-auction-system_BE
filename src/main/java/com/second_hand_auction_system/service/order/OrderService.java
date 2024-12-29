@@ -144,7 +144,7 @@ public class OrderService implements IOrderService {
         if (order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)) {
             try {
                 Wallet customerWallet = walletRepository.findWalletByUserId(requester.getId()).orElse(null);
-
+                Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
                 if (customerWallet == null || customerWallet.getBalance() < orderEntity.getTotalAmount()) {
                     log.warn("Insufficient wallet balance or wallet not found for user: " + requester.getId());
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
@@ -156,44 +156,51 @@ public class OrderService implements IOrderService {
 
                 log.info("Wallet balance before deduction: " + customerWallet.getBalance());
 
-                // Tính toán hoa hồng và số tiền thực nhận cho admin
+// Tính toán số tiền cần trừ và kiểm tra
                 double orderAmount = orderEntity.getTotalAmount();
-
-                // Trừ số tiền từ ví customer
-                customerWallet.setBalance(customerWallet.getBalance() - orderAmount);
-                walletRepository.save(customerWallet);
-                log.info("Wallet balance after deduction: " + customerWallet.getBalance());
-
-                // Cập nhật orderEntity
-                orderEntity.setTotalAmount(orderAmount); // Cập nhật tổng tiền bao gồm hoa hồng
-                orderRepository.save(orderEntity);
-
-                // Cộng tiền vào ví admin
-                Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
-                if (adminWallet != null) {
-                    log.info("Admin wallet balance before: " + adminWallet.getBalance());
-                    adminWallet.setBalance(adminWallet.getBalance() + orderAmount); // Cộng tiền admin
-                    walletRepository.save(adminWallet);
-                    log.info("Admin wallet balance after: " + adminWallet.getBalance());
-                } else {
-                    log.warn("Admin wallet not found");
+                if (customerWallet.getBalance() < orderAmount) {
+                    log.error("Insufficient balance for transaction");
                 }
 
-                // Tạo giao dịch ghi nhận giao dịch và hoa hồng
+// Lấy số dư ví hiện tại trước giao dịch
+                long oldBalance = (long) customerWallet.getBalance();
+                log.info("Wallet balance before deduction: " + oldBalance);
+
+// Kiểm tra nếu số dư không đủ
+                if (oldBalance < orderAmount) {
+                    log.error("Insufficient balance for transaction");
+                }
+
+// Tính số dư sau giao dịch
+                long newBalance = oldBalance - (long) orderAmount;
+
+// Cập nhật số dư ví khách hàng
+                customerWallet.setBalance(newBalance);
+                walletRepository.save(customerWallet);
+
+// Log số dư sau khi cập nhật
+                log.info("Wallet balance after deduction: " + newBalance);
+
+// Tạo và lưu giao dịch
                 Transaction transactionWallet = new Transaction();
-                transactionWallet.setAmount((long) orderAmount);
-                transactionWallet.setWallet(customerWallet);
+                transactionWallet.setAmount(-(long) orderAmount); // Giá trị giao dịch âm
+                transactionWallet.setWallet(customerWallet); // Liên kết với ví
+                transactionWallet.setOldAmount(oldBalance); // Số dư trước giao dịch
+                transactionWallet.setNetAmount(newBalance); // Số dư sau giao dịch
                 transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
                 transactionWallet.setTransactionType(TransactionType.TRANSFER);
                 transactionWallet.setCommissionAmount(0);
                 transactionWallet.setCommissionRate(0);
                 transactionWallet.setOrder(orderEntity);
-                assert adminWallet != null;
-                transactionWallet.setRecipient(adminWallet.getUser().getFullName());
+                transactionWallet.setRecipient(adminWallet != null ? adminWallet.getUser().getFullName() : "Admin");
                 transactionWallet.setSender(requester.getFullName());
                 transactionWallet.setDescription(order.getNote());
                 transactionWallet.setTransactionWalletCode(random());
                 transactionSystemRepository.save(transactionWallet);
+
+                log.info("Transaction saved successfully with details: " + transactionWallet);
+
+                log.info("Transaction saved successfully with details: " + transactionWallet);
 
                 // Cập nhật trạng thái phiên đấu giá sau khi thanh toán thành công
                 auction.setStatus(AuctionStatus.COMPLETED);
@@ -670,9 +677,6 @@ public class OrderService implements IOrderService {
 //        int otp = random.nextInt(900000) + 100000;
 //        return String.valueOf(otp);
 //    }
-
-
-
 
 
 //    @Override
