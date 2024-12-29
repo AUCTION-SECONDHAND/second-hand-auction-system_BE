@@ -385,7 +385,7 @@ public class AuctionService implements IAuctionService {
                     }
 
                     // Đánh dấu phiên đấu giá đã xử lý
-                    auction.setStatus(AuctionStatus.COMPLETED);
+                    auction.setStatus(CLOSED);
                     auctionRepository.save(auction);
 
                     log.info("Đã hoàn thành xử lý phiên đấu giá ID: {}", auction.getAuctionId());

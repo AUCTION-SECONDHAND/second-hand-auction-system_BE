@@ -106,7 +106,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             }
 
             // Tính số tiền cọc bằng giá tiền mong muốn x phần trăm cọc
-            double depositAmount = (auctionExist.getPercentDeposit() * auctionExist.getBuyNowPrice()/100);
+            double depositAmount = (auctionExist.getPercentDeposit() * auctionExist.getBuyNowPrice() / 100);
 
             // Kiểm tra số dư ví có đủ cho tiền cọc không
             if (userWallet.getBalance() < depositAmount) {
@@ -128,54 +128,57 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .depositeAmount(depositAmount)
                     .build();
             auctionRegistrationsRepository.save(newRegistration);
-            log.info("Vi user: " + userWallet.getBalance());
-            // Trừ tiền từ ví của người dùng và cộng vào ví đấu giá
-            userWallet.setBalance(userWallet.getBalance() - depositAmount);
-            walletRepository.save(userWallet);
+            //tracsaction cuar thang nap
+            // Trước tiên, lấy số dư ban đầu của ví người dùng
+            double initialUserBalance = userWallet.getBalance();
+
+// Trừ tiền từ ví của người dùng
+            userWallet.setBalance(initialUserBalance - depositAmount);
+            walletRepository.save(userWallet); // Lưu lại thay đổi vào ví người dùng
+
+// Log số dư ví người dùng sau khi trừ tiền
             log.info("Vi user sau khi coc: " + userWallet.getBalance());
+
+// Lấy ví đấu giá (ví cọc)
             Wallet viCoc = walletRepository.findWalletByAuctionId(auctionExist.getWallet().getWalletId()).orElse(null);
+
+// Kiểm tra ví cọc và cộng tiền vào ví cọc
             if (viCoc != null) {
                 log.info("Vi coc ban dau: " + viCoc.getBalance());
                 viCoc.setBalance(viCoc.getBalance() + depositAmount);
-                walletRepository.save(viCoc);
-                log.info("Vi coc: " + viCoc.getBalance());
+                walletRepository.save(viCoc); // Lưu lại thay đổi vào ví cọc
+                log.info("Vi coc sau khi coc: " + viCoc.getBalance());
             }
 
+// Cập nhật trạng thái đăng ký của người dùng
             AuctionRegistrationUser auctionRegistrationUser = registrationUserRepository.findByAuctionRegistration_AuctionRegistrationId(newRegistration.getAuctionRegistrationId()).orElse(null);
             if (auctionRegistrationUser != null) {
-                auctionRegistrationUser.setStatusRegistration(true);
-                auctionRegistrationUser.setCreateAt(LocalDateTime.now());
-                auctionRegistrationUser.setUpdateAt(LocalDateTime.now());
-                registrationUserRepository.save(auctionRegistrationUser);
+                auctionRegistrationUser.setStatusRegistration(true); // Đánh dấu đã đăng ký
+                auctionRegistrationUser.setCreateAt(LocalDateTime.now()); // Cập nhật thời gian tạo
+                auctionRegistrationUser.setUpdateAt(LocalDateTime.now()); // Cập nhật thời gian cập nhật
+                registrationUserRepository.save(auctionRegistrationUser); // Lưu lại trạng thái đăng ký
             }
 
-//            Transaction transactionWallet = Transaction.builder()
-//                    .transactionType(TransactionType.DEPOSIT_AUCTION)
-//                    .amount(+(long) depositAmount)
-//                    .transactionStatus(TransactionStatus.COMPLETED)
-//                    .recipient("SYSTEM")
-//                    .sender(requester.getFullName())
-//                    .commissionAmount(0)
-//                    .commissionRate(0)
-//                    .transactionWalletCode(generateTransactionCode())
-//                    .build();
-//            transactionRepository.save(transactionWallet);
-            //tracsaction cuar thang nap
+// Tính toán giao dịch sau khi cập nhật ví
             Transaction transactionUser = Transaction.builder()
                     .transactionType(TransactionType.DEPOSIT_AUCTION)
                     .amount(-(long) depositAmount)
-                    .netAmount((requester.getWallet().getBalance())-depositAmount)
-                    .oldAmount(userWallet.getBalance())
+                    .netAmount((long) userWallet.getBalance()) // Số dư ví người dùng sau khi trừ tiền
+                    .oldAmount((long) initialUserBalance) // Số dư ví người dùng trước khi trừ tiền
                     .transactionStatus(TransactionStatus.COMPLETED)
                     .recipient("Hệ thống đấu giá phiên" + auctionExist.getAuctionId())
-                    .description("Nạp tiền cọc tham gia đấu giá ")
+                    .description("Nạp tiền cọc tham gia đấu giá")
                     .sender(requester.getFullName())
                     .commissionAmount(0)
                     .commissionRate(0)
                     .wallet(userWallet)
                     .transactionWalletCode(generateTransactionCode())
                     .build();
+
+// Lưu giao dịch vào cơ sở dữ liệu
             transactionRepository.save(transactionUser);
+
+// Trả về phản hồi thành công
             return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                     .status(HttpStatus.OK)
                     .data(null)
@@ -194,7 +197,6 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         SecureRandom secureRandom = new SecureRandom();
         return 10000000L + secureRandom.nextInt(90000000); // Random từ 10000000 đến 99999999
     }
-
 
 
     @Override
@@ -230,8 +232,6 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         AuctionRegistrationsResponse auctionRegistrationsResponse = auctionRegistrationsConverter.toAuctionRegistrationsResponse(auctionRegistration);
         return auctionRegistrationsResponse;
     }
-
-
 
 
     @Override
@@ -323,10 +323,6 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
         // Chuyển đổi Page<AuctionRegistration> thành Page<AuctionRegistrationsResponse>
         return auctionRegistrationsPage.map(auctionRegistration -> auctionRegistrationsConverter.toDetailedResponse(auctionRegistration));
     }
-
-
-
-
 
 
     public Integer extractUserIdFromToken(String token) throws Exception {
