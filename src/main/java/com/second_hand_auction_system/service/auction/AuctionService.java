@@ -356,10 +356,11 @@ public class AuctionService implements IAuctionService {
             try {
                 // Xác định thời gian kết thúc của phiên đấu giá
                 ZonedDateTime auctionEndTime = ZonedDateTime.of(
-                        auction.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), // Chuyển từ Date thành LocalDate
-                        auction.getEndTime().toLocalTime(), // Chuyển từ Time thành LocalTime
-                        ZoneId.of("Asia/Ho_Chi_Minh") // ZoneId
+                        auction.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                        auction.getEndTime().toLocalTime(),
+                        ZoneId.of("Asia/Ho_Chi_Minh")
                 );
+
                 // Chỉ xử lý nếu phiên đấu giá thực sự đã kết thúc
                 if (ZonedDateTime.now(systemZoneId).isAfter(auctionEndTime)) {
                     log.info("Đang xử lý phiên đấu giá ID: {}", auction.getAuctionId());
@@ -375,17 +376,29 @@ public class AuctionService implements IAuctionService {
                     Bid winningBid = bids.get(0); // Người đặt giá cao nhất
                     User winner = winningBid.getUser();
 
-                    // Thông báo cho người thắng
-                    emailService.sendWinnerNotification(winner.getEmail(), winningBid);
+                    // Lấy đơn hàng của người thắng
+                    Optional<Order> winningOrderOpt = orderRepository.findByUserAndAuction(winner, auction);
+                    if (winningOrderOpt.isPresent()) {
+                        Order winningOrder = winningOrderOpt.get();
 
-                    // Hoàn tiền cọc cho tất cả người thua
-                    for (int i = 1; i < bids.size(); i++) { // Bắt đầu từ bid thứ hai
-                        Bid losingBid = bids.get(i);
-                        processDepositRefund(losingBid.getUser(), auction);
+                        // Kiểm tra nếu giao dịch của đơn hàng đã hoàn tất (COMPLETED)
+                        boolean hasPaid = transactionRepository.existsByOrderAndTransactionStatus(winningOrder, TransactionStatus.COMPLETED);
+                        if (hasPaid) {
+                            log.info("Giao dịch người thắng đã hoàn tất. Hoàn cọc cho tất cả người thua.");
+
+                            // Hoàn tiền cọc cho tất cả người thua
+                            for (int i = 1; i < bids.size(); i++) { // Bắt đầu từ bid thứ hai (người thua)
+                                Bid losingBid = bids.get(i);
+                                processDepositRefund(losingBid.getUser(), auction);
+                            }
+                        } else {
+                            log.info("Giao dịch người thắng chưa hoàn tất. Giữ lại tiền cọc của người thắng.");
+                            // Nếu giao dịch chưa hoàn tất, giữ lại tiền cọc của người thắng
+                        }
                     }
 
                     // Đánh dấu phiên đấu giá đã xử lý
-                    auction.setStatus(CLOSED);
+                    auction.setStatus(AuctionStatus.COMPLETED);
                     auctionRepository.save(auction);
 
                     log.info("Đã hoàn thành xử lý phiên đấu giá ID: {}", auction.getAuctionId());
@@ -396,6 +409,7 @@ public class AuctionService implements IAuctionService {
         }
     }
 
+
     private void processDepositRefund(User user, Auction auction) {
         try {
             // Lấy ví của người dùng
@@ -403,8 +417,8 @@ public class AuctionService implements IAuctionService {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + user.getEmail()));
 
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
-            Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatus(
-                    userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED);
+            Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
+                    userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED,auction);
 
             if (existingRefund.isPresent()) {
                 log.info("Đã có giao dịch hoàn cọc cho user: " + user.getEmail() + ", sẽ không thực hiện lại.");

@@ -1,6 +1,8 @@
 package com.second_hand_auction_system.repositories;
 
+import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Order;
+import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.utils.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
@@ -51,4 +54,5 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     List<Order> findAllByStatus(OrderStatus status);
 
+    Optional<Order> findByUserAndAuction(User winner, Auction auction);
 }
