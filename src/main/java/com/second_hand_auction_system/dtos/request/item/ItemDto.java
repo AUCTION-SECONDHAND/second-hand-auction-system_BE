@@ -20,7 +20,7 @@ public class ItemDto {
     //private Integer itemId;
 
     @NotBlank(message = "Product name is required")
-    @Size(min = 3, max = 200, message = "Product name must be between 3 and 200 characters")
+
     @JsonProperty("item_name")
     private String itemName;
 
@@ -79,8 +79,6 @@ public class ItemDto {
     @JsonProperty("button_condition")
     private String buttonCondition;
 
-    @JsonProperty("cpu")
-    private String cpu;
 
     @JsonProperty("ram")
     private String ram;

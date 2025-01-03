@@ -15,9 +15,6 @@ public class ItemSpecification extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer itemSpecificationId;
 
-    @Column(name = "cpu")
-    private String cpu;
-
     @Column(name = "ram")
     private String ram;
 

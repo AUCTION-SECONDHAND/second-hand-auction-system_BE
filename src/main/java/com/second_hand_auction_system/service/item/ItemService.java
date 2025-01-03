@@ -75,7 +75,6 @@ public class ItemService implements IItemService {
         item.setUpdateBy(requester.getFullName());
         ItemSpecification itemSpecification = ItemSpecification.builder()
                 .ram(itemDto.getRam())
-                .cpu(itemDto.getCpu())
                 .cameraSpecs(itemDto.getCameraSpecs())
                 .sensors(itemDto.getSensors())
                 .screenSize(itemDto.getScreenSize())

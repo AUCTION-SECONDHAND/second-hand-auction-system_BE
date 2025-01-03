@@ -72,7 +72,6 @@ public class AuctionItemConvert {
         if (item.getItemSpecification() != null) {
             ItemSpecification itemSpecification = item.getItemSpecification();
             itemSpecificationResponse = ItemSpecificationResponse.builder()
-                    .cpu(itemSpecification.getCpu())
                     .ram(itemSpecification.getRam())
                     .screenSize(itemSpecification.getScreenSize())
                     .cameraSpecs(itemSpecification.getCameraSpecs())
@@ -165,7 +164,6 @@ public class AuctionItemConvert {
         if(item.getItemSpecification() != null) {
             ItemSpecification itemSpecification = item.getItemSpecification();
             itemSpecificResponse = ItemSpecificResponse.builder()
-                    .cpu(itemSpecification.getCpu())
                     .ram(itemSpecification.getRam())
                     .itemSpecificationId(itemSpecification.getItemSpecificationId())
                     .sensors(itemSpecification.getSensors())
