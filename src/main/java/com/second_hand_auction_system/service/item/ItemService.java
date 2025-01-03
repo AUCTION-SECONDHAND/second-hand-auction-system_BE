@@ -80,6 +80,15 @@ public class ItemService implements IItemService {
                 .sensors(itemDto.getSensors())
                 .screenSize(itemDto.getScreenSize())
                 .connectivity(itemDto.getConnectivity())
+                .sim(itemDto.getSim())
+                .simSlots(itemDto.getSimSlots())
+                .os(itemDto.getOs())
+                .osFamily(itemDto.getOsFamily())
+                .bluetooth(itemDto.getBluetooth())
+                .usb(itemDto.getUsb())
+                .wlan(itemDto.getWlan())
+                .speed(itemDto.getSpeed())
+                .networkTechnology(itemDto.getNetworkTechnology())
                 .build();
         itemSpecificationRepository.save(itemSpecification);
         item.setItemSpecification(itemSpecification);

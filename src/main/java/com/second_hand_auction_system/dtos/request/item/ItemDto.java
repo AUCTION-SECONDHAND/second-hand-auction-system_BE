@@ -111,4 +111,62 @@ public class ItemDto {
     @NotNull(message = "AuctionType ID is required")
     @JsonProperty("auction_type")
     private Integer auctionType;
+
+
+  // item
+    @JsonProperty( "brand")
+    private String brand;
+
+    @JsonProperty("model")
+    private String model;
+
+    @JsonProperty("serial")
+    private Integer serial;
+
+    @JsonProperty("control_number")
+    private Integer controlNumber;
+
+    @JsonProperty("valid")
+    private Boolean valid;
+
+    @JsonProperty("manufacturer")
+    private String manufacturer;
+
+    @JsonProperty("type")
+    private String type; // Loại thiết bị, e.g., "Smartphone"
+
+    @JsonProperty("device_image")
+    private String deviceImage; // Link ảnh từ API
+
+
+
+   // item specification
+    @JsonProperty("sim")
+    private String sim;
+
+    @JsonProperty("sim_slots")
+    private Integer simSlots;
+
+    @JsonProperty("os")
+    private String os;
+
+    @JsonProperty("os_family")
+    private String osFamily;
+
+    @JsonProperty("bluetooth")
+    private String bluetooth;
+
+    @JsonProperty("usb")
+    private String usb;
+
+    @JsonProperty("wlan")
+    private String wlan;
+
+
+
+    @JsonProperty("speed")
+    private String speed;
+
+    @JsonProperty("network_technology")
+    private String networkTechnology;
 }

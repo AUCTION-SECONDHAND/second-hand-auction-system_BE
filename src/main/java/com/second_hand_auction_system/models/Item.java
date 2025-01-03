@@ -111,4 +111,30 @@ public class Item extends BaseEntity{
     @ManyToOne
     @JoinColumn(name = "auction_type_id")
     private AuctionType auctionType;
+
+    @Column(name = "brand")
+    private String brand;
+
+    @Column(name = "model")
+    private String model;
+
+    @Column(name = "serial")
+    private Integer serial;
+
+    @Column(name = "control_number")
+    private Integer controlNumber;
+
+    @Column(name = "valid")
+    private Boolean valid;
+
+    @Column(name = "manufacturer")
+    private String manufacturer;
+
+    @Column(name = "type")
+    private String type; // Loại thiết bị, e.g., "Smartphone"
+
+    @Column(name = "device_image")
+    private String deviceImage; // Link ảnh từ API
+
+
 }
