@@ -166,7 +166,7 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
                     .netAmount((long) userWallet.getBalance()) // Số dư ví người dùng sau khi trừ tiền
                     .oldAmount((long) initialUserBalance) // Số dư ví người dùng trước khi trừ tiền
                     .transactionStatus(TransactionStatus.COMPLETED)
-                    .recipient("Hệ thống đấu giá phiên" + auctionExist.getAuctionId())
+                    .recipient("Hệ thống đấu giá phiên " + auctionExist.getAuctionId())
                     .description("Nạp tiền cọc tham gia đấu giá")
                     .sender(requester.getFullName())
                     .commissionAmount(0)

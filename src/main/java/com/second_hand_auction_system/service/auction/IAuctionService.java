@@ -5,9 +5,10 @@ import org.springframework.http.ResponseEntity;
 
 public interface IAuctionService {
     void addAuction(AuctionDto auctionDto) throws Exception;
-    void updateAuction(int auctionId,AuctionDto auctionDto) throws Exception;
-    void removeAuction(int auctionId) throws Exception;
 
+    void updateAuction(int auctionId,AuctionDto auctionDto) throws Exception;
+
+    void removeAuction(int auctionId) throws Exception;
 
 //    ResponseEntity<List<AuctionDto>> getAllAuctions(int page, int size);
 

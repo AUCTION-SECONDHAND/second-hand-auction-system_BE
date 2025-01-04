@@ -67,12 +67,6 @@ public class AuctionService implements IAuctionService {
         if (!auctionType.getAuctionTypeName().equals(itemExist.getAuctionType().getAuctionTypeName())) {
             throw new Exception("Loại đấu giá không khớp với loại đấu giá của mặt hàng");
         }
-
-        // Kiểm tra nếu thời gian bắt đầu không sau thời gian kết thúc
-        if (auctionDto.getStartDate().after(auctionDto.getEndDate())) {
-            throw new Exception("Ngày bắt đầu đấu giá không được sau ngày kết thúc");
-        }
-
         Date currentDate = new Date();
         long diffInMillies = auctionDto.getStartDate().getTime() - currentDate.getTime();
         long diffDays = diffInMillies / (24 * 60 * 60 * 1000);
@@ -396,9 +390,6 @@ public class AuctionService implements IAuctionService {
                             // Nếu giao dịch chưa hoàn tất, giữ lại tiền cọc của người thắng
                         }
                     }
-
-                    // Đánh dấu phiên đấu giá đã xử lý
-                    auction.setStatus(AuctionStatus.COMPLETED);
                     auctionRepository.save(auction);
 
                     log.info("Đã hoàn thành xử lý phiên đấu giá ID: {}", auction.getAuctionId());
@@ -451,7 +442,8 @@ public class AuctionService implements IAuctionService {
 
             // Lưu giao dịch hoàn cọc vào cơ sở dữ liệu
             transactionRepository.save(refundTransaction);
-
+            auction.setStatus(AuctionStatus.COMPLETED);
+            auctionRepository.save(auction);
             log.info("Hoàn cọc cho user: {}, Số tiền: {}", userWallet.getUser().getEmail(), depositAmount);
             emailService.sendResultForAuction(userWallet.getUser().getEmail(), null);
 
