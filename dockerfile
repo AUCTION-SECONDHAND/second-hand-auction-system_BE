@@ -1,6 +1,6 @@
 FROM openjdk:17
 
-ARG FILE_JAR=target/second-hand-auction-system_BE-0.0.1-SNAPSHOT.jar
+ARG FILE_JAR=target/auction.jar
 
 ADD ${FILE_JAR} /api-service.jar
 
