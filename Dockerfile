@@ -2,12 +2,11 @@
 FROM maven:3-openjdk-17 AS build
 WORKDIR /app
 COPY . .
-RUN mvn clean package -P dev  # Sửa lại cú pháp profile nếu cần
+RUN mvn clean package  # Không dùng profile
 
 # Run stage
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-# Chắc chắn rằng đường dẫn đúng tới file JAR sau khi build
 COPY --from=build /app/target/second-hand-auction-system_BE-0.0.1-SNAPSHOT.jar api-service.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "api-service.jar"]
