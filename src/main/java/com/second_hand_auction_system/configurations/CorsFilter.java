@@ -10,26 +10,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 @Component("customCorsFilter")
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorsFilter extends OncePerRequestFilter {
-    private static final List<String> ALLOWED_ORIGINS = Arrays.asList(
-            "https://auction-system-plum.vercel.app",
-            "http://localhost:5174"
-    );
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-//        response.setHeader("Access-Control-Allow-Origin", "https://auction-system-plum.vercel.app");  // Sửa lại thành tên miền của bạn
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
+        response.setHeader("Access-Control-Allow-Origin", "https://auction-system-plum.vercel.app");  // Sửa lại thành tên miền của bạn
 
-        String origin = ((HttpServletRequest) request).getHeader("Origin");
-
-        if (ALLOWED_ORIGINS.contains(origin)) {
-            httpResponse.setHeader("Access-Control-Allow-Origin", origin);
-        }
+        // Cấu hình các phương thức được phép
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
 
         // Các header được phép trong yêu cầu
