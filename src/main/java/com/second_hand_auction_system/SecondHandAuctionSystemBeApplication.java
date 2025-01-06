@@ -10,7 +10,7 @@ import java.util.TimeZone;
 @EnableScheduling
 public class SecondHandAuctionSystemBeApplication {
     public static void main(String[] args) {
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+//        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         SpringApplication.run(SecondHandAuctionSystemBeApplication.class, args);
     }
 
