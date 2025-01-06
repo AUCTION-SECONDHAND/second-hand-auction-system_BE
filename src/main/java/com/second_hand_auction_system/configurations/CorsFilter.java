@@ -17,25 +17,17 @@ public class CorsFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        response.setHeader("Access-Control-Allow-Origin", "https://auction-system-plum.vercel.app");  // Sửa lại thành tên miền của bạn
-
-        // Cấu hình các phương thức được phép
+        response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-
-        // Các header được phép trong yêu cầu
-        response.setHeader("Access-Control-Allow-Headers", "authorization, content-type, xsrf-token, x-requested-with");
-
-        // Expose header nếu cần
+        response.setHeader("Access-Control-Allow-Headers", "authorization, content-type, xsrf-token");
         response.addHeader("Access-Control-Expose-Headers", "xsrf-token");
 
-        // Cho phép cookies và credentials
-        response.setHeader("Access-Control-Allow-Credentials", "true");
-
-        // Nếu yêu cầu là OPTIONS, trả về thành công
-        if ("OPTIONS".equals(request.getMethod())) {
+        // Bỏ qua OPTIONS cho WebSocket
+        if ("OPTIONS".equals(request.getMethod()) || request.getRequestURI().startsWith("/socket")) {
             response.setStatus(HttpServletResponse.SC_OK);
         } else {
             filterChain.doFilter(request, response);
         }
     }
 }
+
