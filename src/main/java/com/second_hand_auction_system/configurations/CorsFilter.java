@@ -17,16 +17,22 @@ public class CorsFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // Cho phép tất cả nguồn hoặc có thể chỉ định tên miền cụ thể thay vì "*"
-        response.setHeader("Access-Control-Allow-Origin", "http://103.163.24.146:8080/*");  // Thay đổi domain nếu cần
+        // Chỉ định tên miền cụ thể thay vì "*"
+        response.setHeader("Access-Control-Allow-Origin", "http://103.163.24.146:8080");  // Sửa lại thành tên miền của bạn
+
+        // Cấu hình các phương thức được phép
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+
+        // Các header được phép trong yêu cầu
         response.setHeader("Access-Control-Allow-Headers", "authorization, content-type, xsrf-token, x-requested-with");
+
+        // Expose header nếu cần
         response.addHeader("Access-Control-Expose-Headers", "xsrf-token");
 
-        // Cho phép cookies, credentials nếu cần
+        // Cho phép cookies và credentials
         response.setHeader("Access-Control-Allow-Credentials", "true");
 
-        // Nếu là yêu cầu OPTIONS, trả về thành công ngay lập tức
+        // Nếu yêu cầu là OPTIONS, trả về thành công
         if ("OPTIONS".equals(request.getMethod())) {
             response.setStatus(HttpServletResponse.SC_OK);
         } else {
