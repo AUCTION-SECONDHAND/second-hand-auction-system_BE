@@ -138,14 +138,11 @@ public class AuctionService implements IAuctionService {
 
     @Override
     public void updateAuction(int auctionId, AuctionDto auctionDto) throws Exception {
-
-        //        Item itemExist = itemRepository.findById(auctionDto.getItem())
-        //                .orElseThrow(() -> new Exception("Item not found"));
-        // Kiểm tra xem Auction tồn tại hay không
+        // Tìm kiếm phiên đấu giá theo ID
         Auction auctionExist = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new Exception("Phiên đấu giá không tìm thấy"));
 
-        // Cập nhật từng trường nếu chúng được truyền vào
+        // Cập nhật các trường của phiên đấu giá nếu có thay đổi
         if (auctionDto.getStartTime() != null) {
             auctionExist.setStartTime(auctionDto.getStartTime());
         }
@@ -185,44 +182,18 @@ public class AuctionService implements IAuctionService {
         if (auctionDto.getComment() != null) {
             auctionExist.setComment(auctionDto.getComment());
         }
-
         if (auctionExist.getEndDate() != null && auctionExist.getEndDate().before(new Date())) {
-            auctionExist.setStatus(AuctionStatus.CLOSED); // Nếu kết thúc thời gian thì set trạng thái hoàn thành
-            List<Bid> bids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auctionExist.getAuctionId());
-            if (bids.isEmpty()) {
-                log.warn("Phiên đấu giá không có bid nào, không cần xử lý.");
-                return;
-            }
-            Bid winningBid = bids.get(0); // Người đặt giá cao nhất
-            User winner = winningBid.getUser();
-            Optional<Order> winningOrderOpt = orderRepository.findByUserAndAuction(winner, auctionExist);
-            if (winningOrderOpt.isPresent()) {
-                Order winningOrder = winningOrderOpt.get();
-
-                // Kiểm tra nếu giao dịch của đơn hàng đã hoàn tất (COMPLETED)
-                boolean hasPaid = transactionRepository.existsByOrderAndTransactionStatus(winningOrder, TransactionStatus.COMPLETED);
-                if (hasPaid) {
-                    log.info("Giao dịch người thắng đã hoàn tất. Hoàn cọc cho tất cả người thua.");
-                    // Hoàn tiền cọc cho tất cả người thua
-                    for (int i = 1; i < bids.size(); i++) { // Bắt đầu từ bid thứ hai (người thua)
-                        Bid losingBid = bids.get(i);
-                        processDepositRefund(losingBid.getUser(), auctionExist);
-                    }
-                } else {
-                    log.info("Giao dịch người thắng chưa hoàn tất. Giữ lại tiền cọc của người thắng.");
-                }
-            }
-
+            auctionExist.setStatus(AuctionStatus.CLOSED);
         } else if (auctionExist.getStartDate() != null && auctionExist.getStartDate().before(new Date())) {
-            auctionExist.setStatus(AuctionStatus.OPEN); // Nếu thời gian bắt đầu đã qua thì set OPEN
+            auctionExist.setStatus(AuctionStatus.OPEN); // Đặt trạng thái là OPEN nếu phiên đấu giá đang diễn ra
         } else {
-            auctionExist.setStatus(AuctionStatus.PENDING);
+            auctionExist.setStatus(AuctionStatus.PENDING); // Đặt trạng thái là PENDING nếu phiên đấu giá chưa bắt đầu
         }
 
-
-        // Lưu thông tin sau khi kiểm tra từng trường
+        // Lưu các thay đổi vào cơ sở dữ liệu
         auctionRepository.save(auctionExist);
     }
+
 
 
     @Override
@@ -363,66 +334,47 @@ public class AuctionService implements IAuctionService {
     }
 
 
-//    @Scheduled(fixedRate = 60000, zone = "Asia/Ho_Chi_Minh")
-//    @Transactional
-//    public void processAuctionCompletion() {
-//        ZoneId systemZoneId = ZoneId.of("Asia/Ho_Chi_Minh");
-//
-//        // Lấy danh sách các phiên đấu giá đã kết thúc nhưng chưa xử lý hoàn tất
-//        List<Auction> closedAuctions = auctionRepository.findByStatus(AuctionStatus.CLOSED);
-//        for (Auction auction : closedAuctions) {
-//            try {
-//                // Xác định thời gian kết thúc của phiên đấu giá
-//                ZonedDateTime auctionEndTime = ZonedDateTime.of(
-//                        auction.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
-//                        auction.getEndTime().toLocalTime(),
-//                        ZoneId.of("Asia/Ho_Chi_Minh")
-//                );
-//
-//                // Chỉ xử lý nếu phiên đấu giá thực sự đã kết thúc
-//                if (ZonedDateTime.now(systemZoneId).isAfter(auctionEndTime)) {
-//                    log.info("Đang xử lý phiên đấu giá ID: {}", auction.getAuctionId());
-//
-//                    // Lấy danh sách tất cả các bid
-//                    List<Bid> bids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
-//                    if (bids.isEmpty()) {
-//                        log.warn("Phiên đấu giá không có bid nào, không cần xử lý.");
-//                        continue;
-//                    }
-//
-//                    // Xác định người thắng cuộc
-//                    Bid winningBid = bids.get(0); // Người đặt giá cao nhất
-//                    User winner = winningBid.getUser();
-//
-//                    // Lấy đơn hàng của người thắng
-//                    Optional<Order> winningOrderOpt = orderRepository.findByUserAndAuction(winner, auction);
-//                    if (winningOrderOpt.isPresent()) {
-//                        Order winningOrder = winningOrderOpt.get();
-//
-//                        // Kiểm tra nếu giao dịch của đơn hàng đã hoàn tất (COMPLETED)
-//                        boolean hasPaid = transactionRepository.existsByOrderAndTransactionStatus(winningOrder, TransactionStatus.COMPLETED);
-//                        if (hasPaid) {
-//                            log.info("Giao dịch người thắng đã hoàn tất. Hoàn cọc cho tất cả người thua.");
-//
-//                            // Hoàn tiền cọc cho tất cả người thua
-//                            for (int i = 1; i < bids.size(); i++) { // Bắt đầu từ bid thứ hai (người thua)
-//                                Bid losingBid = bids.get(i);
-//                                processDepositRefund(losingBid.getUser(), auction);
-//                            }
-//                        } else {
-//                            log.info("Giao dịch người thắng chưa hoàn tất. Giữ lại tiền cọc của người thắng.");
-//                            // Nếu giao dịch chưa hoàn tất, giữ lại tiền cọc của người thắng
-//                        }
-//                    }
-//                    auctionRepository.save(auction);
-//
-//                    log.info("Đã hoàn thành xử lý phiên đấu giá ID: {}", auction.getAuctionId());
-//                }
-//            } catch (Exception e) {
-//                log.error("Lỗi khi xử lý phiên đấu giá ID: " + auction.getAuctionId(), e);
-//            }
-//        }
-//    }
+    @Scheduled(fixedRate = 60000, zone = "Asia/Ho_Chi_Minh")
+    @Transactional
+    public void processAuctionCompletion() {
+        ZoneId systemZoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        // Lấy danh sách các phiên đấu giá đã kết thúc nhưng chưa xử lý hoàn tất
+        List<Auction> closedAuctions = auctionRepository.findByStatus(AuctionStatus.CLOSED);
+        for (Auction auction : closedAuctions) {
+            try {
+                // Xác định thời gian kết thúc của phiên đấu giá
+                ZonedDateTime auctionEndTime = ZonedDateTime.of(
+                        auction.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                        auction.getEndTime().toLocalTime(),
+                        ZoneId.of("Asia/Ho_Chi_Minh")
+                );
+
+                // Chỉ xử lý nếu phiên đấu giá thực sự đã kết thúc
+                if (ZonedDateTime.now(systemZoneId).isAfter(auctionEndTime)) {
+                    log.info("Đang xử lý phiên đấu giá ID: {}", auction.getAuctionId());
+
+                    // Lấy danh sách tất cả các bid
+                    List<Bid> bids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+                    if (bids.isEmpty()) {
+                        log.warn("Phiên đấu giá không có bid nào, không cần xử lý.");
+                        continue;
+                    }
+
+                    // Hoàn tiền cọc cho tất cả người thua, bắt đầu từ bid thứ hai
+                    for (int i = 1; i < bids.size(); i++) {
+                        Bid losingBid = bids.get(i);
+                        processDepositRefund(losingBid.getUser(), auction);
+                    }
+
+                    log.info("Đã hoàn tất xử lý phiên đấu giá ID: {}", auction.getAuctionId());
+                }
+            } catch (Exception e) {
+                log.error("Lỗi khi xử lý phiên đấu giá ID: " + auction.getAuctionId(), e);
+            }
+        }
+    }
+
 
 
     private void processDepositRefund(User user, Auction auction) {
