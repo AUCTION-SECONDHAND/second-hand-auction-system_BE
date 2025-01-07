@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.dtos.responses.report;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.utils.ReportPriority;
 import com.second_hand_auction_system.utils.ReportStatus;
@@ -42,5 +43,12 @@ public class ReportResponse {
 
     @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
     private LocalDateTime responseUpdateTime;
+    @JsonProperty("created_at")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", shape = JsonFormat.Shape.STRING)
+    private LocalDateTime createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", shape = JsonFormat.Shape.STRING)
+    @JsonProperty("updated_at")
+    private LocalDateTime updatedAt;
 
 }

@@ -75,7 +75,7 @@ public class ReportController {
     }
 
     @GetMapping("")
-    public ResponseEntity<?> getRepor(
+    public ResponseEntity<?> getReport(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "limit", defaultValue = "10") int limit
     ) throws Exception {
