@@ -210,7 +210,6 @@ public class AuctionService implements IAuctionService {
                     }
                 } else {
                     log.info("Giao dịch người thắng chưa hoàn tất. Giữ lại tiền cọc của người thắng.");
-                    // Nếu giao dịch chưa hoàn tất, giữ lại tiền cọc của người thắng
                 }
             }
 
