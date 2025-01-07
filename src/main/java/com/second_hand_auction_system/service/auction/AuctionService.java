@@ -186,17 +186,47 @@ public class AuctionService implements IAuctionService {
             auctionExist.setComment(auctionDto.getComment());
         }
 
-        if (auctionExist.getEndDate() != null && auctionExist.getEndDate().before(new Date())) {
-            auctionExist.setStatus(AuctionStatus.CLOSED); // Nếu kết thúc thời gian thì set trạng thái hoàn thành
-        } else if (auctionExist.getStartDate() != null && auctionExist.getStartDate().before(new Date())) {
-            auctionExist.setStatus(AuctionStatus.OPEN); // Nếu thời gian bắt đầu đã qua thì set OPEN
-        } else {
+        Date currentDateTime = new Date(); // Lấy thời gian hiện tại
+
+// Kiểm tra nếu đấu giá đã kết thúc
+        if (auctionExist.getEndDate() != null && auctionExist.getEndTime() != null &&
+                combineDateAndTime(auctionExist.getEndDate(), auctionExist.getEndTime()).before(currentDateTime)) {
+            auctionExist.setStatus(AuctionStatus.CLOSED);
+        }
+// Kiểm tra nếu đấu giá đang mở
+        else if (auctionExist.getStartDate() != null && auctionExist.getStartTime() != null &&
+                combineDateAndTime(auctionExist.getStartDate(), auctionExist.getStartTime()).before(currentDateTime)) {
+            auctionExist.setStatus(AuctionStatus.OPEN);
+        }
+// Nếu chưa bắt đầu, đặt trạng thái là PENDING
+        else {
             auctionExist.setStatus(AuctionStatus.PENDING);
         }
 
 
-        // Lưu thông tin sau khi kiểm tra từng trường
         auctionRepository.save(auctionExist);
+    }
+
+    private Date combineDateAndTime(Date date, Date time) {
+        Calendar calendar = Calendar.getInstance();
+
+        // Set ngày
+        Calendar datePart = Calendar.getInstance();
+        datePart.setTime(date);
+
+        // Set giờ
+        Calendar timePart = Calendar.getInstance();
+        timePart.setTime(time);
+
+        calendar.set(Calendar.YEAR, datePart.get(Calendar.YEAR));
+        calendar.set(Calendar.MONTH, datePart.get(Calendar.MONTH));
+        calendar.set(Calendar.DAY_OF_MONTH, datePart.get(Calendar.DAY_OF_MONTH));
+        calendar.set(Calendar.HOUR_OF_DAY, timePart.get(Calendar.HOUR_OF_DAY));
+        calendar.set(Calendar.MINUTE, timePart.get(Calendar.MINUTE));
+        calendar.set(Calendar.SECOND, timePart.get(Calendar.SECOND));
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        return calendar.getTime();
     }
 
 

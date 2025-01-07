@@ -86,4 +86,22 @@ public class ItemDetailResponse {
     private int numberParticipant;
 
     private Integer checkBid;
+
+
+    private String brand;
+
+    private String model;
+
+    private Integer serial;
+
+    private Integer controlNumber;
+
+    private Boolean valid;
+
+    private String manufacturer;
+
+    private String type; // Loại thiết bị, e.g., "Smartphone"
+
+    private String deviceImage; // Link ảnh từ API
+
 }

@@ -526,7 +526,8 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    @Scheduled(fixedRate = 600000)
+   // @Scheduled(fixedRate = 600000)
+    @Scheduled(fixedRate = 600000) //1 phút
     public void updateOrderStatuses() {
         // Retrieve all orders that are pending status updates
         List<Order> ordersToUpdate = orderRepository.findAll(); // Or some other filter condition
