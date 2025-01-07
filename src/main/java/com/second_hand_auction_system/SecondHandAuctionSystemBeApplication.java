@@ -13,6 +13,7 @@ public class SecondHandAuctionSystemBeApplication {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
 
 
+
         SpringApplication.run(SecondHandAuctionSystemBeApplication.class, args);
     }
 

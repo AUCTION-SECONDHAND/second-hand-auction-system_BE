@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.GH_USERNAME }}
           password: ${{ secrets.GH_TOKEN }}
           tags: ${{ env.TAGS }}
-          dockerfile: dockerfile
+          dockerfile: Dockerfile
 
   deploy:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'

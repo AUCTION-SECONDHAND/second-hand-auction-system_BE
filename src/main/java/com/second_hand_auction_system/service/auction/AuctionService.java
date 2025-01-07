@@ -204,6 +204,7 @@ public class AuctionService implements IAuctionService {
         }
 
 
+        // Lưu thông tin sau khi kiểm tra từng trường
         auctionRepository.save(auctionExist);
     }
 
@@ -396,39 +397,20 @@ public class AuctionService implements IAuctionService {
                         continue;
                     }
 
-                    // Xác định người thắng cuộc
-                    Bid winningBid = bids.get(0); // Người đặt giá cao nhất
-                    User winner = winningBid.getUser();
-
-                    // Lấy đơn hàng của người thắng
-                    Optional<Order> winningOrderOpt = orderRepository.findByUserAndAuction(winner, auction);
-                    if (winningOrderOpt.isPresent()) {
-                        Order winningOrder = winningOrderOpt.get();
-
-                        // Kiểm tra nếu giao dịch của đơn hàng đã hoàn tất (COMPLETED)
-                        boolean hasPaid = transactionRepository.existsByOrderAndTransactionStatus(winningOrder, TransactionStatus.COMPLETED);
-                        if (hasPaid) {
-                            log.info("Giao dịch người thắng đã hoàn tất. Hoàn cọc cho tất cả người thua.");
-
-                            // Hoàn tiền cọc cho tất cả người thua
-                            for (int i = 1; i < bids.size(); i++) { // Bắt đầu từ bid thứ hai (người thua)
-                                Bid losingBid = bids.get(i);
-                                processDepositRefund(losingBid.getUser(), auction);
-                            }
-                        } else {
-                            log.info("Giao dịch người thắng chưa hoàn tất. Giữ lại tiền cọc của người thắng.");
-                            // Nếu giao dịch chưa hoàn tất, giữ lại tiền cọc của người thắng
-                        }
+                    // Hoàn tiền cọc cho tất cả người thua, bắt đầu từ bid thứ hai
+                    for (int i = 1; i < bids.size(); i++) {
+                        Bid losingBid = bids.get(i);
+                        processDepositRefund(losingBid.getUser(), auction);
                     }
-                    auctionRepository.save(auction);
 
-                    log.info("Đã hoàn thành xử lý phiên đấu giá ID: {}", auction.getAuctionId());
+                    log.info("Đã hoàn tất xử lý phiên đấu giá ID: {}", auction.getAuctionId());
                 }
             } catch (Exception e) {
                 log.error("Lỗi khi xử lý phiên đấu giá ID: " + auction.getAuctionId(), e);
             }
         }
     }
+
 
 
     private void processDepositRefund(User user, Auction auction) {
@@ -439,7 +421,7 @@ public class AuctionService implements IAuctionService {
 
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
             Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
-                    userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED,auction);
+                    userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED, auction);
 
             if (existingRefund.isPresent()) {
                 log.info("Đã có giao dịch hoàn cọc cho user: " + user.getEmail() + ", sẽ không thực hiện lại.");
@@ -483,16 +465,9 @@ public class AuctionService implements IAuctionService {
     }
 
 
-
-
-
     private long random() {
         return (long) (Math.random() * 900000) + 100000; // Tạo số trong khoảng [100000, 999999]
     }
-
-
-
-
 
 
     private Bid getWinningBid(List<Bid> bids) {
