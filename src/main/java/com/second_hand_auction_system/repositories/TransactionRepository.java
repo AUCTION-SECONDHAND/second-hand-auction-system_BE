@@ -1,9 +1,6 @@
 package com.second_hand_auction_system.repositories;
 
-import com.second_hand_auction_system.models.Auction;
-import com.second_hand_auction_system.models.Order;
-import com.second_hand_auction_system.models.Transaction;
-import com.second_hand_auction_system.models.Wallet;
+import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionStatus;
 import com.second_hand_auction_system.utils.TransactionType;
@@ -44,4 +41,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
             @Param("auction") Auction auction);
 
     boolean existsByOrderAndTransactionStatus(Order winningOrder, TransactionStatus transactionStatus);
+
+    boolean existsByWallet_UserAndOrder_AuctionAndTransactionTypeAndTransactionStatus(
+            User user,
+            Auction auction,
+            TransactionType transactionType,
+            TransactionStatus transactionStatus
+    );
 }

@@ -67,12 +67,6 @@ public class AuctionService implements IAuctionService {
         if (!auctionType.getAuctionTypeName().equals(itemExist.getAuctionType().getAuctionTypeName())) {
             throw new Exception("Loại đấu giá không khớp với loại đấu giá của mặt hàng");
         }
-
-        // Kiểm tra nếu thời gian bắt đầu không sau thời gian kết thúc
-        if (auctionDto.getStartDate().after(auctionDto.getEndDate())) {
-            throw new Exception("Ngày bắt đầu đấu giá không được sau ngày kết thúc");
-        }
-
         Date currentDate = new Date();
         long diffInMillies = auctionDto.getStartDate().getTime() - currentDate.getTime();
         long diffDays = diffInMillies / (24 * 60 * 60 * 1000);
@@ -144,14 +138,11 @@ public class AuctionService implements IAuctionService {
 
     @Override
     public void updateAuction(int auctionId, AuctionDto auctionDto) throws Exception {
-
-        //        Item itemExist = itemRepository.findById(auctionDto.getItem())
-        //                .orElseThrow(() -> new Exception("Item not found"));
-        // Kiểm tra xem Auction tồn tại hay không
+        // Tìm kiếm phiên đấu giá theo ID
         Auction auctionExist = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new Exception("Phiên đấu giá không tìm thấy"));
 
-        // Cập nhật từng trường nếu chúng được truyền vào
+        // Cập nhật các trường của phiên đấu giá nếu có thay đổi
         if (auctionDto.getStartTime() != null) {
             auctionExist.setStartTime(auctionDto.getStartTime());
         }
@@ -191,19 +182,18 @@ public class AuctionService implements IAuctionService {
         if (auctionDto.getComment() != null) {
             auctionExist.setComment(auctionDto.getComment());
         }
-
         if (auctionExist.getEndDate() != null && auctionExist.getEndDate().before(new Date())) {
-            auctionExist.setStatus(AuctionStatus.CLOSED); // Nếu kết thúc thời gian thì set trạng thái hoàn thành
+            auctionExist.setStatus(AuctionStatus.CLOSED);
         } else if (auctionExist.getStartDate() != null && auctionExist.getStartDate().before(new Date())) {
-            auctionExist.setStatus(AuctionStatus.OPEN); // Nếu thời gian bắt đầu đã qua thì set OPEN
+            auctionExist.setStatus(AuctionStatus.OPEN); // Đặt trạng thái là OPEN nếu phiên đấu giá đang diễn ra
         } else {
-            auctionExist.setStatus(AuctionStatus.PENDING);
+            auctionExist.setStatus(AuctionStatus.PENDING); // Đặt trạng thái là PENDING nếu phiên đấu giá chưa bắt đầu
         }
 
-
-        // Lưu thông tin sau khi kiểm tra từng trường
+        // Lưu các thay đổi vào cơ sở dữ liệu
         auctionRepository.save(auctionExist);
     }
+
 
 
     @Override
@@ -344,7 +334,6 @@ public class AuctionService implements IAuctionService {
     }
 
 
-
     @Scheduled(fixedRate = 60000, zone = "Asia/Ho_Chi_Minh")
     @Transactional
     public void processAuctionCompletion() {
@@ -372,42 +361,20 @@ public class AuctionService implements IAuctionService {
                         continue;
                     }
 
-                    // Xác định người thắng cuộc
-                    Bid winningBid = bids.get(0); // Người đặt giá cao nhất
-                    User winner = winningBid.getUser();
-
-                    // Lấy đơn hàng của người thắng
-                    Optional<Order> winningOrderOpt = orderRepository.findByUserAndAuction(winner, auction);
-                    if (winningOrderOpt.isPresent()) {
-                        Order winningOrder = winningOrderOpt.get();
-
-                        // Kiểm tra nếu giao dịch của đơn hàng đã hoàn tất (COMPLETED)
-                        boolean hasPaid = transactionRepository.existsByOrderAndTransactionStatus(winningOrder, TransactionStatus.COMPLETED);
-                        if (hasPaid) {
-                            log.info("Giao dịch người thắng đã hoàn tất. Hoàn cọc cho tất cả người thua.");
-
-                            // Hoàn tiền cọc cho tất cả người thua
-                            for (int i = 1; i < bids.size(); i++) { // Bắt đầu từ bid thứ hai (người thua)
-                                Bid losingBid = bids.get(i);
-                                processDepositRefund(losingBid.getUser(), auction);
-                            }
-                        } else {
-                            log.info("Giao dịch người thắng chưa hoàn tất. Giữ lại tiền cọc của người thắng.");
-                            // Nếu giao dịch chưa hoàn tất, giữ lại tiền cọc của người thắng
-                        }
+                    // Hoàn tiền cọc cho tất cả người thua, bắt đầu từ bid thứ hai
+                    for (int i = 1; i < bids.size(); i++) {
+                        Bid losingBid = bids.get(i);
+                        processDepositRefund(losingBid.getUser(), auction);
                     }
 
-                    // Đánh dấu phiên đấu giá đã xử lý
-                    auction.setStatus(AuctionStatus.COMPLETED);
-                    auctionRepository.save(auction);
-
-                    log.info("Đã hoàn thành xử lý phiên đấu giá ID: {}", auction.getAuctionId());
+                    log.info("Đã hoàn tất xử lý phiên đấu giá ID: {}", auction.getAuctionId());
                 }
             } catch (Exception e) {
                 log.error("Lỗi khi xử lý phiên đấu giá ID: " + auction.getAuctionId(), e);
             }
         }
     }
+
 
 
     private void processDepositRefund(User user, Auction auction) {
@@ -418,7 +385,7 @@ public class AuctionService implements IAuctionService {
 
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
             Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
-                    userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED,auction);
+                    userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED, auction);
 
             if (existingRefund.isPresent()) {
                 log.info("Đã có giao dịch hoàn cọc cho user: " + user.getEmail() + ", sẽ không thực hiện lại.");
@@ -451,7 +418,8 @@ public class AuctionService implements IAuctionService {
 
             // Lưu giao dịch hoàn cọc vào cơ sở dữ liệu
             transactionRepository.save(refundTransaction);
-
+            auction.setStatus(AuctionStatus.COMPLETED);
+            auctionRepository.save(auction);
             log.info("Hoàn cọc cho user: {}, Số tiền: {}", userWallet.getUser().getEmail(), depositAmount);
             emailService.sendResultForAuction(userWallet.getUser().getEmail(), null);
 
@@ -461,16 +429,9 @@ public class AuctionService implements IAuctionService {
     }
 
 
-
-
-
     private long random() {
         return (long) (Math.random() * 900000) + 100000; // Tạo số trong khoảng [100000, 999999]
     }
-
-
-
-
 
 
     private Bid getWinningBid(List<Bid> bids) {

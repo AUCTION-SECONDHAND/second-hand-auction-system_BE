@@ -16,7 +16,6 @@ import com.second_hand_auction_system.service.bid.BidService;
 import com.second_hand_auction_system.service.ghn.GHNService;
 import com.second_hand_auction_system.service.jwt.JwtService;
 import com.second_hand_auction_system.utils.*;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -53,6 +53,7 @@ public class OrderService implements IOrderService {
     private final GHNService ghnService;
 
     @Override
+    @Transactional
     public ResponseEntity<?> create(OrderDTO order) {
         // Kiểm tra xem phiên đấu giá có tồn tại hay không
         var auction = auctionRepository.findById(order.getAuctionId()).orElse(null);
@@ -138,8 +139,9 @@ public class OrderService implements IOrderService {
                 .shippingMethod("free shipping")
                 .auction(auction)
                 .orderCode(order.getOrderCode())
+                .paymentMethod(order.getPaymentMethod())
                 .build();
-
+        orderRepository.save(orderEntity);
         // Xử lý ví nếu paymentMethod là WALLET_PAYMENT
         if (order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)) {
             try {
@@ -178,10 +180,10 @@ public class OrderService implements IOrderService {
                 customerWallet.setBalance(newBalance);
                 walletRepository.save(customerWallet);
 
-// Log số dư sau khi cập nhật
+                // Log số dư sau khi cập nhật
                 log.info("Wallet balance after deduction: " + newBalance);
 
-// Tạo và lưu giao dịch
+                // Tạo và lưu giao dịch
                 Transaction transactionWallet = new Transaction();
                 transactionWallet.setAmount(-(long) orderAmount); // Giá trị giao dịch âm
                 transactionWallet.setWallet(customerWallet); // Liên kết với ví
@@ -197,20 +199,42 @@ public class OrderService implements IOrderService {
                 transactionWallet.setDescription(order.getNote());
                 transactionWallet.setTransactionWalletCode(random());
                 transactionSystemRepository.save(transactionWallet);
-
                 log.info("Transaction saved successfully with details: " + transactionWallet);
-
-                log.info("Transaction saved successfully with details: " + transactionWallet);
-
                 // Cập nhật trạng thái phiên đấu giá sau khi thanh toán thành công
-                auction.setStatus(AuctionStatus.COMPLETED);
                 auctionRepository.save(auction);
+                // Hoàn tiền cọc cho người thắng đấu giá
+                Wallet depositWallet = walletRepository.findWalletByAuctionId(auction.getAuctionId()).orElse(null);
+                if (depositWallet != null) {
+                    long depositAmount = (long) (auction.getPercentDeposit() * auction.getBuyNowPrice());
+                    long oldDepositBalance = (long) depositWallet.getBalance();
+                    long newDepositBalance = oldDepositBalance + depositAmount;
+
+                    // Cập nhật số dư ví người thắng đấu giá
+                    depositWallet.setBalance(newDepositBalance);
+                    walletRepository.save(depositWallet);
+                    // Tạo giao dịch hoàn tiền
+                    Transaction refundTransaction = new Transaction();
+                    refundTransaction.setAmount(depositAmount); // Số tiền hoàn cọc (dương)
+                    refundTransaction.setWallet(depositWallet); // Ví của người thắng đấu giá
+                    refundTransaction.setOldAmount(oldDepositBalance); // Số dư trước khi hoàn tiền
+                    refundTransaction.setNetAmount(newDepositBalance); // Số dư sau khi hoàn tiền
+                    refundTransaction.setTransactionStatus(TransactionStatus.COMPLETED);
+                    refundTransaction.setTransactionType(TransactionType.REFUND); // Loại giao dịch là hoàn tiền
+                    refundTransaction.setDescription("Hoàn tiền cọc sau khi thanh toán đơn hàng thành công");
+                    refundTransaction.setSender("Hệ thống");
+                    refundTransaction.setRecipient(requester.getFullName());
+                    refundTransaction.setTransactionWalletCode(random()); // Mã giao dịch ngẫu nhiên
+                    transactionSystemRepository.save(refundTransaction);
+
+                    log.info("Deposit refund transaction saved successfully: " + refundTransaction);
+                }
 
                 return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                         .data("Success")
                         .message("Order created successfully")
                         .status(HttpStatus.OK)
                         .build());
+
             } catch (Exception ex) {
                 log.error("Error occurred during wallet payment processing: ", ex);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
@@ -587,132 +611,6 @@ public class OrderService implements IOrderService {
     }
 
 
-//    @Scheduled(fixedRate = 300000) // 5 phút
-//    @Transactional
-//    public void processCompletedOrders() {
-//        List<Order> completedOrders = orderRepository.findAllByStatus(OrderStatus.delivered);
-//
-//        for (Order order : completedOrders) {
-//            try {
-//                // Kiểm tra trạng thái giao dịch của đơn hàng trước
-//                Transaction orderTransaction = (Transaction) transactionSystemRepository.findTransactionByOrder(order)
-//                        .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch cho đơn hàng: " + order.getOrderCode()));
-//                if (orderTransaction.getTransactionStatus() != TransactionStatus.COMPLETED) {
-//                    System.err.println("Đơn hàng " + order.getOrderCode() + " chưa hoàn tất giao dịch.");
-//                    continue; // Bỏ qua đơn hàng này nếu giao dịch chưa hoàn tất
-//                }
-//                Wallet userWallet = walletRepository.findByUserId(order.getUser().getId())
-//                        .orElseThrow(() -> new RuntimeException("Không tìm thấy ví người dùng cho đơn hàng: " + order.getOrderCode()));
-//
-//                Wallet walletAdmin = walletRepository.findWalletByWalletType(WalletType.ADMIN)
-//                        .orElseThrow(() -> new RuntimeException("Không tìm thấy ví ADMIN"));
-//
-//                double orderAmount = order.getTotalAmount();
-//                double commissionRate = 0.2; // 20% hoa hồng
-//                double commissionAmount = orderAmount * commissionRate;
-//                double sellerAmount = orderAmount - commissionAmount;
-//
-//                if (walletAdmin.getBalance() >= sellerAmount) {
-//                    // Cập nhật số dư
-//                    walletAdmin.setBalance(walletAdmin.getBalance() - sellerAmount);
-//                    userWallet.setBalance(userWallet.getBalance() + sellerAmount);
-//
-//                    // Tạo mã giao dịch duy nhất cho người bán và Admin
-//                    String transactionCodeSeller = code();
-//                    String transactionCodeAdmin = code();
-//
-//                    // Tạo giao dịch cho người bán
-//                    Transaction transactionSeller = Transaction.builder()
-//                            .wallet(walletAdmin)
-//                            .sender("Admin")
-//                            .description("Chuyển tiền đơn hàng " + order.getOrderCode())
-//                            .commissionAmount((int) commissionAmount)
-//                            .transactionStatus(TransactionStatus.COMPLETED)
-//                            .commissionRate(commissionRate)
-//                            .recipient(userWallet.getUser().getFullName())
-//                            .transactionType(TransactionType.TRANSFER)
-//                            .transactionWalletCode(Long.parseLong(transactionCodeSeller))
-//                            .amount((long) sellerAmount)
-//                            .order(order)
-//                            .build();
-//
-//                    transactionSystemRepository.save(transactionSeller);
-//
-//                    // Tạo giao dịch cho Admin
-//                    Transaction transactionAdmin = Transaction.builder()
-//                            .wallet(walletAdmin)
-//                            .sender(walletAdmin.getUser().getFullName())
-//                            .description("Chuyển tiền đơn hàng " + order.getOrderCode())
-//                            .commissionAmount((int) commissionAmount)
-//                            .transactionStatus(TransactionStatus.COMPLETED)
-//                            .commissionRate(commissionRate)
-//                            .recipient(userWallet.getUser().getFullName())
-//                            .transactionType(TransactionType.TRANSFER)
-//                            .transactionWalletCode(Long.parseLong(transactionCodeAdmin))
-//                            .amount((long) commissionAmount)
-//                            .order(order)
-//                            .build();
-//
-//                    transactionSystemRepository.save(transactionAdmin);
-//
-//                    // Lưu các thay đổi vào ví
-//                    walletRepository.save(walletAdmin);
-//                    walletRepository.save(userWallet);
-//
-//                    // Đánh dấu đơn hàng đã được xử lý
-//                    orderRepository.save(order);
-//
-//                    System.out.printf("Chuyển tiền thành công cho đơn hàng %s: Hoa hồng giữ lại %.2f, Người bán nhận %.2f%n",
-//                            order.getOrderCode(), commissionAmount, sellerAmount);
-//                } else {
-//                    System.err.println("Ví Admin không đủ số dư để thực hiện giao dịch cho đơn hàng: " + order.getOrderCode());
-//                }
-//            } catch (Exception e) {
-//                System.err.printf("Lỗi xử lý đơn hàng %d: %s%n", order.getOrderId(), e.getMessage());
-//            }
-//        }
-//    }
-//    private String code() {
-//        SecureRandom random = new SecureRandom();
-//        int otp = random.nextInt(900000) + 100000;
-//        return String.valueOf(otp);
-//    }
-
-
-//    @Override
-//    public ResponseEntity<Map<String, Object>> getOrderStatsByMonth() {
-//
-//
-//
-//                int currentYear = LocalDate.now().getYear(); // Lấy năm hiện tại
-//
-//                // Lấy danh sách giao dịch theo năm
-//                List<MonthlyTransactionStats> transactions = transactionRepository.getMonthlyTransactionStats(currentYear);
-//
-//                // Xử lý dữ liệu
-//                List<String> labels = transactions.stream()
-//                        .map(trans -> "Tháng " + trans.getMonth()) // Format nhãn là "Tháng X"
-//                        .collect(Collectors.toList());
-//
-//                List<Long> chuaThanhToan = transactions.stream()
-//                        .map(MonthlyTransactionStats::getUnpaidAmount) // Số tiền chưa thanh toán
-//                        .collect(Collectors.toList());
-//
-//                List<Long> thanhToan = transactions.stream()
-//                        .map(MonthlyTransactionStats::getPaidAmount) // Số tiền đã thanh toán
-//                        .collect(Collectors.toList());
-//
-//                // Tạo Map để trả về
-//                Map<String, Object> response = new HashMap<>();
-//                response.put("labels", labels);
-//                response.put("chuaThanhToan", chuaThanhToan);
-//                response.put("thanhToan", thanhToan);
-//
-//                return response;
-//            }
-//
-//
-//    }
 
 
 }
