@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 public class ReplyReportDto {
 
     private String responseMessage;
+    private String evidence;
 
 //    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
 //    private LocalDateTime responseCreateTime;

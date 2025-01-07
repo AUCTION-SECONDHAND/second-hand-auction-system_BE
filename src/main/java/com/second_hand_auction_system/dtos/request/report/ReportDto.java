@@ -17,10 +17,8 @@ import java.time.LocalDateTime;
 @Builder
 public class ReportDto {
 
-    @Column(name = "evidence")
-    private String evidence;
+    //private String evidence;
 
-    @Column(name = "reason")
     private String reason;
 
     //private ReportPriority priority;
@@ -29,7 +27,4 @@ public class ReportDto {
 
 //    @Column(name = "response_message")
 //    private String responseMessage;
-
-//    private User user;
-
 }

@@ -361,12 +361,12 @@ public class OrderService implements IOrderService {
                     }
 
                     // Lấy Feedback
-                    FeedBack feedback = feedbackRepository.findByOrder_OrderId(order.getOrderId());
-                    if (feedback != null) {
-                        response.setFeedback(FeedbackConverter.convertToResponse(feedback));
-                    } else {
-                        response.setFeedback(null);
-                    }
+//                    FeedBack feedback = feedbackRepository.findByOrder_OrderId(order.getOrderId());
+//                    if (feedback != null) {
+//                        response.setFeedback(FeedbackConverter.convertToResponse(feedback));
+//                    } else {
+//                        response.setFeedback(null);
+//                    }
 
                     response.setCreateBy(order.getCreateBy());
                     response.setTotalPrice(order.getTotalAmount());
