@@ -167,6 +167,8 @@ public class TransactionWalletService implements ITransactionWalletService {
                                 .recipientName(transaction.getRecipient())
                                 .transactionDate(transaction.getCreateAt())
                                 .description(transaction.getDescription())
+                                .commissionAmount(transaction.getCommissionAmount())
+                                .commissionRate(transaction.getCommissionRate())
                                 .build())
                 .collect(Collectors.toList());
 

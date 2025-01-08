@@ -545,10 +545,11 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new RuntimeException("System wallet not found"));
 
         // Tính toán hoa hồng và số tiền
-        double totalAmount = order.getTotalAmount();
+        double totalAmountOrder = order.getTotalAmount() ;
         double commissionRate = 0.1; // Ví dụ: 10% hoa hồng
-        double commissionAmount = totalAmount * commissionRate;
-        double netAmount = totalAmount - commissionAmount;
+        double commissionAmount = totalAmountOrder * commissionRate;
+        double totalAmount = totalAmountOrder - commissionAmount;
+        double netAmount = sellerWallet.getBalance() + totalAmount;
 
         double oldBalanceSeller = sellerWallet.getBalance();
         // Cập nhật số dư ví

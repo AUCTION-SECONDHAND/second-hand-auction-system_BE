@@ -39,5 +39,8 @@ public class TransactionWalletResponse {
     private String description;
 
     private String image;
+    private int commissionAmount;
+    private double commissionRate;
+
 
 }
