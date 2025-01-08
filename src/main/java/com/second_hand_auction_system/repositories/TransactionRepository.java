@@ -48,4 +48,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
             TransactionType transactionType,
             TransactionStatus transactionStatus
     );
+
+    boolean existsByTransactionWalletCode(long transactionCode);
 }

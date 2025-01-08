@@ -66,7 +66,7 @@ public class OrderService implements IOrderService {
         }
 
         // Kiểm tra trạng thái đấu giá
-        if (!auction.getStatus().equals(AuctionStatus.CLOSED)) {
+        if (!auction.getStatus().equals(AuctionStatus.AWAITING_PAYMENT)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
                     .data(null)
                     .message("Auction is not completed")
@@ -123,9 +123,19 @@ public class OrderService implements IOrderService {
                     .build());
         }
 
+        // Kiểm tra số dư ví của người dùng
+        Wallet customerWallet = walletRepository.findWalletByUserId(requester.getId()).orElse(null);
+        if (customerWallet == null || customerWallet.getBalance() < winningBid.getBidAmount()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message("Số dư tài khoản của bạn không đủ. Vui lòng nạp thêm để thanh toán đơn hàng")
+                    .data(null)
+                    .build());
+        }
+
         // Tạo đối tượng order
         Order orderEntity = Order.builder()
-                .totalAmount(winningBid.getBidAmount()) // Cập nhật giá trị ban đầu
+                .totalAmount(winningBid.getBidAmount())
                 .fullName(order.getFullName())
                 .email(order.getEmail())
                 .phoneNumber(order.getPhoneNumber())
@@ -133,7 +143,7 @@ public class OrderService implements IOrderService {
                 .note(order.getNote())
                 .createBy(requester.getFullName())
                 .status(OrderStatus.ready_to_pick)
-                .address(address.getAddress_name())
+                .address(address.getDefault_address())
                 .item(auction.getItem())
                 .user(requester)
                 .shippingMethod("free shipping")
@@ -142,122 +152,80 @@ public class OrderService implements IOrderService {
                 .paymentMethod(order.getPaymentMethod())
                 .build();
         orderRepository.save(orderEntity);
-        // Xử lý ví nếu paymentMethod là WALLET_PAYMENT
-        if (order.getPaymentMethod().equals(PaymentMethod.WALLET_PAYMENT)) {
-            try {
-                Wallet customerWallet = walletRepository.findWalletByUserId(requester.getId()).orElse(null);
-                Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
-                if (customerWallet == null || customerWallet.getBalance() < orderEntity.getTotalAmount()) {
-                    log.warn("Insufficient wallet balance or wallet not found for user: " + requester.getId());
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                            .status(HttpStatus.BAD_REQUEST)
-                            .message("Số dư tài khoản của bạn không đủ.Vui lòng nạp thêm để thanh toán đơn hàng")
-                            .data(null)
-                            .build());
-                }
 
-                log.info("Wallet balance before deduction: " + customerWallet.getBalance());
+        // Cập nhật số dư ví của khách hàng
+        double newBalance = customerWallet.getBalance() - winningBid.getBidAmount();
+        customerWallet.setBalance(newBalance);
+        walletRepository.save(customerWallet);
 
-// Tính toán số tiền cần trừ và kiểm tra
-                double orderAmount = orderEntity.getTotalAmount();
-                if (customerWallet.getBalance() < orderAmount) {
-                    log.error("Insufficient balance for transaction");
-                }
+        // Tạo giao dịch cho ví
+        Transaction transactionWallet = new Transaction();
+        transactionWallet.setAmount(-(long) winningBid.getBidAmount());
+        transactionWallet.setWallet(customerWallet);
+        transactionWallet.setOldAmount((long) customerWallet.getBalance());
+        transactionWallet.setNetAmount((long) newBalance);
+        transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
+        transactionWallet.setTransactionType(TransactionType.TRANSFER);
+        transactionWallet.setCommissionAmount(0);
+        transactionWallet.setCommissionRate(0);
+        transactionWallet.setOrder(orderEntity);
+        transactionWallet.setRecipient("Admin");
+        transactionWallet.setSender(requester.getFullName());
+        transactionWallet.setDescription(order.getNote());
+        transactionWallet.setTransactionWalletCode(random());
+        transactionSystemRepository.save(transactionWallet);
 
-// Lấy số dư ví hiện tại trước giao dịch
-                long oldBalance = (long) customerWallet.getBalance();
-                log.info("Wallet balance before deduction: " + oldBalance);
 
-// Kiểm tra nếu số dư không đủ
-                if (oldBalance < orderAmount) {
-                    log.error("Insufficient balance for transaction");
-                }
-
-// Tính số dư sau giao dịch
-                long newBalance = oldBalance - (long) orderAmount;
-
-// Cập nhật số dư ví khách hàng
-                customerWallet.setBalance(newBalance);
-                walletRepository.save(customerWallet);
-
-                // Log số dư sau khi cập nhật
-                log.info("Wallet balance after deduction: " + newBalance);
-
-                // Tạo và lưu giao dịch
-                Transaction transactionWallet = new Transaction();
-                transactionWallet.setAmount(-(long) orderAmount); // Giá trị giao dịch âm
-                transactionWallet.setWallet(customerWallet); // Liên kết với ví
-                transactionWallet.setOldAmount(oldBalance); // Số dư trước giao dịch
-                transactionWallet.setNetAmount(newBalance); // Số dư sau giao dịch
-                transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
-                transactionWallet.setTransactionType(TransactionType.TRANSFER);
-                transactionWallet.setCommissionAmount(0);
-                transactionWallet.setCommissionRate(0);
-                transactionWallet.setOrder(orderEntity);
-                transactionWallet.setRecipient(adminWallet != null ? adminWallet.getUser().getFullName() : "Admin");
-                transactionWallet.setSender(requester.getFullName());
-                transactionWallet.setDescription(order.getNote());
-                transactionWallet.setTransactionWalletCode(random());
-                transactionSystemRepository.save(transactionWallet);
-                log.info("Transaction saved successfully with details: " + transactionWallet);
-                // Cập nhật trạng thái phiên đấu giá sau khi thanh toán thành công
-                auctionRepository.save(auction);
-                // Hoàn tiền cọc cho người thắng đấu giá
-                Wallet depositWallet = walletRepository.findWalletByAuctionId(auction.getAuctionId()).orElse(null);
-                if (depositWallet != null) {
-                    long depositAmount = (long) (auction.getPercentDeposit() * auction.getBuyNowPrice());
-                    long oldDepositBalance = (long) depositWallet.getBalance();
-                    long newDepositBalance = oldDepositBalance + depositAmount;
-
-                    // Cập nhật số dư ví người thắng đấu giá
-                    depositWallet.setBalance(newDepositBalance);
-                    walletRepository.save(depositWallet);
-                    // Tạo giao dịch hoàn tiền
-                    Transaction refundTransaction = new Transaction();
-                    refundTransaction.setAmount(depositAmount); // Số tiền hoàn cọc (dương)
-                    refundTransaction.setWallet(depositWallet); // Ví của người thắng đấu giá
-                    refundTransaction.setOldAmount(oldDepositBalance); // Số dư trước khi hoàn tiền
-                    refundTransaction.setNetAmount(newDepositBalance); // Số dư sau khi hoàn tiền
-                    refundTransaction.setTransactionStatus(TransactionStatus.COMPLETED);
-                    refundTransaction.setTransactionType(TransactionType.REFUND); // Loại giao dịch là hoàn tiền
-                    refundTransaction.setDescription("Hoàn tiền cọc sau khi thanh toán đơn hàng thành công");
-                    refundTransaction.setSender("Hệ thống");
-                    refundTransaction.setRecipient(requester.getFullName());
-                    refundTransaction.setTransactionWalletCode(random()); // Mã giao dịch ngẫu nhiên
-                    transactionSystemRepository.save(refundTransaction);
-
-                    log.info("Deposit refund transaction saved successfully: " + refundTransaction);
-                }
-
-                return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                        .data("Success")
-                        .message("Order created successfully")
-                        .status(HttpStatus.OK)
-                        .build());
-
-            } catch (Exception ex) {
-                log.error("Error occurred during wallet payment processing: ", ex);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                        .data(null)
-                        .message("An unexpected error occurred during wallet payment processing")
-                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .build());
-            }
+        // Cập nhật số dư ví của admin
+        Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
+        if (adminWallet == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
+                    .data(null)
+                    .message("Admin wallet not found")
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build());
         }
+        double adminNewBalance = adminWallet.getBalance() + winningBid.getBidAmount();
+        adminWallet.setBalance(adminNewBalance);
+        walletRepository.save(adminWallet);
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                .data(null)
-                .message("Create order failed")
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        // Tạo giao dịch cho ví admin
+        Transaction transactionAdminWallet = new Transaction();
+        transactionAdminWallet.setAmount((long) winningBid.getBidAmount());
+        transactionAdminWallet.setWallet(adminWallet);
+        transactionAdminWallet.setOldAmount((long) adminWallet.getBalance());
+        transactionAdminWallet.setNetAmount((long) adminNewBalance);
+        transactionAdminWallet.setTransactionStatus(TransactionStatus.COMPLETED);
+        transactionAdminWallet.setTransactionType(TransactionType.TRANSFER);
+        transactionAdminWallet.setCommissionAmount(0);
+        transactionAdminWallet.setCommissionRate(0);
+        transactionAdminWallet.setOrder(orderEntity);
+        transactionAdminWallet.setRecipient(adminWallet.getUser().getFullName());
+        transactionAdminWallet.setSender("Auction system");
+        transactionAdminWallet.setDescription("Payment received for auction");
+        transactionAdminWallet.setTransactionWalletCode(random());
+        transactionSystemRepository.save(transactionAdminWallet);
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .data("Success")
+                .message("Order created successfully")
+                .status(HttpStatus.OK)
                 .build());
     }
 
 
+
     private long random() {
         Random random = new Random();
-        int number = random.nextInt(900000) + 100000;
-        return Long.parseLong(String.valueOf(number));
+        long transactionCode;
+        do {
+            // Generate random 6-digit code
+            int number = random.nextInt(900000) + 100000;
+            transactionCode = Long.parseLong(String.valueOf(number));
+        } while (transactionSystemRepository.existsByTransactionWalletCode(transactionCode)); // Check for uniqueness
+
+        return transactionCode;
     }
+
 
 
     @Override

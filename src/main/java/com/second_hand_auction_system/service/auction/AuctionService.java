@@ -195,7 +195,6 @@ public class AuctionService implements IAuctionService {
     }
 
 
-
     @Override
     public void removeAuction(int auctionId) throws Exception {
         Auction auctionExist = auctionRepository.findById(auctionId)
@@ -333,41 +332,44 @@ public class AuctionService implements IAuctionService {
                 .build());
     }
 
-
     @Scheduled(fixedRate = 60000, zone = "Asia/Ho_Chi_Minh")
     @Transactional
     public void processAuctionCompletion() {
         ZoneId systemZoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        // Kiểm tra các phiên đấu giá có trạng thái CLOSED hoặc AWAITING_PAYMENT
+        List<Auction> auctionsToProcess = auctionRepository.findByStatusIn(Arrays.asList(AuctionStatus.CLOSED, AuctionStatus.AWAITING_PAYMENT));
 
-        // Lấy danh sách các phiên đấu giá đã kết thúc nhưng chưa xử lý hoàn tất
-        List<Auction> closedAuctions = auctionRepository.findByStatus(AuctionStatus.CLOSED);
-        for (Auction auction : closedAuctions) {
+        for (Auction auction : auctionsToProcess) {
             try {
-                // Xác định thời gian kết thúc của phiên đấu giá
+                // Kiểm tra thời gian kết thúc của phiên đấu giá
                 ZonedDateTime auctionEndTime = ZonedDateTime.of(
                         auction.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
                         auction.getEndTime().toLocalTime(),
                         ZoneId.of("Asia/Ho_Chi_Minh")
                 );
-
-                // Chỉ xử lý nếu phiên đấu giá thực sự đã kết thúc
                 if (ZonedDateTime.now(systemZoneId).isAfter(auctionEndTime)) {
                     log.info("Đang xử lý phiên đấu giá ID: {}", auction.getAuctionId());
-
-                    // Lấy danh sách tất cả các bid
-                    List<Bid> bids = bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
-                    if (bids.isEmpty()) {
+                    // Lấy danh sách tất cả người tham gia bid (có thể đặt nhiều bid)
+                    List<User> participants = bidRepository.findDistinctUsersByAuction_AuctionId(auction.getAuctionId());
+                    if (participants.isEmpty()) {
                         log.warn("Phiên đấu giá không có bid nào, không cần xử lý.");
                         continue;
                     }
+                    // Lấy bid thắng cuộc (bid cao nhất)
+                    Bid winningBid = bidRepository.findTopByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId());
+                    assert winningBid != null;
 
-                    // Hoàn tiền cọc cho tất cả người thua, bắt đầu từ bid thứ hai
-                    for (int i = 1; i < bids.size(); i++) {
-                        Bid losingBid = bids.get(i);
-                        processDepositRefund(losingBid.getUser(), auction);
+                    // Hoàn tiền cho người thua
+                    for (User participant : participants) {
+                        if (!participant.equals(winningBid.getUser())) {
+                            processDepositRefund(participant, auction); // Hoàn cọc cho người thua
+                        }
                     }
 
-                    log.info("Đã hoàn tất xử lý phiên đấu giá ID: {}", auction.getAuctionId());
+                    // Kiểm tra và hoàn tiền cho người thắng cuộc (nếu đã thanh toán)
+                    processWinnerDepositRefund(winningBid, auction);
+                    auctionRepository.save(auction);
+                    log.info("Đã chuyển trạng thái phiên đấu giá ID: {} sang AWAITING_PAYMENT.", auction.getAuctionId());
                 }
             } catch (Exception e) {
                 log.error("Lỗi khi xử lý phiên đấu giá ID: " + auction.getAuctionId(), e);
@@ -377,8 +379,76 @@ public class AuctionService implements IAuctionService {
 
 
 
+
+
+    private void processWinnerDepositRefund(Bid winningBid, Auction auction) {
+        try {
+            User winner = winningBid.getUser();
+            Wallet winnerWallet = walletRepository.findWalletByUserId(winner.getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + winner.getEmail()));
+
+            // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
+            Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
+                    winnerWallet, TransactionType.REFUND, TransactionStatus.COMPLETED, auction);
+
+            if (existingRefund.isPresent()) {
+                log.info("Đã có giao dịch hoàn cọc cho user: " + winner.getEmail() + ", sẽ không thực hiện lại.");
+                return; // Bỏ qua nếu đã hoàn cọc cho người này
+            }
+
+            // Kiểm tra trạng thái thanh toán của người thắng cuộc
+            boolean isPaymentCompleted = orderRepository.existsByAuctionAndUser(auction, winner);
+
+            if (!isPaymentCompleted) {
+                log.warn("Người thắng cuộc chưa thanh toán thành công cho phiên đấu giá ID: {}", auction.getAuctionId());
+                return; // Không hoàn tiền nếu chưa thanh toán
+            }
+
+            // Xác định số tiền đặt cọc
+            double depositAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice()) / 100;
+
+            // Cộng tiền cọc vào ví người dùng
+            winnerWallet.setBalance(winnerWallet.getBalance() + depositAmount);
+            walletRepository.save(winnerWallet);
+
+            // Tạo giao dịch hoàn tiền
+            long oldBalance = (long) (winnerWallet.getBalance() - depositAmount); // Số dư trước khi hoàn tiền
+            long newBalance = (long) winnerWallet.getBalance(); // Số dư sau khi hoàn tiền
+
+            Transaction refundTransaction = Transaction.builder()
+                    .wallet(winnerWallet)
+                    .transactionStatus(TransactionStatus.COMPLETED)
+                    .description("Hoàn cọc cho người thắng cuộc trong phiên đấu giá " + auction.getAuctionId())
+                    .transactionType(TransactionType.REFUND)
+                    .recipient(winnerWallet.getUser().getFullName())
+                    .sender("SYSTEM")
+                    .transactionWalletCode(random())
+                    .oldAmount(oldBalance) // Số dư trước khi hoàn tiền
+                    .netAmount(newBalance) // Số dư sau khi hoàn tiền
+                    .amount((long) depositAmount) // Giá trị số tiền hoàn cọc
+                    .build();
+
+            // Lưu giao dịch hoàn cọc vào cơ sở dữ liệu
+            transactionRepository.save(refundTransaction);
+            auction.setStatus(AuctionStatus.COMPLETED);
+            auctionRepository.save(auction);
+            log.info("Hoàn cọc cho user: {}, Số tiền: {}", winnerWallet.getUser().getEmail(), depositAmount);
+            emailService.sendResultForAuction(winnerWallet.getUser().getEmail(), null);
+
+        } catch (Exception ex) {
+            log.error("Lỗi khi xử lý hoàn cọc cho user ID: " + winningBid.getUser().getId() + " trong phiên đấu giá ID: " + auction.getAuctionId(), ex);
+        }
+    }
+
+
     private void processDepositRefund(User user, Auction auction) {
         try {
+            // Kiểm tra trạng thái của phiên đấu giá, chỉ tiếp tục nếu trạng thái là CLOSED
+            if (!auction.getStatus().equals(AuctionStatus.CLOSED)) {
+                log.info("Phiên đấu giá ID: {} không phải trạng thái CLOSED, không thực hiện hoàn cọc.", auction.getAuctionId());
+                return; // Nếu không phải trạng thái CLOSED, kết thúc
+            }
+
             // Lấy ví của người dùng
             Wallet userWallet = walletRepository.findWalletByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + user.getEmail()));
@@ -418,7 +488,7 @@ public class AuctionService implements IAuctionService {
 
             // Lưu giao dịch hoàn cọc vào cơ sở dữ liệu
             transactionRepository.save(refundTransaction);
-            auction.setStatus(AuctionStatus.COMPLETED);
+            auction.setStatus(AuctionStatus.AWAITING_PAYMENT);
             auctionRepository.save(auction);
             log.info("Hoàn cọc cho user: {}, Số tiền: {}", userWallet.getUser().getEmail(), depositAmount);
             emailService.sendResultForAuction(userWallet.getUser().getEmail(), null);
@@ -427,6 +497,7 @@ public class AuctionService implements IAuctionService {
             log.error("Lỗi khi xử lý hoàn cọc cho user ID: " + user.getId() + " trong phiên đấu giá ID: " + auction.getAuctionId(), ex);
         }
     }
+
 
 
     private long random() {

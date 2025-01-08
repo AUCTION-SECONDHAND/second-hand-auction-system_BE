@@ -25,7 +25,7 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
             "JOIN Bid b ON a.auctionId = b.auction.auctionId " +
             "JOIN b.user u " +
             "WHERE u.id = :userId " +
-            "AND b.winBid = true " + "AND a.status = 'CLOSED'"  )
+            "AND b.winBid = true " + "AND a.status = 'AWAITING_PAYMENT'"  )
     Page<Item> findItemsByUserId(@Param("userId") Integer userId, Pageable pageable);
 
 
