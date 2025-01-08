@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.repositories;
 
+import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.models.Wallet;
 import com.second_hand_auction_system.utils.WalletType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,8 @@ public interface WalletRepository extends JpaRepository<Wallet, Integer> {
 
     Optional<Wallet> findWalletByUserId(Integer userId);
 
+
+    Optional<Wallet> findByUser(User user);
+
+    Optional<Wallet> findByWalletType(WalletType walletType);
 }

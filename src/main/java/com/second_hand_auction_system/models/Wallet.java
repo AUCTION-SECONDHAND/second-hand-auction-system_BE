@@ -26,7 +26,7 @@ public class Wallet extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private WalletType walletType;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
 }

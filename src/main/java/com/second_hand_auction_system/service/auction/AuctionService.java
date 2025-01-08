@@ -138,11 +138,14 @@ public class AuctionService implements IAuctionService {
 
     @Override
     public void updateAuction(int auctionId, AuctionDto auctionDto) throws Exception {
-        // Tìm kiếm phiên đấu giá theo ID
+
+        //        Item itemExist = itemRepository.findById(auctionDto.getItem())
+        //                .orElseThrow(() -> new Exception("Item not found"));
+        // Kiểm tra xem Auction tồn tại hay không
         Auction auctionExist = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new Exception("Phiên đấu giá không tìm thấy"));
 
-        // Cập nhật các trường của phiên đấu giá nếu có thay đổi
+        // Cập nhật từng trường nếu chúng được truyền vào
         if (auctionDto.getStartTime() != null) {
             auctionExist.setStartTime(auctionDto.getStartTime());
         }
@@ -182,18 +185,50 @@ public class AuctionService implements IAuctionService {
         if (auctionDto.getComment() != null) {
             auctionExist.setComment(auctionDto.getComment());
         }
-        if (auctionExist.getEndDate() != null && auctionExist.getEndDate().before(new Date())) {
+
+        Date currentDateTime = new Date(); // Lấy thời gian hiện tại
+
+// Kiểm tra nếu đấu giá đã kết thúc
+        if (auctionExist.getEndDate() != null && auctionExist.getEndTime() != null &&
+                combineDateAndTime(auctionExist.getEndDate(), auctionExist.getEndTime()).before(currentDateTime)) {
             auctionExist.setStatus(AuctionStatus.CLOSED);
-        } else if (auctionExist.getStartDate() != null && auctionExist.getStartDate().before(new Date())) {
-            auctionExist.setStatus(AuctionStatus.OPEN); // Đặt trạng thái là OPEN nếu phiên đấu giá đang diễn ra
-        } else {
-            auctionExist.setStatus(AuctionStatus.PENDING); // Đặt trạng thái là PENDING nếu phiên đấu giá chưa bắt đầu
+        }
+// Kiểm tra nếu đấu giá đang mở
+        else if (auctionExist.getStartDate() != null && auctionExist.getStartTime() != null &&
+                combineDateAndTime(auctionExist.getStartDate(), auctionExist.getStartTime()).before(currentDateTime)) {
+            auctionExist.setStatus(AuctionStatus.OPEN);
+        }
+// Nếu chưa bắt đầu, đặt trạng thái là PENDING
+        else {
+            auctionExist.setStatus(AuctionStatus.PENDING);
         }
 
-        // Lưu các thay đổi vào cơ sở dữ liệu
+
+        // Lưu thông tin sau khi kiểm tra từng trường
         auctionRepository.save(auctionExist);
     }
 
+    private Date combineDateAndTime(Date date, Date time) {
+        Calendar calendar = Calendar.getInstance();
+
+        // Set ngày
+        Calendar datePart = Calendar.getInstance();
+        datePart.setTime(date);
+
+        // Set giờ
+        Calendar timePart = Calendar.getInstance();
+        timePart.setTime(time);
+
+        calendar.set(Calendar.YEAR, datePart.get(Calendar.YEAR));
+        calendar.set(Calendar.MONTH, datePart.get(Calendar.MONTH));
+        calendar.set(Calendar.DAY_OF_MONTH, datePart.get(Calendar.DAY_OF_MONTH));
+        calendar.set(Calendar.HOUR_OF_DAY, timePart.get(Calendar.HOUR_OF_DAY));
+        calendar.set(Calendar.MINUTE, timePart.get(Calendar.MINUTE));
+        calendar.set(Calendar.SECOND, timePart.get(Calendar.SECOND));
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        return calendar.getTime();
+    }
 
 
     @Override
@@ -332,6 +367,7 @@ public class AuctionService implements IAuctionService {
                 .data(auction.getStatus())
                 .build());
     }
+
 
 
     @Scheduled(fixedRate = 60000, zone = "Asia/Ho_Chi_Minh")
