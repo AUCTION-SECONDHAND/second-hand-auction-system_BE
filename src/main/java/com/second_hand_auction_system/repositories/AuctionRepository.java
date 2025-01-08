@@ -32,4 +32,6 @@ public interface AuctionRepository extends JpaRepository<Auction, Integer> {
 
 
     List<Auction> findByStatus(AuctionStatus auctionStatus);
+
+    List<Auction> findByStatusIn(List<AuctionStatus> list);
 }

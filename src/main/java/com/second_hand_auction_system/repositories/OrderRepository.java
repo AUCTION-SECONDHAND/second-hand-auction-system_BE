@@ -55,4 +55,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findAllByStatus(OrderStatus status);
 
     Optional<Order> findByUserAndAuction(User winner, Auction auction);
+
+    boolean existsByAuctionAndUser(Auction auction, User winner);
 }
