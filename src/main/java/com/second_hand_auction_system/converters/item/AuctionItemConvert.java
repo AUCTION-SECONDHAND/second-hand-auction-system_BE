@@ -73,10 +73,20 @@ public class AuctionItemConvert {
             ItemSpecification itemSpecification = item.getItemSpecification();
             itemSpecificationResponse = ItemSpecificationResponse.builder()
                     .ram(itemSpecification.getRam())
+                    .itemSpecificationId(itemSpecification.getItemSpecificationId())
+                    .sensors(itemSpecification.getSensors())
                     .screenSize(itemSpecification.getScreenSize())
                     .cameraSpecs(itemSpecification.getCameraSpecs())
+                    .sim(itemSpecification.getSim())
+                    .simSlots(itemSpecification.getSimSlots())
+                    .os(itemSpecification.getOs())
+                    .osFamily(itemSpecification.getOsFamily())
+                    .bluetooth(itemSpecification.getBluetooth())
+                    .usb(itemSpecification.getUsb())
+                    .wlan(itemSpecification.getWlan())
+                    .speed(itemSpecification.getSpeed())
+                    .networkTechnology(itemSpecification.getNetworkTechnology())
                     .connectivity(itemSpecification.getConnectivity())
-                    .sensors(itemSpecification.getSensors())
                     .build();
         }
 

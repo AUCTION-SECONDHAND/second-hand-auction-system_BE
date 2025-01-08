@@ -402,6 +402,8 @@ public class UserService implements IUserService {
         if (user != null) {
             UserResponse userResponse = modelMapper.map(user, UserResponse.class);
 
+            userResponse.setBalance(user.getWallet().getBalance());
+
             return ResponseEntity.ok(ResponseObject.builder()
                     .status(HttpStatus.OK)
                     .message("User found")
