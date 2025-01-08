@@ -1,6 +1,7 @@
 package com.second_hand_auction_system.dtos.responses.report;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.utils.ReportPriority;
 import com.second_hand_auction_system.utils.ReportStatus;
