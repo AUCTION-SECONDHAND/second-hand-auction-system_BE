@@ -143,7 +143,7 @@ public class OrderService implements IOrderService {
                 .note(order.getNote())
                 .createBy(requester.getFullName())
                 .status(OrderStatus.ready_to_pick)
-                .address(address.getDefault_address())
+                .address(address.getStreet_address())
                 .item(auction.getItem())
                 .user(requester)
                 .shippingMethod("free shipping")
@@ -153,16 +153,36 @@ public class OrderService implements IOrderService {
                 .build();
         orderRepository.save(orderEntity);
 
-        // Cập nhật số dư ví của khách hàng
-        double newBalance = customerWallet.getBalance() - winningBid.getBidAmount();
+//        // Cập nhật số dư ví của khách hàng
+//        double oldBalance = customerWallet.getBalance(); // Lưu số dư trước giao dịch
+//        double newBalance = oldBalance - winningBid.getBidAmount();
+//        customerWallet.setBalance(newBalance);
+//        walletRepository.save(customerWallet);
+
+        // Cập nhật và tạo giao dịch cho ví khách hàng
+        createCustomerTransaction(customerWallet, winningBid.getBidAmount(), orderEntity, requester);
+
+        // Cập nhật và tạo giao dịch cho ví admin
+//        createAdminTransaction(winningBid.getBidAmount(), orderEntity);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
+                .data("Success")
+                .message("Order created successfully")
+                .status(HttpStatus.OK)
+                .build());
+    }
+
+    private void createCustomerTransaction(Wallet customerWallet, double bidAmount, Order orderEntity, User requester) {
+        double oldBalance = customerWallet.getBalance();
+        double newBalance = oldBalance - bidAmount;
         customerWallet.setBalance(newBalance);
         walletRepository.save(customerWallet);
 
-        // Tạo giao dịch cho ví
+        // Tạo giao dịch cho ví khách hàng
         Transaction transactionWallet = new Transaction();
-        transactionWallet.setAmount(-(long) winningBid.getBidAmount());
+        transactionWallet.setAmount(-(long) bidAmount);
         transactionWallet.setWallet(customerWallet);
-        transactionWallet.setOldAmount((long) customerWallet.getBalance());
+        transactionWallet.setOldAmount((long) oldBalance);
         transactionWallet.setNetAmount((long) newBalance);
         transactionWallet.setTransactionStatus(TransactionStatus.COMPLETED);
         transactionWallet.setTransactionType(TransactionType.TRANSFER);
@@ -171,48 +191,41 @@ public class OrderService implements IOrderService {
         transactionWallet.setOrder(orderEntity);
         transactionWallet.setRecipient("Admin");
         transactionWallet.setSender(requester.getFullName());
-        transactionWallet.setDescription(order.getNote());
-        transactionWallet.setTransactionWalletCode(random());
+        transactionWallet.setDescription(orderEntity.getNote());
+        transactionWallet.setTransactionWalletCode((random()));
         transactionSystemRepository.save(transactionWallet);
-
-
-        // Cập nhật số dư ví của admin
-        Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
-        if (adminWallet == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                    .data(null)
-                    .message("Admin wallet not found")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build());
-        }
-        double adminNewBalance = adminWallet.getBalance() + winningBid.getBidAmount();
-        adminWallet.setBalance(adminNewBalance);
-        walletRepository.save(adminWallet);
-
-        // Tạo giao dịch cho ví admin
-        Transaction transactionAdminWallet = new Transaction();
-        transactionAdminWallet.setAmount((long) winningBid.getBidAmount());
-        transactionAdminWallet.setWallet(adminWallet);
-        transactionAdminWallet.setOldAmount((long) adminWallet.getBalance());
-        transactionAdminWallet.setNetAmount((long) adminNewBalance);
-        transactionAdminWallet.setTransactionStatus(TransactionStatus.COMPLETED);
-        transactionAdminWallet.setTransactionType(TransactionType.TRANSFER);
-        transactionAdminWallet.setCommissionAmount(0);
-        transactionAdminWallet.setCommissionRate(0);
-        transactionAdminWallet.setOrder(orderEntity);
-        transactionAdminWallet.setRecipient(adminWallet.getUser().getFullName());
-        transactionAdminWallet.setSender("Auction system");
-        transactionAdminWallet.setDescription("Payment received for auction");
-        transactionAdminWallet.setTransactionWalletCode(random());
-        transactionSystemRepository.save(transactionAdminWallet);
-        return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                .data("Success")
-                .message("Order created successfully")
-                .status(HttpStatus.OK)
-                .build());
     }
-
-
+//
+//    private void createAdminTransaction(double bidAmount, Order orderEntity) {
+//        Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
+//        if (adminWallet == null) {
+//            throw new RuntimeException("Admin wallet not found");
+//        }
+//
+//        double adminOldBalance = adminWallet.getBalance();
+//        double adminNewBalance = adminOldBalance + bidAmount;
+//        adminWallet.setBalance(adminNewBalance);
+//        walletRepository.save(adminWallet);
+//
+//        // Tạo giao dịch cho ví admin
+//        Transaction transactionAdminWallet = Transaction.builder()
+//                .amount((long) bidAmount)
+//                .wallet(adminWallet)
+//                .oldAmount((long) adminOldBalance)
+//                .netAmount((long) adminNewBalance)
+//                .transactionStatus(TransactionStatus.COMPLETED)
+//                .transactionType(TransactionType.TRANSFER)
+//                .commissionAmount(0)
+//                .commissionRate(0)
+//                .order(orderEntity)
+//                .recipient(adminWallet.getUser().getFullName())
+//                .sender("Auction system")
+//                .description("Payment received for auction")
+//                .transactionWalletCode((random()))
+//                .build();
+//
+//        transactionSystemRepository.save(transactionAdminWallet);
+//    }
 
     private long random() {
         Random random = new Random();
@@ -226,6 +239,9 @@ public class OrderService implements IOrderService {
         return transactionCode;
     }
 
+//    private String random() {
+//        return UUID.randomUUID().toString();
+//    }
 
 
     @Override
@@ -494,7 +510,7 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-   // @Scheduled(fixedRate = 600000)
+    // @Scheduled(fixedRate = 600000)
     @Scheduled(fixedRate = 60000) //1 phút
     public void updateOrderStatuses() {
         // Retrieve all orders that are pending status updates
@@ -545,11 +561,10 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new RuntimeException("System wallet not found"));
 
         // Tính toán hoa hồng và số tiền
-        double totalAmountOrder = order.getTotalAmount() ;
+        double totalAmount = order.getTotalAmount();
         double commissionRate = 0.1; // Ví dụ: 10% hoa hồng
-        double commissionAmount = totalAmountOrder * commissionRate;
-        double totalAmount = totalAmountOrder - commissionAmount;
-        double netAmount = sellerWallet.getBalance() + totalAmount;
+        double commissionAmount = totalAmount * commissionRate;
+        double netAmount = totalAmount - commissionAmount;
 
         double oldBalanceSeller = sellerWallet.getBalance();
         // Cập nhật số dư ví
@@ -587,7 +602,6 @@ public class OrderService implements IOrderService {
 
         System.out.println("Processed payment for order " + order.getOrderId());
     }
-
 
 
     @Override
@@ -650,8 +664,6 @@ public class OrderService implements IOrderService {
                 .data(result)
                 .build());
     }
-
-
 
 
 }
