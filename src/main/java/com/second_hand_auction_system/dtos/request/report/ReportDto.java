@@ -17,8 +17,8 @@ import java.time.LocalDateTime;
 @Builder
 public class ReportDto {
 
-    @Column(name = "evidence")
-    private String evidence;
+//    @Column(name = "evidence")
+//    private String evidence;
 
     @Column(name = "reason")
     private String reason;

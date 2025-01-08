@@ -353,12 +353,12 @@ public class OrderService implements IOrderService {
                     }
 
                     // Lấy Feedback
-                    FeedBack feedback = feedbackRepository.findByOrder_OrderId(order.getOrderId());
-                    if (feedback != null) {
-                        response.setFeedback(FeedbackConverter.convertToResponse(feedback));
-                    } else {
-                        response.setFeedback(null);
-                    }
+//                    FeedBack feedback = feedbackRepository.findByOrder_OrderId(order.getOrderId());
+//                    if (feedback != null) {
+//                        response.setFeedback(FeedbackConverter.convertToResponse(feedback));
+//                    } else {
+//                        response.setFeedback(null);
+//                    }
 
                     response.setCreateBy(order.getCreateBy());
                     response.setTotalPrice(order.getTotalAmount());
@@ -494,7 +494,8 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    @Scheduled(fixedRate = 600000)
+   // @Scheduled(fixedRate = 600000)
+    @Scheduled(fixedRate = 60000) //1 phút
     public void updateOrderStatuses() {
         // Retrieve all orders that are pending status updates
         List<Order> ordersToUpdate = orderRepository.findAll(); // Or some other filter condition
@@ -510,12 +511,83 @@ public class OrderService implements IOrderService {
                     order.setStatus(OrderStatus.valueOf(ghnStatus.toLowerCase())); // Adjust status based on your enum
                     orderRepository.save(order);
                     System.out.println("Updated order " + order.getOrderId() + " with status " + ghnStatus);
+
+                    if (ghnStatus.toLowerCase().equals("delivered")) {
+
+                        processPayment(order);
+
+                    }
                 }
             } catch (Exception e) {
                 System.err.println("Error updating order " + order.getOrderId() + ": " + e.getMessage());
             }
         }
     }
+
+    @Transactional
+    public void processPayment(Order order) {
+        // Kiểm tra nếu đã có giao dịch với description "Thanh toán tiền cho seller" và orderId hiện tại
+        boolean transactionExists = transactionSystemRepository.existsByOrderAndDescription(order, "Thanh toán tiền cho seller");
+
+        if (transactionExists) {
+            System.out.println("Transaction for order " + order.getOrderId() + " already exists. Skipping payment process.");
+            return;  // Nếu đã tồn tại giao dịch, không thực hiện processPayment
+        }
+
+        // Lấy ví của seller
+        Wallet sellerWallet = walletRepository.findByUser(order.getItem().getUser())
+                .orElseThrow(() -> new RuntimeException("Seller wallet not found for order ID: "
+                        + order.getOrderId() + ", Item ID: " + order.getItem().getItemId()
+                        + ", Seller User ID: " + order.getItem().getUser().getId()));
+
+        // Lấy ví hệ thống
+        Wallet systemWallet = walletRepository.findByWalletType(WalletType.ADMIN)
+                .orElseThrow(() -> new RuntimeException("System wallet not found"));
+
+        // Tính toán hoa hồng và số tiền
+        double totalAmount = order.getTotalAmount();
+        double commissionRate = 0.1; // Ví dụ: 10% hoa hồng
+        double commissionAmount = totalAmount * commissionRate;
+        double netAmount = totalAmount - commissionAmount;
+
+        double oldBalanceSeller = sellerWallet.getBalance();
+        // Cập nhật số dư ví
+        sellerWallet.setBalance(sellerWallet.getBalance() + netAmount);
+        systemWallet.setBalance(systemWallet.getBalance() + commissionAmount);
+
+        walletRepository.save(sellerWallet);
+        walletRepository.save(systemWallet);
+
+        // Lưu giao dịch
+        Transaction transaction = new Transaction();
+        transaction.setOrder(order);
+        transaction.setAmount((long) totalAmount);
+        transaction.setCommissionRate(commissionRate);
+        transaction.setDescription("Thanh toán tiền cho seller");
+        transaction.setCommissionAmount((int) commissionAmount);
+        transaction.setNetAmount(netAmount);
+        transaction.setOldAmount(oldBalanceSeller);
+        transaction.setRecipient(sellerWallet.getUser().getFullName());
+        transaction.setSender("System");
+        transaction.setTransactionWalletCode(922187);
+        transaction.setTransactionType(TransactionType.TRANSFER);
+        transaction.setTransactionStatus(TransactionStatus.COMPLETED);
+        transaction.setWallet(order.getItem().getUser().getWallet());
+
+        try {
+            transactionSystemRepository.save(transaction);
+            System.out.println("Transaction saved successfully for order " + order.getOrderId() + transaction);
+        } catch (Exception e) {
+            System.err.println("Error saving transaction for order " + order.getOrderId() + ": " + e.getMessage());
+            e.printStackTrace();  // In chi tiết lỗi ra console
+        }
+
+        orderRepository.save(order);
+
+        System.out.println("Processed payment for order " + order.getOrderId());
+    }
+
+
 
     @Override
     public OrderDetailResponse getOrderDetail(int orderId) {

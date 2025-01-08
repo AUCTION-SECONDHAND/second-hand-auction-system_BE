@@ -22,6 +22,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     Page<Transaction> findByTransactionType(TransactionType transactionType, Pageable pageable);
 
     Optional<Transaction> findByWallet_User_Id(Integer id);
+    boolean existsByOrderAndDescription(Order order, String description);
 
     Optional<Transaction> findTransactionByOrder_OrderId(Integer id);
 
@@ -49,5 +50,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
             TransactionStatus transactionStatus
     );
 
+
     boolean existsByTransactionWalletCode(long transactionCode);
+
+    Optional<Transaction> findByOrderAndTransactionType(Order order, TransactionType transactionType);
+
+
+
 }

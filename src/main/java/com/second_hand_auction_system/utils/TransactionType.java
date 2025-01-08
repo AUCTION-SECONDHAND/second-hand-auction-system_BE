@@ -6,4 +6,6 @@ public enum TransactionType {
     TRANSFER,
     REFUND,
     DEPOSIT_AUCTION,
+
+    SELLER_PAYMENT
 }

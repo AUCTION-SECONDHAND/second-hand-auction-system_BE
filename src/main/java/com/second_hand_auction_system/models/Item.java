@@ -57,7 +57,7 @@ public class Item extends BaseEntity{
     @Column(name = "update_By")
     private String updateBy;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JsonManagedReference
     @JoinColumn(name = "user_id")
     private User user;

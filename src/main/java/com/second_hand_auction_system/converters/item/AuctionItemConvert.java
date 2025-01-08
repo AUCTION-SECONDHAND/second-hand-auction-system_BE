@@ -169,6 +169,16 @@ public class AuctionItemConvert {
                     .sensors(itemSpecification.getSensors())
                     .screenSize(itemSpecification.getScreenSize())
                     .cameraSpecs(itemSpecification.getCameraSpecs())
+                    .sim(itemSpecification.getSim())
+                    .simSlots(itemSpecification.getSimSlots())
+                    .os(itemSpecification.getOs())
+                    .osFamily(itemSpecification.getOsFamily())
+                    .bluetooth(itemSpecification.getBluetooth())
+                    .usb(itemSpecification.getUsb())
+                    .wlan(itemSpecification.getWlan())
+                    .speed(itemSpecification.getSpeed())
+                    .networkTechnology(itemSpecification.getNetworkTechnology())
+                    .connectivity(itemSpecification.getConnectivity())
                     .build();
         }
 
@@ -201,6 +211,13 @@ public class AuctionItemConvert {
                 .priceStepItem(item.getPriceStepItem())
                 .auctionType(auctionTypeResponse)
                 .numberParticipant(0)
+                .brand(item.getBrand())
+                .model(item.getModel())
+                .serial(item.getSerial())
+                .controlNumber(item.getControlNumber())
+                .valid(item.getValid())
+                .manufacturer(item.getManufacturer())
+                .deviceImage(item.getDeviceImage())
                 .build();
     }
 

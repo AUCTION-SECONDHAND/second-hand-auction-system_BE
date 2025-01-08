@@ -38,7 +38,7 @@ public class Transaction extends BaseEntity {
     @Column(name = "net_Amount")
     private double netAmount;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "order_id")
     private Order order;
 

@@ -43,7 +43,7 @@ public class ReportService implements IReportService {
             throw new Exception("User not found");
         }
         Report report = Report.builder()
-                .evidence(reportDto.getEvidence())
+//                .evidence(reportDto.getEvidence())
                 .reason(reportDto.getReason())
                 .type(reportDto.getType())
                 .user(requester)
@@ -75,6 +75,7 @@ public class ReportService implements IReportService {
         reportExisted.setResponseCreateTime(LocalDateTime.now());
         reportExisted.setResponseUpdateTime(LocalDateTime.now());
         reportExisted.setResponseMessage(replyReportDto.getResponseMessage());
+        reportExisted.setEvidence(replyReportDto.getEvidence());
         reportRepository.save(reportExisted);
     }
 
@@ -105,6 +106,8 @@ public class ReportService implements IReportService {
                 .responseMessage(report.getResponseMessage())
                 .responseCreateTime(report.getResponseCreateTime())
                 .responseUpdateTime(report.getResponseUpdateTime())
+                .createdAt(report.getCreateAt())
+                .updatedAt(report.getUpdateAt())
                 .build());
     }
 
