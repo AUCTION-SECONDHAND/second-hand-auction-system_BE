@@ -172,20 +172,17 @@ public class BidService implements IBidService {
             // Tính thời gian còn lại (tính bằng phút)
             long minutesRemaining = ChronoUnit.MINUTES.between(nowDateTime, auctionEndDateTime);
 
-            // Kiểm tra nếu thời gian còn lại nhỏ hơn hoặc bằng 10 phút mới thay đổi thời gian kết thúc
-            if (minutesRemaining <= 10) {
-                LocalDateTime newEndDateTime = nowDateTime.plusMinutes(10);  // Thêm 10 phút vào thời gian hiện tại
+            // Kiểm tra và cập nhật thời gian
+            if (minutesRemaining > 10) {
+                // Nếu thời gian còn lại lớn hơn 10 phút, cập nhật thời gian kết thúc để chỉ còn lại đúng 10 phút
+                LocalDateTime newEndDateTime = nowDateTime.plusMinutes(10);
                 auction.setEndDate(Date.from(newEndDateTime.atZone(ZoneId.systemDefault()).toInstant()));  // Cập nhật lại endDate
                 auction.setEndTime(Time.valueOf(newEndDateTime.toLocalTime()));  // Cập nhật lại endTime
-            } else {
-                // Nếu còn nhiều hơn 10 phút, không thay đổi thời gian
-                auction.setEndDate(auction.getEndDate());  // Không thay đổi
-                auction.setEndTime(auction.getEndTime());  // Không thay đổi
             }
+            // Nếu thời gian còn lại <= 10 phút, giữ nguyên thời gian hiện tại
 
             // Lưu phiên đấu giá đã cập nhật
             auctionRepository.save(auction);
-
             // Đánh dấu tất cả các bid hiện tại là không thắng
             bidRepository.findByAuction_AuctionIdOrderByBidAmountDesc(auction.getAuctionId())
                     .forEach(b -> {
