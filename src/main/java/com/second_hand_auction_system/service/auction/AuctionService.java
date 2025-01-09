@@ -464,6 +464,7 @@ public class AuctionService implements IAuctionService {
             User winner = winningBid.getUser();
             Wallet winnerWallet = walletRepository.findWalletByUserId(winner.getId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + winner.getEmail()));
+            Wallet auctionWallet = walletRepository.findWalletByAuctionId(auction.getAuctionId()).orElseThrow(null);
 
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
             Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
@@ -488,6 +489,11 @@ public class AuctionService implements IAuctionService {
             // Cộng tiền cọc vào ví người dùng
             winnerWallet.setBalance(winnerWallet.getBalance() + depositAmount);
             walletRepository.save(winnerWallet);
+
+
+            // Trừ tiền cọc từ ví đấu giá
+            auctionWallet.setBalance(auctionWallet.getBalance() - depositAmount);
+            walletRepository.save(auctionWallet);
 
             // Tạo giao dịch hoàn tiền
             long oldBalance = (long) (winnerWallet.getBalance() - depositAmount); // Số dư trước khi hoàn tiền
@@ -530,6 +536,7 @@ public class AuctionService implements IAuctionService {
             // Lấy ví của người dùng
             Wallet userWallet = walletRepository.findWalletByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + user.getEmail()));
+            Wallet auctionWallet = walletRepository.findWalletByAuctionId(auction.getAuctionId()).orElseThrow(null);
 
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
             Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
@@ -547,6 +554,9 @@ public class AuctionService implements IAuctionService {
             userWallet.setBalance(userWallet.getBalance() + depositAmount);
             walletRepository.save(userWallet);
 
+            // Trừ tiền cọc từ ví đấu giá
+            auctionWallet.setBalance(auctionWallet.getBalance() - depositAmount);
+            walletRepository.save(auctionWallet);
             // Tạo giao dịch hoàn tiền
             long oldBalance = (long) (userWallet.getBalance() - depositAmount); // Số dư trước khi hoàn tiền
             long newBalance = (long) userWallet.getBalance(); // Số dư sau khi hoàn tiền
