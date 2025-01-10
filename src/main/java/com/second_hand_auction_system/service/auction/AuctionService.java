@@ -464,7 +464,7 @@ public class AuctionService implements IAuctionService {
             User winner = winningBid.getUser();
             Wallet winnerWallet = walletRepository.findWalletByUserId(winner.getId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + winner.getEmail()));
-            Wallet auctionWallet = walletRepository.findWalletByAuctionId(auction.getAuctionId()).orElseThrow(null);
+            Wallet auctionWallet = walletRepository.findById(auction.getWallet().getWalletId()).orElseThrow(null);
 
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
             Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
@@ -536,8 +536,7 @@ public class AuctionService implements IAuctionService {
             // Lấy ví của người dùng
             Wallet userWallet = walletRepository.findWalletByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + user.getEmail()));
-            Wallet auctionWallet = walletRepository.findWalletByAuctionId(auction.getAuctionId()).orElseThrow(null);
-
+            Wallet auctionWallet = walletRepository.findById(auction.getWallet().getWalletId()).orElseThrow(null);
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
             Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
                     userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED, auction);
