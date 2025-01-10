@@ -208,23 +208,23 @@ public class OrderService implements IOrderService {
         walletRepository.save(adminWallet);
 
 //        // Tạo giao dịch cho ví admin
-//        Transaction transactionAdminWallet = Transaction.builder()
-//                .amount((long) bidAmount)
-//                .wallet(adminWallet)
-//                .oldAmount((long) adminOldBalance)
-//                .netAmount((long) adminNewBalance)
-//                .transactionStatus(TransactionStatus.COMPLETED)
-//                .transactionType(TransactionType.TRANSFER)
-//                .commissionAmount(0)
-//                .commissionRate(0)
-//                .order(orderEntity)
-//                .recipient(adminWallet.getUser().getFullName())
-//                .sender("Auction system")
-//                .description("Payment received for auction")
-//                .transactionWalletCode((random()))
-//                .build();
-//
-//        transactionSystemRepository.save(transactionAdminWallet);
+        Transaction transactionAdminWallet = Transaction.builder()
+                .amount((long) bidAmount)
+                .wallet(adminWallet)
+                .oldAmount((long) adminOldBalance)
+                .netAmount((long) adminNewBalance)
+                .transactionStatus(TransactionStatus.COMPLETED)
+                .transactionType(TransactionType.TRANSFER)
+                .commissionAmount(0)
+                .commissionRate(0)
+                .order(orderEntity)
+                .recipient(adminWallet.getUser().getFullName())
+                .sender("Nguoi thang")
+                .description("Payment received for auction")
+                .transactionWalletCode((random2()))
+                .build();
+
+        transactionSystemRepository.save(transactionAdminWallet);
     }
 
     private long random() {
@@ -243,6 +243,17 @@ public class OrderService implements IOrderService {
 //        return UUID.randomUUID().toString();
 //    }
 
+    private long random2() {
+        Random random = new Random();
+        long transactionCode;
+        do {
+            // Generate random 6-digit code
+            int number = random.nextInt(900000) + 100000;
+            transactionCode = Long.parseLong(String.valueOf(number));
+        } while (transactionSystemRepository.existsByTransactionWalletCode(transactionCode)); // Check for uniqueness
+
+        return transactionCode;
+    }
 
     @Override
     public ResponseEntity<?> getOrders(Integer page, Integer size, String sortBy, OrderStatus status) {
