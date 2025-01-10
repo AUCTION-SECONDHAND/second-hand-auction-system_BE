@@ -561,15 +561,18 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new RuntimeException("System wallet not found"));
 
         // Tính toán hoa hồng và số tiền
-        double totalAmount = order.getTotalAmount();
+        double totalAmountOder = order.getTotalAmount();
         double commissionRate = 0.1; // Ví dụ: 10% hoa hồng
-        double commissionAmount = totalAmount * commissionRate;
-        double netAmount = totalAmount - commissionAmount;
+        double commissionAmount = totalAmountOder * commissionRate;
+        double Amount = totalAmountOder - commissionAmount;
+
 
         double oldBalanceSeller = sellerWallet.getBalance();
+
+        double netAmount = oldBalanceSeller + Amount;
         // Cập nhật số dư ví
-        sellerWallet.setBalance(sellerWallet.getBalance() + netAmount);
-        systemWallet.setBalance(systemWallet.getBalance() + commissionAmount);
+        sellerWallet.setBalance(sellerWallet.getBalance() + Amount);
+        systemWallet.setBalance(systemWallet.getBalance() - Amount );
 
         walletRepository.save(sellerWallet);
         walletRepository.save(systemWallet);
@@ -577,7 +580,7 @@ public class OrderService implements IOrderService {
         // Lưu giao dịch
         Transaction transaction = new Transaction();
         transaction.setOrder(order);
-        transaction.setAmount((long) totalAmount);
+        transaction.setAmount((long) Amount);
         transaction.setCommissionRate(commissionRate);
         transaction.setDescription("Thanh toán tiền cho seller");
         transaction.setCommissionAmount((int) commissionAmount);
