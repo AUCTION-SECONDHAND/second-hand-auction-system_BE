@@ -551,6 +551,7 @@ public class AuctionService implements IAuctionService {
 
             Wallet auctionWallet = walletRepository.findById(auction.getWallet().getWalletId()).orElseThrow(null);
 
+
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
             Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
                     userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED, auction);
