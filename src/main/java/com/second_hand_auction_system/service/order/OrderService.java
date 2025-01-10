@@ -163,7 +163,7 @@ public class OrderService implements IOrderService {
         createCustomerTransaction(customerWallet, winningBid.getBidAmount(), orderEntity, requester);
 
         // Cập nhật và tạo giao dịch cho ví admin
-//        createAdminTransaction(winningBid.getBidAmount(), orderEntity);
+        createAdminTransaction(winningBid.getBidAmount(), orderEntity);
 
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .data("Success")
@@ -196,17 +196,17 @@ public class OrderService implements IOrderService {
         transactionSystemRepository.save(transactionWallet);
     }
 //
-//    private void createAdminTransaction(double bidAmount, Order orderEntity) {
-//        Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
-//        if (adminWallet == null) {
-//            throw new RuntimeException("Admin wallet not found");
-//        }
-//
-//        double adminOldBalance = adminWallet.getBalance();
-//        double adminNewBalance = adminOldBalance + bidAmount;
-//        adminWallet.setBalance(adminNewBalance);
-//        walletRepository.save(adminWallet);
-//
+    private void createAdminTransaction(double bidAmount, Order orderEntity) {
+        Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
+        if (adminWallet == null) {
+            throw new RuntimeException("Admin wallet not found");
+        }
+
+        double adminOldBalance = adminWallet.getBalance();
+        double adminNewBalance = adminOldBalance + bidAmount;
+        adminWallet.setBalance(adminNewBalance);
+        walletRepository.save(adminWallet);
+
 //        // Tạo giao dịch cho ví admin
 //        Transaction transactionAdminWallet = Transaction.builder()
 //                .amount((long) bidAmount)
@@ -225,7 +225,7 @@ public class OrderService implements IOrderService {
 //                .build();
 //
 //        transactionSystemRepository.save(transactionAdminWallet);
-//    }
+    }
 
     private long random() {
         Random random = new Random();
