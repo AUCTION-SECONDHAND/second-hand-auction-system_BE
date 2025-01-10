@@ -498,7 +498,19 @@ public class AuctionService implements IAuctionService {
             // Tạo giao dịch hoàn tiền
             long oldBalance = (long) (winnerWallet.getBalance() - depositAmount); // Số dư trước khi hoàn tiền
             long newBalance = (long) winnerWallet.getBalance(); // Số dư sau khi hoàn tiền
-
+            Transaction refundofAuction = Transaction.builder()
+                    .wallet(auctionWallet)
+                    .transactionStatus(TransactionStatus.COMPLETED)
+                    .description("Tru tien coc cho nguoi thang trong phien dau gia " + auction.getAuctionId())
+                    .transactionType(TransactionType.REFUND)
+                    .recipient(winnerWallet.getUser().getFullName())
+                    .sender("He thong phien dau gia " + auction.getAuctionId())
+                    .transactionWalletCode(random())
+                    .oldAmount(oldBalance) // Số dư trước khi hoàn tiền
+                    .netAmount(newBalance) // Số dư sau khi hoàn tiền
+                    .amount((long) depositAmount) // Giá trị số tiền hoàn cọc
+                    .build();
+            transactionRepository.save(refundofAuction);
             Transaction refundTransaction = Transaction.builder()
                     .wallet(winnerWallet)
                     .transactionStatus(TransactionStatus.COMPLETED)
@@ -536,7 +548,10 @@ public class AuctionService implements IAuctionService {
             // Lấy ví của người dùng
             Wallet userWallet = walletRepository.findWalletByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy ví cho user: " + user.getEmail()));
+
             Wallet auctionWallet = walletRepository.findById(auction.getWallet().getWalletId()).orElseThrow(null);
+
+
             // Kiểm tra nếu đã có giao dịch hoàn cọc với trạng thái COMPLETED
             Optional<Transaction> existingRefund = transactionRepository.findByWalletAndTransactionTypeAndTransactionStatusAndAuction(
                     userWallet, TransactionType.REFUND, TransactionStatus.COMPLETED, auction);
@@ -559,7 +574,19 @@ public class AuctionService implements IAuctionService {
             // Tạo giao dịch hoàn tiền
             long oldBalance = (long) (userWallet.getBalance() - depositAmount); // Số dư trước khi hoàn tiền
             long newBalance = (long) userWallet.getBalance(); // Số dư sau khi hoàn tiền
-
+            Transaction refundofAuction = Transaction.builder()
+                    .wallet(auctionWallet)
+                    .transactionStatus(TransactionStatus.COMPLETED)
+                    .description("Tru tien coc cho khach hang trong phien dau gia " + auction.getAuctionId())
+                    .transactionType(TransactionType.REFUND)
+                    .recipient(userWallet.getUser().getFullName())
+                    .sender("He thong phien dau gia " + auction.getAuctionId())
+                    .transactionWalletCode(random())
+                    .oldAmount(oldBalance) // Số dư trước khi hoàn tiền
+                    .netAmount(newBalance) // Số dư sau khi hoàn tiền
+                    .amount((long) depositAmount) // Giá trị số tiền hoàn cọc
+                    .build();
+            transactionRepository.save(refundofAuction);
             Transaction refundTransaction = Transaction.builder()
                     .wallet(userWallet)
                     .transactionStatus(TransactionStatus.COMPLETED)
