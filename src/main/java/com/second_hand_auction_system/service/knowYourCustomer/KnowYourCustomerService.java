@@ -210,14 +210,14 @@ public class KnowYourCustomerService implements IKnowYourCustomerService {
 //        assert  address != null;
         if (knowYourCustomer.getKycStatus().equals(KycStatus.APPROVED)) {
             user.setRole(Role.SELLER);
-//            SellerInformation sellerInformation = SellerInformation.builder()
-//                    .sellerId(requester.getId())
-//                    .avatar(requester.getAvatar())
-//                    .address("")
-//                    .storeName(requester.getFullName())
-//                    .user(requester)
-//                    .build();
-//            sellerInformationRepository.save(sellerInformation);
+            SellerInformation sellerInformation = SellerInformation.builder()
+                    .avatar("https://res.cloudinary.com/dwqq0mx4j/image/upload/v1731999295/z5964182930964_ddba55cac914596d0727dd9f52278d0f_ycgchq.jpg")
+                    .backgroundImage("https://res.cloudinary.com/dwqq0mx4j/image/upload/v1732531487/wallpaperflare.com_wallpaper_bwbfw4.jpg")
+                    .address("Địa chỉ")
+                    .storeName("Tên cửa hàng")
+                    .user(kyc.getUser())
+                    .build();
+            sellerInformationRepository.save(sellerInformation);
         } else if (knowYourCustomer.getKycStatus().equals(KycStatus.PENDING) ||
                 knowYourCustomer.getKycStatus().equals(KycStatus.REJECTED)) {
             user.setRole(Role.BUYER);  // Update the user's role to BUYER
