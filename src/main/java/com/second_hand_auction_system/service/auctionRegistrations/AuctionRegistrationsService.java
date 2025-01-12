@@ -140,17 +140,12 @@ public class AuctionRegistrationsService implements IAuctionRegistrationsService
             auctionRepository.save(auctionExist);
             // Log số dư ví người dùng sau khi trừ tiền
             log.info("Vi user sau khi coc: " + userWallet.getBalance());
+            log.info("Vi coc sau khi coc: " + auctionExist.getWallet().getBalance());
 
             // Lấy ví đấu giá (ví cọc)
             Wallet viCoc = walletRepository.findWalletByAuctionId(auctionExist.getWallet().getWalletId()).orElse(null);
 
-            // Kiểm tra ví cọc và cộng tiền vào ví cọc
-            if (viCoc != null) {
-                log.info("Vi coc ban dau: " + viCoc.getBalance());
-                viCoc.setBalance(viCoc.getBalance() + depositAmount);
-                walletRepository.save(viCoc); // Lưu lại thay đổi vào ví cọc
-                log.info("Vi coc sau khi coc: " + viCoc.getBalance());
-            }
+
 
             // Cập nhật trạng thái đăng ký của người dùng
             AuctionRegistrationUser auctionRegistrationUser = registrationUserRepository.findByAuctionRegistration_AuctionRegistrationId(newRegistration.getAuctionRegistrationId()).orElse(null);
