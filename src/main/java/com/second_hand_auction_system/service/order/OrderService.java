@@ -220,7 +220,7 @@ public class OrderService implements IOrderService {
                 .order(orderEntity)
                 .recipient(adminWallet.getUser().getFullName())
                 .sender("Nguoi thang")
-                .description("Payment received for auction")
+                .description("Người dùng thanh toán đơn hàng")
                 .transactionWalletCode((random2()))
                 .build();
 
