@@ -21,4 +21,6 @@ public interface ITransactionWalletService {
     ResponseEntity<?> getAllTransaction(int limit, int page, Role role, TransactionType transactionType);
 
     ResponseEntity<?> upload(String imageUrl,Integer transactionId);
+
+    ResponseEntity<?> getTransaction(Integer auctionId);
 }
