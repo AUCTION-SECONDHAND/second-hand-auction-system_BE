@@ -33,7 +33,7 @@ public class TransactionWalletController {
     }
 
     @GetMapping("/get-transaction-admin")
-    public ResponseEntity<?> getTransactionAdmin(@RequestParam(value = "limit", defaultValue = "10") int limit,
+    public ResponseEntity<?> getTransactionAdmin(@RequestParam(value = "limit", defaultValue = "50") int limit,
                                                  @RequestParam(value = "page", defaultValue = "0") int page,
                                                  @RequestParam(value = "role", required = false) Role role,
                                                  @RequestParam(value = "transactionType", required = false) TransactionType transactionType) {
