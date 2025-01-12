@@ -4,12 +4,14 @@ import com.second_hand_auction_system.models.*;
 import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionStatus;
 import com.second_hand_auction_system.utils.TransactionType;
+import com.second_hand_auction_system.utils.WalletType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Integer> {
@@ -54,6 +56,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     boolean existsByTransactionWalletCode(long transactionCode);
 
     Optional<Transaction> findByOrderAndTransactionType(Order order, TransactionType transactionType);
+
+    @Query("SELECT t FROM Transaction t " +
+            "JOIN t.wallet w " +
+            "JOIN Auction a ON a.wallet.walletId = w.walletId " +
+            "WHERE a.auctionId = :auctionId " +
+            "AND w.walletType = :walletType")
+    List<Transaction> findTransactionsByAuctionId(@Param("walletType") WalletType walletType, @Param("auctionId") Integer auctionId);
+
+
+    List<Transaction> findTransactionByWallet_WalletId(Integer walletId);
+
+
 
 
 

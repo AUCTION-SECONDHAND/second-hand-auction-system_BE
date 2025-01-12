@@ -4,6 +4,8 @@ import com.second_hand_auction_system.dtos.responses.ResponseObject;
 import com.second_hand_auction_system.dtos.responses.transactionWallet.TransactionWalletResponse;
 import com.second_hand_auction_system.dtos.responses.withdraw.APiResponse;
 import com.second_hand_auction_system.models.Transaction;
+import com.second_hand_auction_system.models.Wallet;
+import com.second_hand_auction_system.repositories.AuctionRepository;
 import com.second_hand_auction_system.repositories.TransactionRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.repositories.WalletRepository;
@@ -11,6 +13,7 @@ import com.second_hand_auction_system.service.jwt.IJwtService;
 import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionStatus;
 import com.second_hand_auction_system.utils.TransactionType;
+import com.second_hand_auction_system.utils.WalletType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -40,6 +43,7 @@ public class TransactionWalletService implements ITransactionWalletService {
     private final IJwtService jwtService;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
+    private final AuctionRepository auctionRepository;
 
     @Override
     public ResponseEntity<?> getAll(String keyword, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
@@ -320,6 +324,101 @@ public class TransactionWalletService implements ITransactionWalletService {
                 .message("Transaction wallet uploaded successfully")
                 .build());
     }
+
+    @Override
+    public ResponseEntity<?> getTransaction(Integer auctionId) {
+        // Kiểm tra Auction có tồn tại không
+        var auction = auctionRepository.findById(auctionId).orElse(null);
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("Auction not found")
+                    .data(null)
+                    .build());
+        }
+
+        // Lấy Wallet từ Auction
+        Wallet walletAuction = auction.getWallet();
+        if (walletAuction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("Wallet not associated with the auction")
+                    .data(null)
+                    .build());
+        }
+
+        // Xác thực người dùng
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest()
+                .getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .message("Unauthorized")
+                    .data(null)
+                    .build());
+        }
+
+        String token = authHeader.substring(7);
+        var email = jwtService.extractUserEmail(token);
+        var user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("User not found")
+                    .data(null)
+                    .build());
+        }
+        if (!(user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.STAFF))) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    ResponseObject.builder()
+                            .message("Unauthorized")
+                            .status(HttpStatus.UNAUTHORIZED)
+                            .data(null)
+                            .build()
+            );
+        }
+
+        // Lấy danh sách giao dịch từ Wallet
+        List<Transaction> transactionAuction = transactionRepository.findTransactionByWallet_WalletId(auction.getWallet().getWalletId());
+        if (transactionAuction.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .message("No transactions found for this auction wallet")
+                    .data(null)
+                    .build());
+        }
+
+        // Chuyển đổi danh sách giao dịch sang TransactionWalletResponse
+        List<TransactionWalletResponse> transactionWallets = transactionAuction.stream()
+                .map(transaction -> TransactionWalletResponse.builder()
+                        .transactionId(transaction.getTransactionWalletId())
+                        .amount(transaction.getAmount())
+                        .transactionWalletCode(transaction.getTransactionWalletCode())
+                        .oldAmount((long) transaction.getOldAmount())
+                        .netAmount((long) transaction.getNetAmount())
+                        .transactionType(transaction.getTransactionType())
+                        .transactionStatus(transaction.getTransactionStatus())
+                        .senderName(transaction.getSender())
+                        .recipientName(transaction.getRecipient())
+                        .transactionDate(transaction.getCreateAt())
+                        .description(transaction.getDescription())
+                        .commissionAmount(transaction.getCommissionAmount())
+                        .commissionRate(transaction.getCommissionRate())
+                        .build())
+                .collect(Collectors.toList());
+        double balanceAuctionWallet = auction.getWallet().getBalance();
+        // Tạo phản hồi
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("data", transactionWallets);
+        responseData.put("balance",balanceAuctionWallet );// Sử dụng danh sách đã ánh xạ
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Transaction wallets retrieved successfully")
+                .data(responseData)
+                .build());
+    }
+
 
 
 }

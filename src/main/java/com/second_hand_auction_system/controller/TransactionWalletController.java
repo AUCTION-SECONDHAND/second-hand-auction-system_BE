@@ -46,7 +46,10 @@ public class TransactionWalletController {
 
     }
 
-
+    @GetMapping("/check-balance/{auctionId}")
+    public ResponseEntity<?> checkAuctionBalance(@PathVariable Integer auctionId) {
+        return transactionWalletService.getTransaction(auctionId);
+    }
 
 
 
