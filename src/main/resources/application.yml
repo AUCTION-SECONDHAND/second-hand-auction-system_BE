@@ -8,8 +8,6 @@ open:
     description: API for the second-hand auction system
     licenseUrl: "https://example.com/license"  # Replace with actual license URL
     licenseName: API License
-#    serversUrl: https://auction-system-fpt-2024-production.azurewebsites.net/
-#    serversUrl: http://localhost:8080/
     serversUrl: http://103.163.24.146:8080/
     serversDescription: Server production
 
@@ -22,15 +20,10 @@ spring:
   application:
     name: second-hand-auction-system_BE
   datasource:
-    # Duc Anh
-#    url: jdbc:mysql://root:uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl@junction.proxy.rlwy.net:45319/railway?useSSL=true
-#    url: jdbc:mysql://localhost:3306/secondhandauction
     url: jdbc:mysql://103.163.24.146:3306/secondhandauction?useSSL=false&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-#    password: 12345
     password: Auction@123
-#    password: uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl
   task:
     scheduling:
       pool:
@@ -68,15 +61,15 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${SECRET_KEY}
-            client-secret: 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
-            scope: profile, email
-            redirect-uri: http://localhost:8080/login/oauth2/code/google
+#  security:
+#    oauth2:
+#      client:
+#        registration:
+#          google:
+#            client-id: ${SECRET_KEY}
+#            client-secret: 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
+#            scope: profile, email
+#            redirect-uri: http://localhost:8080/login/oauth2/code/google
 
 application:
   security:
