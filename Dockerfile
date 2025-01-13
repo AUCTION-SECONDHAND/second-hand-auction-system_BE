@@ -6,6 +6,8 @@ COPY . .
 # Build ứng dụng và tạo file jar
 RUN mvn clean package -DskipTests
 
+
+
 # Run stage
 FROM openjdk:17-jdk-slim
 WORKDIR /app
