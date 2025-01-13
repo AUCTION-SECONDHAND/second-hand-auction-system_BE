@@ -10,7 +10,7 @@ open:
     licenseName: API License
     #    serversUrl: https://auction-system-fpt-2024-production.azurewebsites.net/
     #    serversUrl: http://localhost:8080/
-    serversUrl: http://103.163.24.146:8080/
+    serversUrl: https://teracandle.id.vn/
     serversDescription: Server production
 
 springdoc:
@@ -23,7 +23,6 @@ spring:
     name: second-hand-auction-system_BE
   datasource:
     url: jdbc:mysql://103.163.24.146:3306/secondhandauction?useSSL=false&allowPublicKeyRetrieval=true
-
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: Auction@123
