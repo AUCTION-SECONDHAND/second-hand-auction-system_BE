@@ -429,14 +429,19 @@ public class AuctionService implements IAuctionService {
                     }
 
                     log.info("Bid thắng cuộc cho phiên đấu giá {}: {}", auction.getAuctionId(), winningBid);
-
-                    // Hoàn tiền cho tất cả người tham gia trừ người thắng cuộc
+       // Hoàn tiền cho tất cả người tham gia trừ người thắng cuộc
                     for (User participant : participants) {
-                        if (participant != (winningBid.getUser())) {
+                        if (participant != winningBid.getUser()) {
                             log.info("Hoàn tiền cho người tham gia ID: {} trong phiên đấu giá {}", participant.getId(), auction.getAuctionId());
                             processDepositRefund(participant, auction);
                         }
                     }
+
+           // Đổi trạng thái sau khi hoàn thành hoàn tiền
+                    auction.setStatus(AuctionStatus.AWAITING_PAYMENT);
+                    auctionRepository.save(auction);
+                    log.info("Phiên đấu giá ID: {} chuyển sang trạng thái AWAITING_PAYMENT.", auction.getAuctionId());
+
 
                     // Xử lý trạng thái và hoàn tiền cho người thắng cuộc nếu cần
                     if (auction.getStatus() == AuctionStatus.AWAITING_PAYMENT) {
@@ -540,9 +545,9 @@ public class AuctionService implements IAuctionService {
     private void processDepositRefund(User user, Auction auction) {
         try {
             // Kiểm tra trạng thái của phiên đấu giá, chỉ tiếp tục nếu trạng thái là CLOSED
-            if (!auction.getStatus().equals(AuctionStatus.CLOSED)) {
-                log.info("Phiên đấu giá ID: {} không phải trạng thái CLOSED, không thực hiện hoàn cọc.", auction.getAuctionId());
-                return; // Nếu không phải trạng thái CLOSED, kết thúc
+            if (!(auction.getStatus().equals(AuctionStatus.CLOSED))) {
+                log.info("Phiên đấu giá ID: {} không phải trạng thái CLOSED hoặc AWAITING_PAYMENT, không thực hiện hoàn cọc.", auction.getAuctionId());
+                return;
             }
 
             // Lấy ví của người dùng
@@ -580,10 +585,10 @@ public class AuctionService implements IAuctionService {
             Transaction refundofAuction = Transaction.builder()
                     .wallet(auctionWallet)
                     .transactionStatus(TransactionStatus.COMPLETED)
-                    .description(userWallet.getUser().getFullName() + ", Id: " + userWallet.getUser().getId())
+                    .description("Transaction hoàn cọc ví Auction")
                     .transactionType(TransactionType.REFUND)
-                    .recipient("Hệ thống đấu giá phiên " + auction.getAuctionId())
-                    .sender("Transaction hoàn cọc ví Auction" )
+                    .recipient(userWallet.getUser().getFullName() + ", ID: " + userWallet.getUser().getId())
+                    .sender("Hệ thống đấu giá phiên " + auction.getAuctionId())
                     .transactionWalletCode(random())
                     .oldAmount(oldBalanceAuction) // Số dư trước khi hoàn tiền
                     .netAmount(newBlanceAuction) // Số dư sau khi hoàn tiền
@@ -605,8 +610,6 @@ public class AuctionService implements IAuctionService {
 
             // Lưu giao dịch hoàn cọc vào cơ sở dữ liệu
             transactionRepository.save(refundTransaction);
-            auction.setStatus(AuctionStatus.AWAITING_PAYMENT);
-            auctionRepository.save(auction);
             log.info("Hoàn cọc cho user: {}, Số tiền: {}", userWallet.getUser().getEmail(), depositAmount);
             emailService.sendResultForAuction(userWallet.getUser().getEmail(), null);
 

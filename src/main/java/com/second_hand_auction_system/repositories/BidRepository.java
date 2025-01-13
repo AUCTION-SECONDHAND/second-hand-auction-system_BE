@@ -52,4 +52,10 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     Bid findTopByAuction_AuctionIdOrderByBidAmountDesc(Integer auctionId);
 
     @Query("SELECT DISTINCT b.user FROM Bid b WHERE b.auction.auctionId = :auctionId")
-    List<User> findDistinctUsersByAuction_AuctionId(Integer auctionId);}
+    List<User> findDistinctUsersByAuction_AuctionId(Integer auctionId);
+
+    @Query("SELECT b.user FROM Bid b WHERE b.auction.auctionId = :auctionId AND b.winBid = false")
+    List<User> findLosersByAuctionId(@Param("auctionId") Integer auctionId);
+
+}
+

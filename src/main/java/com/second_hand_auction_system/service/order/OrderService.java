@@ -163,7 +163,7 @@ public class OrderService implements IOrderService {
         createCustomerTransaction(customerWallet, winningBid.getBidAmount(), orderEntity, requester);
 
         // Cập nhật và tạo giao dịch cho ví admin
-        createAdminTransaction(winningBid.getBidAmount(), orderEntity);
+        createAdminTransaction(winningBid.getBidAmount(), orderEntity, customerWallet);
 
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
                 .data("Success")
@@ -196,7 +196,7 @@ public class OrderService implements IOrderService {
         transactionSystemRepository.save(transactionWallet);
     }
 //
-    private void createAdminTransaction(double bidAmount, Order orderEntity) {
+    private void createAdminTransaction(double bidAmount, Order orderEntity, Wallet customerWallet) {
         Wallet adminWallet = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
         if (adminWallet == null) {
             throw new RuntimeException("Admin wallet not found");
@@ -219,7 +219,7 @@ public class OrderService implements IOrderService {
                 .commissionRate(0)
                 .order(orderEntity)
                 .recipient(adminWallet.getUser().getFullName())
-                .sender("Nguoi thang")
+                .sender(customerWallet.getUser().getFullName() + ", Id: " + customerWallet.getUser().getId())
                 .description("Người dùng thanh toán đơn hàng")
                 .transactionWalletCode((random2()))
                 .build();
