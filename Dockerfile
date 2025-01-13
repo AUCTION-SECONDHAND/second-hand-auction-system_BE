@@ -14,7 +14,7 @@ WORKDIR /app
 COPY --from=build /app/target/second-hand-auction-system_BE-0.0.1-SNAPSHOT.jar api-service.jar
 
 # Expose cổng mà ứng dụng sẽ chạy trên container
-EXPOSE 5000
+EXPOSE 8080
 
 # Khởi động ứng dụng khi container được chạy
 ENTRYPOINT ["java", "-jar", "api-service.jar"]
