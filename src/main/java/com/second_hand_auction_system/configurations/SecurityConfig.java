@@ -45,6 +45,7 @@ public class SecurityConfig {
             "/api/v1/bids/**",
             "/api/v1/auctions/update/**",
             "/socket/**",
+            "/**"
     };
 
 
