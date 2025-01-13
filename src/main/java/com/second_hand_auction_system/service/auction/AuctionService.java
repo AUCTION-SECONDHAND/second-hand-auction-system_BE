@@ -514,10 +514,10 @@ public class AuctionService implements IAuctionService {
             Transaction refundTransaction = Transaction.builder()
                     .wallet(winnerWallet)
                     .transactionStatus(TransactionStatus.COMPLETED)
-                    .description("Hoàn cọc cho người thắng cuộc trong phiên đấu giá " + auction.getAuctionId())
+                    .description("Hoàn cọc cho người thắng cuộc")
                     .transactionType(TransactionType.REFUND)
                     .recipient(winnerWallet.getUser().getFullName())
-                    .sender("SYSTEM")
+                    .sender("He thong phien dau gia " + auction.getAuctionId())
                     .transactionWalletCode(random())
                     .oldAmount(oldBalance) // Số dư trước khi hoàn tiền
                     .netAmount(newBalance) // Số dư sau khi hoàn tiền
