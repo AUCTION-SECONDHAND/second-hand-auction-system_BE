@@ -74,3 +74,4 @@ jobs:
             docker rm ${{ env.CONTAINER_NAME }}  || true
             docker rmi ${{ env.DOCKER_REGISTRY }}  || true
             docker pull ${{ env.DOCKER_REGISTRY }}
+            docker run -d --name ${{ env.CONTAINER_NAME }} -p ${{ env.CONTAINER_PORT }}:${{ env.CONTAINER_PORT }} ${{ env.DOCKER_REGISTRY }}
