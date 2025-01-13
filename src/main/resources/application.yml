@@ -8,6 +8,11 @@ open:
     description: API for the second-hand auction system
     licenseUrl: "https://example.com/license"  # Replace with actual license URL
     licenseName: API License
+<<<<<<< HEAD
+=======
+    #    serversUrl: https://auction-system-fpt-2024-production.azurewebsites.net/
+    #    serversUrl: http://localhost:8080/
+>>>>>>> 3e240380bf8b3465fd6517ed9b7a02081674a751
     serversUrl: http://103.163.24.146:8080/
     serversDescription: Server production
 
@@ -21,9 +26,16 @@ spring:
     name: second-hand-auction-system_BE
   datasource:
     url: jdbc:mysql://103.163.24.146:3306/secondhandauction?useSSL=false&allowPublicKeyRetrieval=true
+
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
+<<<<<<< HEAD
     password: Auction@123
+=======
+    password: 12345
+  #    password: Auction@123
+  #    password: uVNsXRvMbfemejUtOJGWxMiJlJXkvJyl
+>>>>>>> 3e240380bf8b3465fd6517ed9b7a02081674a751
   task:
     scheduling:
       pool:
