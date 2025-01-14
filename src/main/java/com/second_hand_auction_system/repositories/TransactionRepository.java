@@ -68,7 +68,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     List<Transaction> findTransactionByWallet_WalletId(Integer walletId);
 
 
-
-
-
 }
