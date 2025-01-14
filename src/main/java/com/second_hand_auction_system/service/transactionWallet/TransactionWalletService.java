@@ -28,10 +28,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -388,9 +385,11 @@ public class TransactionWalletService implements ITransactionWalletService {
                     .data(null)
                     .build());
         }
-
-        // Chuyển đổi danh sách giao dịch sang TransactionWalletResponse
-        List<TransactionWalletResponse> transactionWallets = transactionAuction.stream()
+        List<Transaction> transactionList = transactionRepository.findTransactionByWallet_WalletId(auction.getWallet().getWalletId())
+                .stream()
+                .sorted(Comparator.comparing(Transaction::getCreateAt).reversed()) // Sắp xếp theo createAt giảm dần
+                .toList();
+        List<TransactionWalletResponse> transactionWallets = transactionList.stream()
                 .map(transaction -> TransactionWalletResponse.builder()
                         .transactionId(transaction.getTransactionWalletId())
                         .amount(transaction.getAmount())
@@ -407,18 +406,18 @@ public class TransactionWalletService implements ITransactionWalletService {
                         .commissionRate(transaction.getCommissionRate())
                         .build())
                 .collect(Collectors.toList());
+
         double balanceAuctionWallet = auction.getWallet().getBalance();
         // Tạo phản hồi
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("data", transactionWallets);
-        responseData.put("balance",balanceAuctionWallet );// Sử dụng danh sách đã ánh xạ
+        responseData.put("balance", balanceAuctionWallet);// Sử dụng danh sách đã ánh xạ
         return ResponseEntity.ok(ResponseObject.builder()
                 .status(HttpStatus.OK)
                 .message("Transaction wallets retrieved successfully")
                 .data(responseData)
                 .build());
     }
-
 
 
 }

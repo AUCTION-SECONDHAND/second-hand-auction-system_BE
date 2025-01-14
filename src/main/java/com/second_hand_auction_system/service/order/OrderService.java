@@ -540,9 +540,9 @@ public class OrderService implements IOrderService {
                     System.out.println("Updated order " + order.getOrderId() + " with status " + ghnStatus);
 
                     if (ghnStatus.toLowerCase().equals("delivered")) {
-
                         processPayment(order);
-
+                    }else if (ghnStatus.toLowerCase().equals("returned")) {
+                        refundBidder(order); // Hoàn tiền cho bidder
                     }
                 }
             } catch (Exception e) {
@@ -550,6 +550,61 @@ public class OrderService implements IOrderService {
             }
         }
     }
+
+    @Transactional
+    public void refundBidder(Order order) {
+        // Kiểm tra nếu đã tồn tại giao dịch hoàn tiền
+        boolean refundExists = transactionSystemRepository.existsByOrderAndDescription(order, "Hoàn tiền cho bidder");
+
+        if (refundExists) {
+            System.out.println("Refund for order " + order.getOrderId() + " already exists. Skipping refund process.");
+            return;
+        }
+
+        // Lấy ví của bidder
+        Wallet bidderWallet = walletRepository.findByUser(order.getUser())
+                .orElseThrow(() -> new RuntimeException("Bidder wallet not found for order ID: "
+                        + order.getOrderId() + ", Bidder User ID: " + order.getUser().getId()));
+
+        // Lấy ví hệ thống
+        Wallet systemWallet = walletRepository.findByWalletType(WalletType.ADMIN)
+                .orElseThrow(() -> new RuntimeException("System wallet not found"));
+
+        // Số tiền cần hoàn lại
+        double refundAmount = order.getTotalAmount(); // Tổng tiền đặt giá
+
+        double oldBalanceBidder = bidderWallet.getBalance();
+        double newBalanceBidder = oldBalanceBidder + refundAmount;
+
+        // Cập nhật số dư ví
+        bidderWallet.setBalance(newBalanceBidder);
+        systemWallet.setBalance(systemWallet.getBalance() - refundAmount);
+
+        walletRepository.save(bidderWallet);
+        walletRepository.save(systemWallet);
+
+        // Lưu giao dịch hoàn tiền
+        Transaction refundTransaction = new Transaction();
+        refundTransaction.setOrder(order);
+        refundTransaction.setAmount((long) refundAmount);
+        refundTransaction.setDescription("Hoàn tiền cho bidder");
+        refundTransaction.setOldAmount(oldBalanceBidder);
+        refundTransaction.setNetAmount(newBalanceBidder);
+        refundTransaction.setRecipient(bidderWallet.getUser().getFullName());
+        refundTransaction.setSender("System");
+        refundTransaction.setTransactionWalletCode(random()); // Mã giao dịch hoàn tiền
+        refundTransaction.setTransactionType(TransactionType.REFUND);
+        refundTransaction.setTransactionStatus(TransactionStatus.COMPLETED);
+        refundTransaction.setWallet(order.getUser().getWallet());
+
+        try {
+            transactionSystemRepository.save(refundTransaction);
+            System.out.println("Refund transaction saved successfully for order " + order.getOrderId());
+        } catch (Exception e) {
+            System.err.println("Error saving refund transaction for order " + order.getOrderId() + ": " + e.getMessage());
+        }
+    }
+
 
     @Transactional
     public void processPayment(Order order) {
