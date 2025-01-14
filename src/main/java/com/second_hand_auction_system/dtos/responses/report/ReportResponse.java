@@ -51,4 +51,10 @@ public class ReportResponse {
     @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
 
+    private Integer orderId;
+
+    private String orderCode;
+
+    private String ticketId;
+
 }

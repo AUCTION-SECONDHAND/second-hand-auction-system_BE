@@ -4,8 +4,10 @@ package com.second_hand_auction_system.service.report;
 import com.second_hand_auction_system.dtos.request.report.ReplyReportDto;
 import com.second_hand_auction_system.dtos.request.report.ReportDto;
 import com.second_hand_auction_system.dtos.responses.report.ReportResponse;
+import com.second_hand_auction_system.models.Order;
 import com.second_hand_auction_system.models.Report;
 import com.second_hand_auction_system.models.User;
+import com.second_hand_auction_system.repositories.OrderRepository;
 import com.second_hand_auction_system.repositories.ReportRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.service.jwt.IJwtService;
@@ -26,6 +28,7 @@ import java.util.Objects;
 public class ReportService implements IReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
     private final IJwtService jwtService;
 
     @Override
@@ -35,17 +38,20 @@ public class ReportService implements IReportService {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("Unauthorized");
         }
+        Order orderExisted = orderRepository.findById(reportDto.getOrderId())
+                .orElseThrow(() -> new Exception("Đơn hàng không tìm thấy"));
 
         String token = authHeader.substring(7);
         String userEmail = jwtService.extractUserEmail(token);
         var requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
         if (requester == null) {
-            throw new Exception("User not found");
+            throw new Exception("Không tìm thấy người dùng");
         }
         Report report = Report.builder()
-//                .evidence(reportDto.getEvidence())
+                .evidence(reportDto.getEvidence())
                 .reason(reportDto.getReason())
                 .type(reportDto.getType())
+                .order(orderExisted)
                 .user(requester)
                 .build();
         report.setStatus(ReportStatus.PENDING);
@@ -68,6 +74,8 @@ public class ReportService implements IReportService {
         if (requester == null) {
             throw new Exception("Không tìm thấy người dùng");
         }
+//        Order orderExisted = orderRepository.findById(replyReportDto.getOrderId())
+//                .orElseThrow(() -> new Exception("Đơn hàng không tìm thấy"));
         Report reportExisted = reportRepository.findById(reportId)
                 .orElseThrow(() -> new Exception("Không tìm thấy báo cáo"));
         reportExisted.setProcessedBy(requester.getFullName());
@@ -75,7 +83,9 @@ public class ReportService implements IReportService {
         reportExisted.setResponseCreateTime(LocalDateTime.now());
         reportExisted.setResponseUpdateTime(LocalDateTime.now());
         reportExisted.setResponseMessage(replyReportDto.getResponseMessage());
-        reportExisted.setEvidence(replyReportDto.getEvidence());
+        reportExisted.setTicketId(replyReportDto.getTicketId());
+        //reportExisted.setEvidence(replyReportDto.getEvidence());
+        //reportExisted.setOrder(orderExisted);
         reportRepository.save(reportExisted);
     }
 
@@ -108,6 +118,9 @@ public class ReportService implements IReportService {
                 .responseUpdateTime(report.getResponseUpdateTime())
                 .createdAt(report.getCreateAt())
                 .updatedAt(report.getUpdateAt())
+                .orderId(report.getOrder() != null ? report.getOrder().getOrderId() : null)
+                .orderCode(report.getOrder() != null ? report.getOrder().getOrderCode() : null)
+                .ticketId(report.getTicketId())
                 .build());
     }
 
@@ -126,6 +139,9 @@ public class ReportService implements IReportService {
                 .responseMessage(report.getResponseMessage())
                 .responseCreateTime(report.getResponseCreateTime())
                 .responseUpdateTime(report.getResponseUpdateTime())
+                .orderId(report.getOrder().getOrderId())
+                .orderCode(report.getOrder() != null ? report.getOrder().getOrderCode() : null)
+                .ticketId(report.getTicketId())
                 .build());
     }
 

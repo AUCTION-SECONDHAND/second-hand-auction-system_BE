@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.repositories;
 
+import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
 import com.second_hand_auction_system.models.Auction;
 import com.second_hand_auction_system.models.Order;
 import com.second_hand_auction_system.models.User;
@@ -57,4 +58,10 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     Optional<Order> findByUserAndAuction(User winner, Auction auction);
 
     boolean existsByAuctionAndUser(Auction auction, User winner);
+
+    CoercionInputShape findByOrderCode(String orderCode);
+
+    List<Order> findByOrderId(Integer orderId);
+
+    List<Order> findByOrderIdOrderByOrderCode(Integer orderId);
 }

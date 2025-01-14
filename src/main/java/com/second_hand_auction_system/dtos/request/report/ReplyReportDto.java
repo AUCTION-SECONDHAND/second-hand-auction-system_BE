@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class ReplyReportDto {
 
     private String responseMessage;
-    private String evidence;
+//    private String evidence;
 
 //    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
 //    private LocalDateTime responseCreateTime;
@@ -27,4 +27,7 @@ public class ReplyReportDto {
 
     @Enumerated(EnumType.STRING)
     private ReportStatus status;
+
+    private String ticketId;
+//    private Integer orderId;
 }

@@ -57,4 +57,10 @@ public class Report extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "order_id")
+    private Order order;
+
+    private String ticketId;
+
 }
