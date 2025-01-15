@@ -94,7 +94,12 @@ public class AuctionController {
 
     @PutMapping("/update/{auctionId}")
     public ResponseEntity<?> updateAuction(@PathVariable Integer auctionId){
-        return auctionService.updateStatus(auctionId);
+        return auctionService.updateStatusOpen(auctionId);
+    }
+
+    @PutMapping("/update-closed/{auctionId}")
+    public ResponseEntity<?> updateAuctionClose(@PathVariable Integer auctionId){
+        return auctionService.updateStatusClose(auctionId);
     }
 
     @GetMapping
