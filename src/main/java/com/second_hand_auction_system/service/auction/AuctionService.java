@@ -364,26 +364,38 @@ public class AuctionService implements IAuctionService {
     }
 
     @Override
-    public ResponseEntity<?> updateStatus(Integer auctionId) {
+    public ResponseEntity<?> updateStatusOpen(Integer auctionId) {
+        // Tìm phiên đấu giá
         Auction auction = auctionRepository.findById(auctionId).orElse(null);
         if (auction == null) {
             throw new RuntimeException("Phiên đấu giá không tìm thấy");
         }
-
-        if (auction.getStatus().equals(AuctionStatus.PENDING)) {
+        if(auction.getStatus().equals(AuctionStatus.PENDING)){
             auction.setStatus(AuctionStatus.OPEN);
         }
-//        if (auction.getStatus().equals(AuctionStatus.OPEN)) {
-//            if (auction.getEndTime().before(new Timestamp(System.currentTimeMillis()))) {
-//                auction.setStatus(AuctionStatus.CLOSED);
-//            }
-//        }
-
-        // Lưu lại thay đổi trong cơ sở dữ liệu
         auctionRepository.save(auction);
 
+        // Trả về phản hồi
         return ResponseEntity.ok(ResponseObject.builder()
-                .message("Phiên đấu giá đã cập nhật")
+                .message("Trạng thái phiên đấu giá đã được cập nhật")
+                .data(auction.getStatus())
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> updateStatusClose(Integer auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElse(null);
+        if (auction == null) {
+            throw new RuntimeException("Phiên đấu giá không tìm thấy");
+        }
+        if(auction.getStatus().equals(AuctionStatus.OPEN)){
+            auction.setStatus(CLOSED);
+        }
+        auctionRepository.save(auction);
+
+        // Trả về phản hồi
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Trạng thái phiên đấu giá đã được cập nhật")
                 .data(auction.getStatus())
                 .build());
     }
@@ -393,12 +405,10 @@ public class AuctionService implements IAuctionService {
     @Transactional
     public void processAuctionCompletion() {
         ZoneId systemZoneId = ZoneId.of("Asia/Ho_Chi_Minh");
-
         // Lấy danh sách các phiên đấu giá cần xử lý
         List<Auction> auctionsToProcess = auctionRepository.findByStatusIn(
                 Arrays.asList(AuctionStatus.CLOSED, AuctionStatus.AWAITING_PAYMENT)
         );
-
         for (Auction auction : auctionsToProcess) {
             try {
                 // Kiểm tra thời gian kết thúc phiên đấu giá
@@ -407,11 +417,9 @@ public class AuctionService implements IAuctionService {
                         auction.getEndTime().toLocalTime(),
                         systemZoneId
                 );
-
                 // Chỉ xử lý nếu phiên đấu giá đã kết thúc
                 if (ZonedDateTime.now(systemZoneId).isAfter(auctionEndTime)) {
                     log.info("Đang xử lý phiên đấu giá ID: {}", auction.getAuctionId());
-
                     // Lấy danh sách người tham gia phiên đấu giá
                     List<User> participants = bidRepository.findDistinctUsersByAuction_AuctionId(auction.getAuctionId());
                     log.info("Danh sách người tham gia phiên đấu giá {}: {}", auction.getAuctionId(), participants);

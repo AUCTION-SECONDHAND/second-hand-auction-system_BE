@@ -21,5 +21,7 @@ public interface IAuctionService {
 
     ResponseEntity<?> countAuctionsByMonth();
 
-    ResponseEntity<?> updateStatus(Integer auctionId);
+    ResponseEntity<?> updateStatusOpen(Integer auctionId);
+
+    ResponseEntity<?> updateStatusClose(Integer auctionId);
 }
