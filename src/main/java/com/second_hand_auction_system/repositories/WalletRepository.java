@@ -29,4 +29,7 @@ public interface WalletRepository extends JpaRepository<Wallet, Integer> {
     Optional<Wallet> findByUser(User user);
 
     Optional<Wallet> findByWalletType(WalletType walletType);
+
+    Optional<Wallet> findWalletWithdrawRequestId(Integer withdrawRequestId);
+
 }
