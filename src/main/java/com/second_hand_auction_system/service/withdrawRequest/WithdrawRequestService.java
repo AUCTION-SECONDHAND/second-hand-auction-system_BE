@@ -310,7 +310,6 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         String paymentUrl = VNPayConfig.vnp_PayUrl + "?" + queryUrl;
         var walletAdmin = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElse(null);
         assert walletAdmin != null;
-
         var walletCustomer = walletRepository.findByUserId(requester.getId()).orElse(null);
         Transaction transaction1;
 
@@ -326,16 +325,21 @@ public class WithdrawRequestService implements IWithdrawRequestService {
             // Trừ tiền từ ví khách hàng
             walletCustomer.setBalance(walletCustomer.getBalance() - amount);
             walletRepository.save(walletCustomer);
+
+            // Cộng tiền vào ví admin (nếu cần)
+            walletAdmin.setBalance(walletAdmin.getBalance() + amount);
+            walletRepository.save(walletAdmin);
+
             // Tạo giao dịch rút tiền
             transaction1 = Transaction.builder()
                     .transactionType(TransactionType.WITHDRAWAL) // Giao dịch rút tiền
                     .oldAmount(walletCustomer.getBalance() - amount)
                     .netAmount(walletCustomer.getBalance()) // Số dư sau khi rút
-                    .amount(amount) // Số tiền rút
+                    .amount(- amount) // Số tiền rút
                     .description(description)
                     .wallet(walletCustomer) // Ví khách hàng
-                    .recipient(walletCustomer.getUser().getFullName()) // Người nhận
-                    .sender(walletCustomer.getUser().getFullName()) // Người gửi (cũng chính là khách hàng)
+                    .recipient("Khách hàng") // Người nhận
+                    .sender("Khách hàng") // Người gửi (cũng chính là khách hàng)
                     .commissionAmount(0) // Có thể thêm logic phí giao dịch nếu cần
                     .commissionRate(0)
                     .transactionStatus(TransactionStatus.COMPLETED) // Đặt trạng thái hoàn thành
@@ -343,6 +347,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
 
             transactionRepository.save(transaction1);
         }
+
 
         return new WalletResponse(paymentUrl, transaction1.getTransactionWalletId());
     }
