@@ -30,6 +30,9 @@ public interface WalletRepository extends JpaRepository<Wallet, Integer> {
 
     Optional<Wallet> findByWalletType(WalletType walletType);
 
-    Optional<Wallet> findWalletWithdrawRequestId(Integer withdrawRequestId);
+    @Query(value = "SELECT w FROM Wallet w " +
+            "JOIN WithdrawRequest wr ON w.walletId = wr.wallet.walletId " +
+            "WHERE wr.withdrawRequestId = :withdrawRequestId")
+    Optional<Wallet> findWalletByWithdrawId(@Param("withdrawRequestId") Integer withdrawRequestId);
 
 }

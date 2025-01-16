@@ -309,7 +309,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
         String paymentUrl = VNPayConfig.vnp_PayUrl + "?" + queryUrl;
 
-        Wallet walletCustomer = walletRepository.findWalletWithdrawRequestId(withdrawId).orElse(null);
+        Wallet walletCustomer = walletRepository.findWalletByWithdrawId(withdrawId).orElse(null);
         Transaction transaction1;
 
         if (walletCustomer == null) {
