@@ -610,13 +610,12 @@ public class OrderService implements IOrderService {
 
     @Transactional
     public void processPayment(Order order) {
-        // Kiểm tra nếu đã có giao dịch thanh toán với trạng thái COMPLETED
-        boolean transactionExists = transactionSystemRepository.existsByOrderAndTransactionStatus(
-                order, TransactionStatus.COMPLETED);
+        // Kiểm tra nếu đã có giao dịch với description "Thanh toán tiền cho seller" và orderId hiện tại
+        boolean transactionExists = transactionSystemRepository.existsByOrderAndDescription(order, "Thanh toán tiền cho seller");
 
         if (transactionExists) {
-            System.out.println("Payment for order " + order.getOrderId() + " already completed. Skipping payment process.");
-            return;
+            System.out.println("Transaction for order " + order.getOrderId() + " already exists. Skipping payment process.");
+            return;  // Nếu đã tồn tại giao dịch, không thực hiện processPayment
         }
 
         // Lấy ví của seller
@@ -635,12 +634,13 @@ public class OrderService implements IOrderService {
         double commissionAmount = totalAmountOder * commissionRate;
         double Amount = totalAmountOder - commissionAmount;
 
-        double oldBalanceSeller = sellerWallet.getBalance();
-        double netAmount = oldBalanceSeller + Amount;
 
+        double oldBalanceSeller = sellerWallet.getBalance();
+
+        double netAmount = oldBalanceSeller + Amount;
         // Cập nhật số dư ví
         sellerWallet.setBalance(sellerWallet.getBalance() + Amount);
-        systemWallet.setBalance(systemWallet.getBalance() - Amount);
+        systemWallet.setBalance(systemWallet.getBalance() - Amount );
 
         walletRepository.save(sellerWallet);
         walletRepository.save(systemWallet);
@@ -656,17 +656,17 @@ public class OrderService implements IOrderService {
         transaction.setOldAmount(oldBalanceSeller);
         transaction.setRecipient(sellerWallet.getUser().getFullName());
         transaction.setSender("System");
-        transaction.setTransactionWalletCode(random());
+        transaction.setTransactionWalletCode(922187);
         transaction.setTransactionType(TransactionType.TRANSFER);
         transaction.setTransactionStatus(TransactionStatus.COMPLETED);
         transaction.setWallet(order.getItem().getUser().getWallet());
 
         try {
             transactionSystemRepository.save(transaction);
-            System.out.println("Transaction saved successfully for order " + order.getOrderId());
+            System.out.println("Transaction saved successfully for order " + order.getOrderId() + transaction);
         } catch (Exception e) {
             System.err.println("Error saving transaction for order " + order.getOrderId() + ": " + e.getMessage());
-            e.printStackTrace();
+            e.printStackTrace();  // In chi tiết lỗi ra console
         }
 
         orderRepository.save(order);
