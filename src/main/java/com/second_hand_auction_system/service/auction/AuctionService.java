@@ -675,7 +675,7 @@ public class AuctionService implements IAuctionService {
 
                         // Lấy ví của admin (ví của hệ thống)
                         Wallet adminWallet = walletRepository.findById(auction.getWallet().getWalletId()).orElseThrow(() -> new RuntimeException("Không tìm thấy ví admin"));
-
+                        assert adminWallet != null;
                         // Xác định số tiền cọc
                         double depositAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice()) / 100;
 
