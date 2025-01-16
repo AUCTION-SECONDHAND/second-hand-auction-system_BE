@@ -70,26 +70,28 @@ public class orderConverter {
         ItemSpecificResponse itemSpecificResponse = null;
 
         if (order.getItem() != null) {
-            Item item = order.getItem();
+            ItemSpecification itemSpecification = order.getItem().getItemSpecification();
 
-            // Map dữ liệu từ item.getItemSpecification()
-            itemSpecificResponse = ItemSpecificResponse.builder()
-                    .itemSpecificationId(item.getItemSpecification().getItemSpecificationId())
-                    .ram(item.getItemSpecification().getRam())
-                    .screenSize(item.getItemSpecification().getScreenSize())
-                    .cameraSpecs(item.getItemSpecification().getCameraSpecs())
-                    .connectivity(item.getItemSpecification().getConnectivity())
-                    .sensors(item.getItemSpecification().getSensors())
-                    .sim(item.getItemSpecification().getSim())
-                    .simSlots(item.getItemSpecification().getSimSlots())
-                    .os(item.getItemSpecification().getOs())
-                    .osFamily(item.getItemSpecification().getOsFamily())
-                    .bluetooth(item.getItemSpecification().getBluetooth())
-                    .usb(item.getItemSpecification().getUsb())
-                    .wlan(item.getItemSpecification().getWlan())
-                    .speed(item.getItemSpecification().getSpeed())
-                    .networkTechnology(item.getItemSpecification().getNetworkTechnology())
-                    .build();
+            if (itemSpecification != null) { // Kiểm tra null cho itemSpecification
+                // Map dữ liệu từ itemSpecification
+                itemSpecificResponse = ItemSpecificResponse.builder()
+                        .itemSpecificationId(itemSpecification.getItemSpecificationId())
+                        .ram(itemSpecification.getRam())
+                        .screenSize(itemSpecification.getScreenSize())
+                        .cameraSpecs(itemSpecification.getCameraSpecs())
+                        .connectivity(itemSpecification.getConnectivity())
+                        .sensors(itemSpecification.getSensors())
+                        .sim(itemSpecification.getSim())
+                        .simSlots(itemSpecification.getSimSlots())
+                        .os(itemSpecification.getOs())
+                        .osFamily(itemSpecification.getOsFamily())
+                        .bluetooth(itemSpecification.getBluetooth())
+                        .usb(itemSpecification.getUsb())
+                        .wlan(itemSpecification.getWlan())
+                        .speed(itemSpecification.getSpeed())
+                        .networkTechnology(itemSpecification.getNetworkTechnology())
+                        .build();
+            }
         }
 
 
