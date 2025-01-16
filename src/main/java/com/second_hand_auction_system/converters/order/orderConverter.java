@@ -66,6 +66,36 @@ public class orderConverter {
                     .build();
         }
 
+
+        ItemSpecificResponse itemSpecificResponse = null;
+
+        if (order.getItem() != null) {
+            Item item = order.getItem();
+
+            // Map dữ liệu từ item.getItemSpecification()
+            itemSpecificResponse = ItemSpecificResponse.builder()
+                    .itemSpecificationId(item.getItemSpecification().getItemSpecificationId())
+                    .ram(item.getItemSpecification().getRam())
+                    .screenSize(item.getItemSpecification().getScreenSize())
+                    .cameraSpecs(item.getItemSpecification().getCameraSpecs())
+                    .connectivity(item.getItemSpecification().getConnectivity())
+                    .sensors(item.getItemSpecification().getSensors())
+                    .sim(item.getItemSpecification().getSim())
+                    .simSlots(item.getItemSpecification().getSimSlots())
+                    .os(item.getItemSpecification().getOs())
+                    .osFamily(item.getItemSpecification().getOsFamily())
+                    .bluetooth(item.getItemSpecification().getBluetooth())
+                    .usb(item.getItemSpecification().getUsb())
+                    .wlan(item.getItemSpecification().getWlan())
+                    .speed(item.getItemSpecification().getSpeed())
+                    .networkTechnology(item.getItemSpecification().getNetworkTechnology())
+                    .build();
+        }
+
+
+
+
+
         return OrderDetailResponse.builder()
                 .orderId(order.getOrderId())
                 .totalAmount(order.getTotalAmount())
@@ -80,5 +110,8 @@ public class orderConverter {
                 .item(itemDetailResponse)
                 .orderCode(order.getOrderCode())
                 .build();
+
     }
+
+
 }
