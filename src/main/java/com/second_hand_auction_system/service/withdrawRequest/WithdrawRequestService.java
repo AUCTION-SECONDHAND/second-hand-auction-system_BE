@@ -310,6 +310,12 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         String paymentUrl = VNPayConfig.vnp_PayUrl + "?" + queryUrl;
 
         Wallet walletCustomer = walletRepository.findWalletByWithdrawId(withdrawId).orElse(null);
+        WithdrawRequest withdrawRequest = withdrawRequestRepository.findById(withdrawId).orElse(null);
+        if (withdrawRequest == null) {
+            throw new RuntimeException("Withdraw not found");
+        }
+
+
         Transaction transaction1;
 
         if (walletCustomer == null) {
@@ -321,7 +327,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 throw new IllegalStateException("Số dư ví không đủ để thực hiện giao dịch rút tiền.");
             }
             // Trừ tiền từ ví khách hàng
-            walletCustomer.setBalance(walletCustomer.getBalance() - amount);
+            walletCustomer.setBalance(walletCustomer.getBalance() - (withdrawRequest.getRequestAmount()));
             walletRepository.save(walletCustomer);
             // Tạo giao dịch rút tiền
             transaction1 = Transaction.builder()
@@ -330,6 +336,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                     .netAmount(walletCustomer.getBalance()) // Số dư sau khi rút
                     .amount(- amount) // Số tiền rút
                     .description(description)
+                    .transactionWalletCode(randomEightDigits())
                     .wallet(walletCustomer) // Ví khách hàng
                     .recipient("Khách hàng") // Người nhận
                     .sender("Khách hàng") // Người gửi (cũng chính là khách hàng)
@@ -344,6 +351,10 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         return new WalletResponse(paymentUrl, transaction1.getTransactionWalletId());
     }
 
+    private long randomEightDigits() {
+        Random rand = new Random();
+        return 10000000L + rand.nextLong(90000000L);
+    }
 
 
 
