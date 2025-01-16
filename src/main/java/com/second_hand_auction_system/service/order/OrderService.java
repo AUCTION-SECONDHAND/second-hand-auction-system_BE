@@ -656,7 +656,7 @@ public class OrderService implements IOrderService {
         transaction.setOldAmount(oldBalanceSeller);
         transaction.setRecipient(sellerWallet.getUser().getFullName());
         transaction.setSender("System");
-        transaction.setTransactionWalletCode(922187);
+        transaction.setTransactionWalletCode(100000 + new Random().nextInt(900000));
         transaction.setTransactionType(TransactionType.TRANSFER);
         transaction.setTransactionStatus(TransactionStatus.COMPLETED);
         transaction.setWallet(order.getItem().getUser().getWallet());
