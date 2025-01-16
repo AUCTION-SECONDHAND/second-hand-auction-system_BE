@@ -450,7 +450,10 @@ public class AuctionService implements IAuctionService {
                     auctionRepository.save(auction);
                     log.info("Phiên đấu giá ID: {} chuyển sang trạng thái AWAITING_PAYMENT.", auction.getAuctionId());
 
-
+                    if (ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).isBefore(auctionEndTime.plusSeconds(30))) {
+                        log.warn("Chưa đủ 24 giờ kể từ khi phiên đấu giá kết thúc, bỏ qua hoàn cọc.");
+                        return; // Không thực hiện hoàn cọc nếu chưa đủ 24 giờ
+                    }
                     // Xử lý trạng thái và hoàn tiền cho người thắng cuộc nếu cần
                     if (auction.getStatus() == AuctionStatus.AWAITING_PAYMENT) {
                         processWinnerDepositRefund(winningBid, auction);
@@ -494,12 +497,6 @@ public class AuctionService implements IAuctionService {
                     auction.getEndTime().toLocalTime(),
                     ZoneId.of("Asia/Ho_Chi_Minh")
             );
-
-            if (ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).isBefore(auctionEndTime.plusHours(24))) {
-                log.warn("Chưa đủ 24 giờ kể từ khi phiên đấu giá kết thúc, bỏ qua hoàn cọc.");
-                return; // Không thực hiện hoàn cọc nếu chưa đủ 24 giờ
-            }
-
             // Kiểm tra trạng thái thanh toán của người thắng cuộc
             boolean isPaymentCompleted = orderRepository.existsByAuctionAndUser(auction, winner);
 
@@ -678,7 +675,7 @@ public class AuctionService implements IAuctionService {
 
                         // Lấy ví của admin (ví của hệ thống)
                         Wallet adminWallet = walletRepository.findById(auction.getWallet().getWalletId()).orElseThrow(() -> new RuntimeException("Không tìm thấy ví admin"));
-
+                        assert adminWallet != null;
                         // Xác định số tiền cọc
                         double depositAmount = (auction.getPercentDeposit() * auction.getBuyNowPrice()) / 100;
 

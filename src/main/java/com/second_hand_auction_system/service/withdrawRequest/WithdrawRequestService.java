@@ -1,5 +1,6 @@
 package com.second_hand_auction_system.service.withdrawRequest;
 
+import com.second_hand_auction_system.configurations.VNPayConfig;
 import com.second_hand_auction_system.dtos.request.walletCustomer.Deposit;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawApprove;
 import com.second_hand_auction_system.dtos.request.withdrawRequest.WithdrawRequestDTO;
@@ -10,14 +11,13 @@ import com.second_hand_auction_system.models.Transaction;
 import com.second_hand_auction_system.models.User;
 import com.second_hand_auction_system.models.Wallet;
 import com.second_hand_auction_system.models.WithdrawRequest;
+import com.second_hand_auction_system.repositories.TransactionRepository;
 import com.second_hand_auction_system.repositories.UserRepository;
 import com.second_hand_auction_system.repositories.WalletRepository;
 import com.second_hand_auction_system.repositories.WithdrawRequestRepository;
 import com.second_hand_auction_system.service.VNPay.VNPAYService;
 import com.second_hand_auction_system.service.jwt.JwtService;
-import com.second_hand_auction_system.utils.PaymentMethod;
-import com.second_hand_auction_system.utils.RequestStatus;
-import com.second_hand_auction_system.utils.Role;
+import com.second_hand_auction_system.utils.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,11 +32,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +46,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
     private final ModelMapper modelMapper;
     private final VNPAYService vnpayService;
 
@@ -211,15 +213,139 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                     .build());
         }
 
-        WalletResponse walletResponse = vnpayService.deposite(deposit.getAmount(),deposit.getDescription());
-        withdrawRequest.setRequestStatus(RequestStatus.ACCEPTED);
+        // Gọi phương thức withdraw để thực hiện giao dịch
+        WalletResponse walletResponse = null;
+        try {
+            walletResponse = withdraw(deposit.getAmount(), deposit.getDescription());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        withdrawRequest.setRequestStatus(RequestStatus.ACCEPTED); // Cập nhật trạng thái yêu cầu rút tiền
         withdrawRequestRepository.save(withdrawRequest);
+
+        // Trả về kết quả giao dịch
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                        .data(walletResponse)
-                        .message("Chuyen tien thanh cong")
-                        .status(HttpStatus.OK)
+                .data(walletResponse)
+                .message("Chuyển tiền thành công")
+                .status(HttpStatus.OK)
                 .build());
     }
+
+
+    public WalletResponse withdraw(int amount, String description) throws UnsupportedEncodingException {
+        String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
+        // Kiểm tra Authorization header
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Unauthorized");
+        }
+        String token = authHeader.substring(7);
+        String userEmail = jwtService.extractUserEmail(token);
+
+        // Kiểm tra người dùng
+        User requester = userRepository.findByEmailAndStatusIsTrue(userEmail).orElse(null);
+        if (requester == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        // Kiểm tra ví của người dùng
+        Wallet walletCustomer = walletRepository.findByUserId(requester.getId()).orElse(null);
+        if (walletCustomer == null) {
+            throw new IllegalStateException("Ví khách hàng không tồn tại.");
+        }
+
+        // Kiểm tra số dư ví
+        if (walletCustomer.getBalance() < amount) {
+            throw new IllegalStateException("Số dư ví không đủ để thực hiện giao dịch.");
+        }
+
+        // Cộng tiền vào ví admin
+        Wallet walletAdmin = walletRepository.findWalletByWalletType(WalletType.ADMIN).orElseThrow(() -> new IllegalStateException("Ví Admin không tồn tại."));
+        walletAdmin.setBalance(walletAdmin.getBalance() + amount);
+        walletRepository.save(walletAdmin);
+
+        // Trừ tiền từ ví khách hàng
+        walletCustomer.setBalance(walletCustomer.getBalance() - amount);
+        walletRepository.save(walletCustomer);
+
+        // Tạo giao dịch rút tiền
+        Transaction transaction = Transaction.builder()
+                .transactionType(TransactionType.WITHDRAWAL) // Loại giao dịch: rút tiền
+                .oldAmount(walletCustomer.getBalance() + amount) // Số dư trước khi rút
+                .netAmount(walletCustomer.getBalance()) // Số dư sau khi rút
+                .amount(amount) // Số tiền rút
+                .description(description)
+                .wallet(walletCustomer) // Ví khách hàng
+                .recipient(walletAdmin.getUser().getFullName()) // Người nhận là admin
+                .sender(walletCustomer.getUser().getFullName()) // Người gửi là khách hàng
+                .commissionAmount(0) // Phí giao dịch (nếu có)
+                .commissionRate(0)
+                .transactionStatus(TransactionStatus.COMPLETED) // Giao dịch hoàn tất
+                .build();
+
+        // Lưu giao dịch vào cơ sở dữ liệu
+        transactionRepository.save(transaction);
+
+        // Tạo URL thanh toán với VNPay
+        String paymentUrl = createPaymentUrl(amount, description);
+
+        return new WalletResponse(paymentUrl, transaction.getTransactionWalletId());
+    }
+
+    private String createPaymentUrl(int amount, String description) throws UnsupportedEncodingException {
+        // Tạo URL thanh toán với VNPay (các tham số và mã hóa giống như trong phương thức withdraw của bạn)
+        String vnp_Version = "2.1.0";
+        String bankCode = "NCB";
+        String vnp_Command = "pay";
+        String vnp_TxnRef = VNPayConfig.getRandomNumber(8);
+        String vnp_IpAddr = "127.0.0.1";
+        String vnp_TmnCode = VNPayConfig.vnp_TmnCode;
+        String orderType = "order-type";
+
+        Map<String, String> vnp_Params = new HashMap<>();
+        vnp_Params.put("vnp_Version", vnp_Version);
+        vnp_Params.put("vnp_Command", vnp_Command);
+        vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
+        vnp_Params.put("vnp_Amount", String.valueOf(amount * 100)); // Chuyển thành cent
+        vnp_Params.put("vnp_CurrCode", "VND");
+        vnp_Params.put("vnp_BankCode", bankCode);
+        vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
+        vnp_Params.put("vnp_OrderInfo", description);
+        vnp_Params.put("vnp_OrderType", orderType);
+        vnp_Params.put("vnp_Locale", "vn");
+        vnp_Params.put("vnp_ReturnUrl", VNPayConfig.vnp_ReturnUrl);
+        vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
+
+        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        String vnp_CreateDate = formatter.format(cld.getTime());
+        vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
+
+        cld.add(Calendar.MINUTE, 15);
+        String vnp_ExpireDate = formatter.format(cld.getTime());
+        vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
+
+        List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
+        Collections.sort(fieldNames);
+        StringBuilder hashData = new StringBuilder();
+        StringBuilder query = new StringBuilder();
+        for (String fieldName : fieldNames) {
+            String fieldValue = vnp_Params.get(fieldName);
+            if (fieldValue != null && !fieldValue.isEmpty()) {
+                hashData.append(fieldName).append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()))
+                        .append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                query.append('&');
+                hashData.append('&');
+            }
+        }
+
+        String queryUrl = query.toString();
+        String vnp_SecureHash = VNPayConfig.hmacSHA512(VNPayConfig.secretKey, hashData.toString());
+        queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
+
+        return VNPayConfig.vnp_PayUrl + "?" + queryUrl;
+    }
+
 
 
 }
