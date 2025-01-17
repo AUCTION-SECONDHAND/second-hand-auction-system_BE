@@ -364,7 +364,7 @@ public class VNPAYService implements VNPaySerivce {
     }
 
     @Transactional
-    public WalletResponse deposite(int amount, String description) {
+    public WalletResponse deposite(long amount, String description) {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         // Kiểm tra Authorization header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -380,9 +380,9 @@ public class VNPAYService implements VNPaySerivce {
         }
         // Kiểm tra ví của người dùng
         Wallet wallet = walletRepository.findByUserId(requester.getId()).orElse(null);
-        if(!(amount > 5000 && amount < 25000000)){
-            throw new RuntimeException("Số tiền giao dịch không hợp lệ.");
-        }
+//        if(!(amount > 5000 && amount < 25000000)){
+//            throw new RuntimeException("Số tiền giao dịch không hợp lệ.");
+//        }
         String orderInfo = description;
         String vnp_Version = "2.1.0";
         String bankCode = "NCB";

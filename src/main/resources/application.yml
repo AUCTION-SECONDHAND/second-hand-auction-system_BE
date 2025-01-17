@@ -8,9 +8,9 @@ open:
     description: API for the second-hand auction system
     licenseUrl: "https://example.com/license"  # Replace with actual license URL
     licenseName: API License
-#    serversUrl: http://localhost:8080/
+    serversUrl: http://localhost:8080/
 
-    serversUrl: https://teracandle.id.vn/
+#    serversUrl: https://teracandle.id.vn/
 
     serversDescription: Server production
 
