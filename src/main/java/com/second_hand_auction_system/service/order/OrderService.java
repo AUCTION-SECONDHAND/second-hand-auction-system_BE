@@ -541,7 +541,7 @@ public class OrderService implements IOrderService {
 
                     if (ghnStatus.toLowerCase().equals("delivered")) {
                         processPayment(order);
-                    }else if (ghnStatus.toLowerCase().equals("returned")) {
+                    }else if ((ghnStatus.toLowerCase().equals("returned")) || (ghnStatus.toLowerCase().equals("lost")) || (ghnStatus.toLowerCase().equals("damage")) ) {
                         refundBidder(order); // Hoàn tiền cho bidder
                     }
                 }
