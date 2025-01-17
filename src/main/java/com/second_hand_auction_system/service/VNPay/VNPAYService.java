@@ -378,6 +378,9 @@ public class VNPAYService implements VNPaySerivce {
         }
         // Kiểm tra ví của người dùng
         Wallet wallet = walletRepository.findByUserId(requester.getId()).orElse(null);
+        if(!(amount > 5000 && amount < 25000000)){
+            throw new RuntimeException("Số tiền giao dịch không hợp lệ.");
+        }
         String orderInfo = description;
         String vnp_Version = "2.1.0";
         String bankCode = "NCB";
