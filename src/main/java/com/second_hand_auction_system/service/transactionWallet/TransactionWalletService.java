@@ -14,6 +14,7 @@ import com.second_hand_auction_system.utils.Role;
 import com.second_hand_auction_system.utils.TransactionStatus;
 import com.second_hand_auction_system.utils.TransactionType;
 import com.second_hand_auction_system.utils.WalletType;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -188,6 +189,7 @@ public class TransactionWalletService implements ITransactionWalletService {
 
 
     @Override
+    @Transactional
     public ResponseEntity<?> updateTransaction(Integer transactionId, String vnpTransactionStatus, String vnpTransactionNo) {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
