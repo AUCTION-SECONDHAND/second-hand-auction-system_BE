@@ -553,9 +553,8 @@ public class OrderService implements IOrderService {
 
     @Transactional
     public void refundBidder(Order order) {
-        // Kiểm tra nếu đã tồn tại giao dịch hoàn tiền với trạng thái COMPLETED
-        boolean refundExists = transactionSystemRepository.existsByOrderAndTransactionStatus(
-                order, TransactionStatus.COMPLETED);
+        // Kiểm tra nếu đã có giao dịch với description "Thanh toán tiền cho seller" và orderId hiện tại
+        boolean refundExists = transactionSystemRepository.existsByOrderAndDescription(order, "Hoàn tiền cho đơn hàng thất bại");
 
         if (refundExists) {
             System.out.println("Refund for order " + order.getOrderId() + " already completed. Skipping refund process.");
@@ -588,10 +587,10 @@ public class OrderService implements IOrderService {
         Transaction refundTransaction = new Transaction();
         refundTransaction.setOrder(order);
         refundTransaction.setAmount((long) refundAmount);
-        refundTransaction.setDescription("Hoàn tiền cho bidder");
+        refundTransaction.setDescription("Hoàn tiền cho đơn hàng thất bại");
         refundTransaction.setOldAmount(oldBalanceBidder);
         refundTransaction.setNetAmount(newBalanceBidder);
-        refundTransaction.setRecipient(bidderWallet.getUser().getFullName());
+        refundTransaction.setRecipient(bidderWallet.getUser().getFullName() + ", Id: " + bidderWallet.getUser().getId());
         refundTransaction.setSender("System");
         refundTransaction.setTransactionWalletCode(random());
         refundTransaction.setTransactionType(TransactionType.REFUND);
