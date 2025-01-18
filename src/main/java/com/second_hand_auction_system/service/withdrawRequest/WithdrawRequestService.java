@@ -213,17 +213,17 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                     .build());
         }
 
-        WalletResponse walletResponse = withdraw(withdrawId, deposit.getAmount(),deposit.getDescription());
+        WalletResponse walletResponse = withdraw(withdrawId, deposit.getAmount(), deposit.getDescription());
         withdrawRequest.setRequestStatus(RequestStatus.ACCEPTED);
         withdrawRequestRepository.save(withdrawRequest);
         return ResponseEntity.status(HttpStatus.OK).body(ResponseObject.builder()
-                        .data(walletResponse)
-                        .message("Chuyen tien thanh cong")
-                        .status(HttpStatus.OK)
+                .data(walletResponse)
+                .message("Chuyen tien thanh cong")
+                .status(HttpStatus.OK)
                 .build());
     }
 
-    public WalletResponse withdraw(Integer withdrawId,int amount, String description) {
+    public WalletResponse withdraw(Integer withdrawId, int amount, String description) {
         String authHeader = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
         // Kiểm tra Authorization header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -252,7 +252,7 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(amount*100));
+        vnp_Params.put("vnp_Amount", String.valueOf(amount * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
         if (bankCode != null && !bankCode.isEmpty()) {
             vnp_Params.put("vnp_BankCode", bankCode);
@@ -327,24 +327,31 @@ public class WithdrawRequestService implements IWithdrawRequestService {
                 throw new IllegalStateException("Số dư ví không đủ để thực hiện giao dịch rút tiền.");
             }
             // Trừ tiền từ ví khách hàng
-            walletCustomer.setBalance(walletCustomer.getBalance() - (withdrawRequest.getRequestAmount()));
+            long amountGiaodich = (long) withdrawRequest.getRequestAmount();
+            // Cập nhật số dư ví khách hàng
+            walletCustomer.setBalance(walletCustomer.getBalance() - withdrawRequest.getRequestAmount());
             walletRepository.save(walletCustomer);
+            // Lấy số dư sau khi cập nhật
+            double updatedBalance = walletCustomer.getBalance();
             // Tạo giao dịch rút tiền
             transaction1 = Transaction.builder()
-                    .transactionType(TransactionType.WITHDRAWAL) // Giao dịch rút tiền
-                    .oldAmount(walletCustomer.getBalance() - amount)
-                    .netAmount(walletCustomer.getBalance()) // Số dư sau khi rút
-                    .amount(- amount) // Số tiền rút
-                    .description(description)
-                    .transactionWalletCode(randomEightDigits())
+                    .transactionType(TransactionType.WITHDRAWAL) // Loại giao dịch: Rút tiền
+                    .oldAmount(updatedBalance + withdrawRequest.getRequestAmount()) // Số dư trước khi rút
+                    .netAmount(updatedBalance) // Số dư sau khi rút
+                    .amount(-amountGiaodich) // Số tiền rút (âm để chỉ rút tiền)
+                    .description(description) // Mô tả giao dịch
+                    .transactionWalletCode(randomEightDigits()) // Mã giao dịch
                     .wallet(walletCustomer) // Ví khách hàng
                     .recipient("Khách hàng") // Người nhận
-                    .sender("Khách hàng") // Người gửi (cũng chính là khách hàng)
-                    .commissionAmount(0) // Có thể thêm logic phí giao dịch nếu cần
-                    .commissionRate(0)
-                    .transactionStatus(TransactionStatus.COMPLETED) // Đặt trạng thái hoàn thành
+                    .sender("Khách hàng") // Người gửi (chính khách hàng)
+                    .commissionAmount(0) // Phí giao dịch (nếu có logic phí, thay đổi giá trị này)
+                    .commissionRate(0) // Tỷ lệ phí (nếu có logic phí)
+                    .transactionStatus(TransactionStatus.COMPLETED) // Trạng thái: Hoàn thành
                     .build();
+
+            // Lưu giao dịch vào cơ sở dữ liệu
             transactionRepository.save(transaction1);
+
         }
 
 
@@ -355,7 +362,6 @@ public class WithdrawRequestService implements IWithdrawRequestService {
         Random rand = new Random();
         return 10000000L + rand.nextLong(90000000L);
     }
-
 
 
 }
